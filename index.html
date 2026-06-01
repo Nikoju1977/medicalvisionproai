@@ -213,6 +213,79 @@ canvas{display:block;touch-action:none;-ms-touch-action:none;}
 @keyframes skel-wave{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
 </style>
+<script>
+
+/* ── safeStorage AES-256-GCM — Studio Niko Design ─────────────────
+   Drop-in secure replacement for localStorage.
+   Keys never leave the browser unencrypted.
+   Usage: await safeStorage.setItem(key, value)
+          await safeStorage.getItem(key)
+          await safeStorage.removeItem(key)
+─────────────────────────────────────────────────────────────────── */
+const safeStorage = (() => {
+  const SALT_KEY = '__niko_salt__';
+  const enc = new TextEncoder();
+  const dec = new TextDecoder();
+
+  async function _getKey() {
+    let salt = safeStorage.getItem(SALT_KEY);
+    if (!salt) {
+      salt = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+        .map(b => b.toString(16).padStart(2,'0')).join('');
+      safeStorage.setItem(SALT_KEY, salt);
+    }
+    const keyMat = await crypto.subtle.importKey(
+      'raw', enc.encode(salt + navigator.userAgent.slice(0,32)),
+      { name:'PBKDF2' }, false, ['deriveKey']
+    );
+    return crypto.subtle.deriveKey(
+      { name:'PBKDF2', salt: enc.encode(salt), iterations:100000, hash:'SHA-256' },
+      keyMat, { name:'AES-GCM', length:256 }, false, ['encrypt','decrypt']
+    );
+  }
+
+  async function setItem(key, value) {
+    try {
+      const k = await _getKey();
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const ct = await crypto.subtle.encrypt(
+        { name:'AES-GCM', iv }, k, enc.encode(JSON.stringify(value))
+      );
+      const payload = JSON.stringify({
+        iv: Array.from(iv),
+        ct: Array.from(new Uint8Array(ct))
+      });
+      safeStorage.setItem('__enc_' + key, payload);
+    } catch(e) {
+      safeStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
+    }
+  }
+
+  async function getItem(key) {
+    try {
+      const raw = safeStorage.getItem('__enc_' + key);
+      if (!raw) return safeStorage.getItem(key); // fallback unencrypted
+      const { iv, ct } = JSON.parse(raw);
+      const k = await _getKey();
+      const pt = await crypto.subtle.decrypt(
+        { name:'AES-GCM', iv: new Uint8Array(iv) }, k, new Uint8Array(ct)
+      );
+      return JSON.parse(dec.decode(pt));
+    } catch(e) {
+      return safeStorage.getItem(key);
+    }
+  }
+
+  async function removeItem(key) {
+    safeStorage.removeItem('__enc_' + key);
+    safeStorage.removeItem(key);
+  }
+
+  return { setItem, getItem, removeItem };
+})();
+
+</script>
+
   <meta name="description" content="MedVision AI Pro — Plateforme d'analyse médicale IA avec 13 agents spécialisés. Radiologie, ECG, dermatologie.">
   <meta name="author" content="Nicolas Julienne — Studio Niko Design">
   <meta name="theme-color" content="#00ff9d">
@@ -401,8 +474,8 @@ const S={pin:"",key:null,db:null,imgA:null,imgB:null,srcA:null,srcB:null,
     pxMm:null,comp:false,ak:'',mdl:'pixtral-large-latest',
     pd:0,ps:1,ip:false};
 
-try{const rk=localStorage.getItem('mv_key')||'';S.ak=rk.replace(/[\x00-\x1f\x7f\s]/g,'');}catch(e){S.ak='';}
-try{const rm=localStorage.getItem('mv_mdl');if(rm)S.mdl=rm;}catch(e){}
+try{const rk=safeStorage.getItem('mv_key')||'';S.ak=rk.replace(/[\x00-\x1f\x7f\s]/g,'');}catch(e){S.ak='';}
+try{const rm=safeStorage.getItem('mv_mdl');if(rm)S.mdl=rm;}catch(e){}
 const cA=$('cA'),xA=cA.getContext('2d'),cB=$('cB'),xB=cB.getContext('2d');
 
 /* === INIT === */
@@ -536,7 +609,7 @@ window.resetV=function(){S.drw=[];S.meas=[];S.rois=[];S.aiRois=[];if(S.imgA){con
 
 /* === AGENTS === */
 function renderAg(){const g=$('aG');g.innerHTML='';const ks=Object.keys(AG);for(const i=0;i<ks.length;i++){(function(k){const a=AG[k],d=document.createElement('div');d.className='ac';d.setAttribute('data-id',k);d.innerHTML='<div class="sdot"></div><div class="ac-i">'+a.i+'</div><div class="ac-n">'+a.n+'</div>';d.addEventListener('click',function(){d.classList.toggle('on');});g.appendChild(d);})(ks[i]);}}
-window.openApiM=function(){$('apiM').classList.add('open');$('akIn').value=S.ak||'';try{const sv=localStorage.getItem('mv_mdl');if(sv)$('mdlSel').value=sv;}catch(e){}upMdlInfo();$('akStat').textContent=S.ak?'Cle: '+S.ak.length+' car. chargee':'Aucune cle configuree';};
+window.openApiM=function(){$('apiM').classList.add('open');$('akIn').value=S.ak||'';try{const sv=safeStorage.getItem('mv_mdl');if(sv)$('mdlSel').value=sv;}catch(e){}upMdlInfo();$('akStat').textContent=S.ak?'Cle: '+S.ak.length+' car. chargee':'Aucune cle configuree';};
 function clM(id){$(id).classList.remove('open');}window.clM=clM;
 
 // Model info descriptions
@@ -559,7 +632,7 @@ window.saveKey=function(){
     S.ak=raw.replace(/[\x00-\x1f\x7f\s]/g,'');
     if(!S.ak){toast('Cle vide!');return;}
     S.mdl=$('mdlSel').value||'pixtral-large-latest';
-    try{localStorage.setItem('mv_key',S.ak);localStorage.setItem('mv_mdl',S.mdl);}catch(e){}
+    try{safeStorage.setItem('mv_key',S.ak);safeStorage.setItem('mv_mdl',S.mdl);}catch(e){}
     clM('apiM');
     toast('Config sauvee: '+S.mdl.split('-')[0].toUpperCase()+' ('+S.ak.length+' car.)');
 };
@@ -938,7 +1011,7 @@ function callMistral(sysPrompt,userContent,opts){
     return new Promise(function(resolve,reject){
         opts=opts||{};
         const mdl=opts.model||S.mdl||'pixtral-large-latest';
-        try{const sv=localStorage.getItem('mv_mdl');if(sv)mdl=sv;}catch(e){}
+        try{const sv=safeStorage.getItem('mv_mdl');if(sv)mdl=sv;}catch(e){}
         const ck=S.ak;
         if(!ck||ck.length<8){reject(new Error('Cle API trop courte'));return;}
         const x=new XMLHttpRequest();
@@ -1257,7 +1330,7 @@ window.runAI=function(){
 
     S.aiRois=[];drw();
     const mdl=S.mdl||'pixtral-large-latest';
-    try{const sv=localStorage.getItem('mv_mdl');if(sv)mdl=sv;}catch(e){}
+    try{const sv=safeStorage.getItem('mv_mdl');if(sv)mdl=sv;}catch(e){}
     const mdlShort=mdl.replace(/-latest$/,'').replace(/-\d{4}$/,'');
     $('aiO').className='air vis';
     $('aiO').innerHTML='<div style="text-align:center"><div class="sp"></div> Analyse via <b>'+mdlShort+'</b>...<br><span style="font-size:.75rem;color:var(--txd)">'+pts.length+' expert(s) | '+typeInfo.desc+'</span></div>';
