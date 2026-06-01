@@ -1135,17 +1135,20 @@ window.runAutoAI=function(){
     b64Prom.then(function(b64){
         const detectPr='Identifie le TYPE EXACT de cette image medicale. '+
             'Reponds UNIQUEMENT en JSON: {"type":"xray|ct|mri|echo|dermato|fundus|histo|mammo|cardio|photo","modality":"nom","anatomie":"zone anatomique","qualite":"bonne|moyenne|mauvaise","orientation":"face|profil|axial|sagittal|coronal|autre"}';
-        return callMistral(detectPr,[
+        return try {
+  const data = await callMistral(detectPr,[
             {type:'text',text:'Classifie cette image medicale.'},
             {type:'image_url',image_url:{url:b64}}
-        ],{temp:0.1,maxTok:200,timeout:30000}).then(function(data){
-            const txt=data.choices[0].message.content;
+        ],{temp:0.1,maxTok:200,timeout:30000});
+  const txt=data.choices[0].message.content;
             try{const det=JSON.parse(txt);Pipeline.results.detect=det;}
             catch(e){Pipeline.results.detect={type:stats.guessType,modality:'Auto',anatomie:'?',qualite:'?'};}
             const d=Pipeline.results.detect;
             Pipeline.stepDone(1,d.modality+' | '+d.anatomie+' | Q:'+d.qualite);
             return b64;
-        });
+} catch(e) {
+  console.error(e)
+};
     }).then(function(b64){
         // ===== STEP 3: Auto-select agents =====
         Pipeline.setStep(2,'Selection experts...');
@@ -1403,11 +1406,15 @@ window.runAI=function(){
         'FORMAT DE REPONSE JSON STRICT OBLIGATOIRE :\n{\n  "detections": [\n    {"label": "nom_pathologie", "ymin": 0.0, "xmin": 0.0, "ymax": 1.0, "xmax": 1.0}\n  ],\n  "html_report": "<h3>INDICATION</h3><p>...</p><h3>OBSERVATIONS</h3><ul><li>...</li></ul><h3>CONCLUSION</h3><p>...</p>",\n  "severity": "critical|high|moderate|low|normal"\n}\nREGLES :\n1. Coordonnees normalisees (0-1).\n2. Rapport HTML formel avec balises h3, p, ul, li, b.\n3. Vocabulaire medical precis.\n4. Si aucune anomalie, detections vide et rapport normal.';
     const usrPr='ANALYSE CLINIQUE. Contexte: '+($('notes').value||'Aucun contexte fourni.');
 
-    getPPbase64().then(function(b64){
-        return callMistral(sysPr,[
+    try {
+  const b64 = await getPPbase64();
+  return callMistral(sysPr,[
             {type:'text',text:usrPr},
             {type:'image_url',image_url:{url:b64}}
-        ],{temp:0.2,maxTok:4096});
+        ],{temp:0.2,maxTok:4096
+} catch(e) {
+  console.error(e)
+};
     }).then(function(data){
         const content=data.choices[0].message.content;
         const usage=data.usage?(' | Tokens: '+data.usage.total_tokens):'';
