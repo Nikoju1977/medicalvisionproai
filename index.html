@@ -207,6 +207,11 @@ canvas{display:block;touch-action:none;-ms-touch-action:none;}
     .pb{width:52px;height:52px;font-size:1.2rem;}.cvf{max-height:40vh;}
 }
 @media(max-width:350px){.bt{padding:8px 10px;font-size:.8rem;}.agr{grid-template-columns:repeat(auto-fill,minmax(65px,1fr));}.ac-n{font-size:.58rem;}}
+
+/* ── Skeleton Loader ─────────────────────────── */
+.skeleton{background:linear-gradient(90deg,rgba(0,255,157,.07) 25%,rgba(0,255,157,.15) 50%,rgba(0,255,157,.07) 75%);background-size:200% 100%;animation:skel-wave 1.4s infinite;border-radius:6px;min-height:1em}
+@keyframes skel-wave{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
 </style>
   <meta name="description" content="MedVision AI Pro — Plateforme d'analyse médicale IA avec 13 agents spécialisés. Radiologie, ECG, dermatologie.">
   <meta name="author" content="Nicolas Julienne — Studio Niko Design">
@@ -219,7 +224,10 @@ canvas{display:block;touch-action:none;-ms-touch-action:none;}
   <meta name="twitter:title" content="MedVision AI Pro | Studio Niko Design">
   <meta name="twitter:description" content="Analyse médicale par intelligence artificielle — 13 agents spécialisés, EU MDR 2017/745 IIa">
 </head>
-<body>
+<body role="application" aria-label="MedVision AI Pro — Analyse médicale IA">
+<main id="app" tabindex="-1">
+<h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap">MedVision AI Pro</h1>
+
 
 <!-- AUTH -->
 <div id="authScreen" class="auth">
@@ -363,14 +371,14 @@ canvas{display:block;touch-action:none;-ms-touch-action:none;}
 (function(){
 "use strict";
 var $=function(id){return document.getElementById(id);};
-var DPR=Math.min(window.devicePixelRatio||1,3);
-var IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-var SAF=/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+const DPR=Math.min(window.devicePixelRatio||1,3);
+const IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const SAF=/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
 function san(k){if(!k)return'';return k.replace(/[\x00-\x1f\x7f]/g,'').replace(/^\s+|\s+$/g,'');}
 
 // 13 Medical Specialist Agents
-var AG={
+const AG={
     radio:{n:"Radiologue",i:"\uD83E\uDDB4",s:"Analyse osseuse, fractures, densit\u00e9s, tissus mous."},
     pulmo:{n:"Pneumologue",i:"\uD83E\uDEC1",s:"Poumons, pl\u00e8vre, \u00e9panchements, nodules pulmonaires."},
     neuro:{n:"Neurologue",i:"\uD83E\uDDE0",s:"Cerveau, AVC, rachis, tissus mous c\u00e9r\u00e9braux."},
@@ -387,31 +395,31 @@ var AG={
 };
 
 // STATE
-var S={pin:"",key:null,db:null,imgA:null,imgB:null,srcA:null,srcB:null,
+const S={pin:"",key:null,db:null,imgA:null,imgB:null,srcA:null,srcB:null,
     w:0,h:0,ox:0,oy:0,sc:1,tool:'pan',
     drw:[],rois:[],meas:[],aiRois:[],
     pxMm:null,comp:false,ak:'',mdl:'pixtral-large-latest',
     pd:0,ps:1,ip:false};
 
-try{var rk=localStorage.getItem('mv_key')||'';S.ak=rk.replace(/[\x00-\x1f\x7f\s]/g,'');}catch(e){S.ak='';}
-try{var rm=localStorage.getItem('mv_mdl');if(rm)S.mdl=rm;}catch(e){}
-var cA=$('cA'),xA=cA.getContext('2d'),cB=$('cB'),xB=cB.getContext('2d');
+try{const rk=localStorage.getItem('mv_key')||'';S.ak=rk.replace(/[\x00-\x1f\x7f\s]/g,'');}catch(e){S.ak='';}
+try{const rm=localStorage.getItem('mv_mdl');if(rm)S.mdl=rm;}catch(e){}
+const cA=$('cA'),xA=cA.getContext('2d'),cB=$('cB'),xB=cB.getContext('2d');
 
 /* === INIT === */
 function init(){
     initPin();renderAg();initDB();rsz();
     $('fIn').addEventListener('change',function(){hFile(this);});
-    var rt;function oR(){clearTimeout(rt);rt=setTimeout(rsz,120);}
+    const rt;function oR(){clearTimeout(rt);rt=setTimeout(rsz,120);}
     window.addEventListener('resize',oR);
     window.addEventListener('orientationchange',function(){setTimeout(rsz,350);});
     // Prevent modal bounce
-    var ms=document.querySelectorAll('.mdl');
-    for(var i=0;i<ms.length;i++){(function(m){
+    const ms=document.querySelectorAll('.mdl');
+    for(const i=0;i<ms.length;i++){(function(m){
         m.addEventListener('touchmove',function(e){if(e.target===m)e.preventDefault();},{passive:false});
         m.addEventListener('click',function(e){if(e.target===m&&m.id!=='camM')m.classList.remove('open');});
     })(ms[i]);}
     document.addEventListener('keydown',function(e){
-        if(e.key==='Escape'||e.keyCode===27){var o=document.querySelectorAll('.mdl.open');for(var j=0;j<o.length;j++){if(o[j].id==='camM')stopCam();else o[j].classList.remove('open');}}
+        if(e.key==='Escape'||e.keyCode===27){const o=document.querySelectorAll('.mdl.open');for(const j=0;j<o.length;j++){if(o[j].id==='camM')stopCam();else o[j].classList.remove('open');}}
     });
     // Canvas events
     cA.addEventListener('touchstart',onTS,{passive:false});
@@ -425,31 +433,31 @@ function init(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 
 /* === PIN === */
-function initPin(){var p=$('pinPad');p.innerHTML='';var ks=[1,2,3,4,5,6,7,8,9,'C',0,'OK'];for(var i=0;i<ks.length;i++){(function(k){var b=document.createElement('button');b.className='pb';b.textContent=k;if(k==='C')b.style.color='var(--dg)';if(k==='OK')b.style.color='var(--pr)';b.addEventListener('click',function(){hPin(k);});p.appendChild(b);})(ks[i]);}}
+function initPin(){const p=$('pinPad');p.innerHTML='';const ks=[1,2,3,4,5,6,7,8,9,'C',0,'OK'];for(const i=0;i<ks.length;i++){(function(k){const b=document.createElement('button');b.className='pb';b.textContent=k;if(k==='C')b.style.color='var(--dg)';if(k==='OK')b.style.color='var(--pr)';b.addEventListener('click',function(){hPin(k);});p.appendChild(b);})(ks[i]);}}
 function hPin(k){if(k==='C'){S.pin='';rDots();return;}if(k==='OK'){if(S.pin.length===4){$('authScreen').style.display='none';$('app').classList.add('on');setTimeout(rsz,100);}else toast('Code: 4 chiffres');return;}if(S.pin.length<4)S.pin+=k;rDots();}
-function rDots(){var d=$('pinDots').children;for(var i=0;i<4;i++){if(i<S.pin.length)d[i].className='pdot f';else d[i].className='pdot';}}
+function rDots(){const d=$('pinDots').children;for(const i=0;i<4;i++){if(i<S.pin.length)d[i].className='pdot f';else d[i].className='pdot';}}
 
 /* === DB === */
-function initDB(){try{var r=indexedDB.open('MedVPro2',2);r.onupgradeneeded=function(e){var db=e.target.result;if(!db.objectStoreNames.contains('p'))db.createObjectStore('p',{keyPath:'id',autoIncrement:true});if(!db.objectStoreNames.contains('e')){var s=db.createObjectStore('e',{keyPath:'id',autoIncrement:true});s.createIndex('pid','pid');}};r.onsuccess=function(e){S.db=e.target.result;$('dbS').textContent='DB: OK';$('dbS').style.color='var(--ac)';ldPL();};r.onerror=function(){toast('Erreur DB');};}catch(e){$('dbS').textContent='DB: N/A';}}
-function ldPL(){if(!S.db)return;try{var t=S.db.transaction('p','readonly'),sel=$('patL');sel.innerHTML='<option value="">-- Patient --</option>';t.objectStore('p').getAll().onsuccess=function(e){var a=e.target.result;for(var i=0;i<a.length;i++){var o=document.createElement('option');o.value=a[i].id;o.textContent=a[i].name;sel.appendChild(o);}};}catch(e){}}
-window.addPat=function(){var n=prompt('Nom du patient:');if(n&&n.replace(/\s/g,'')){if(!S.db)return toast('DB N/A');S.db.transaction('p','readwrite').objectStore('p').add({name:n.replace(/^\s+|\s+$/g,''),date:Date.now()});setTimeout(ldPL,500);toast('Patient ajout\u00e9');}};
-window.saveExam=function(){var pid=$('patL').value;if(!pid||!S.imgA)return toast('Patient ou image manquant');if(!S.db)return toast('DB N/A');
+function initDB(){try{const r=indexedDB.open('MedVPro2',2);r.onupgradeneeded=function(e){const db=e.target.result;if(!db.objectStoreNames.contains('p'))db.createObjectStore('p',{keyPath:'id',autoIncrement:true});if(!db.objectStoreNames.contains('e')){const s=db.createObjectStore('e',{keyPath:'id',autoIncrement:true});s.createIndex('pid','pid');}};r.onsuccess=function(e){S.db=e.target.result;$('dbS').textContent='DB: OK';$('dbS').style.color='var(--ac)';ldPL();};r.onerror=function(){toast('Erreur DB');};}catch(e){$('dbS').textContent='DB: N/A';}}
+function ldPL(){if(!S.db)return;try{const t=S.db.transaction('p','readonly'),sel=$('patL');sel.innerHTML='<option value="">-- Patient --</option>';t.objectStore('p').getAll().onsuccess=function(e){const a=e.target.result;for(const i=0;i<a.length;i++){const o=document.createElement('option');o.value=a[i].id;o.textContent=a[i].name;sel.appendChild(o);}};}catch(e){}}
+window.addPat=function(){const n=prompt('Nom du patient:');if(n&&n.replace(/\s/g,'')){if(!S.db)return toast('DB N/A');S.db.transaction('p','readwrite').objectStore('p').add({name:n.replace(/^\s+|\s+$/g,''),date:Date.now()});setTimeout(ldPL,500);toast('Patient ajout\u00e9');}};
+window.saveExam=function(){const pid=$('patL').value;if(!pid||!S.imgA)return toast('Patient ou image manquant');if(!S.db)return toast('DB N/A');
     // Use toBlob with fallback
     try{cA.toBlob(function(blob){if(!blob)return toast('Erreur capture');S.db.transaction('e','readwrite').objectStore('e').add({pid:parseInt(pid),date:Date.now(),img:blob,notes:$('notes').value,meta:{meas:S.meas,roi:S.rois,pxMm:S.pxMm}});toast('Examen sauvegard\u00e9');},'image/jpeg',0.85);}catch(e){toast('Erreur sauvegarde');}};
-window.loadPat=function(){var pid=$('patL').value;if(!pid||!S.db)return;try{S.db.transaction('e','readonly').objectStore('e').index('pid').getAll(parseInt(pid)).onsuccess=function(e){var r=e.target.result;if(r.length>0){var l=r[r.length-1],im=new Image();im.onload=function(){S.imgB=im;S.srcB=im.src;if(l.notes)$('notes').value=l.notes;if(l.meta){S.meas=l.meta.meas||[];S.rois=l.meta.roi||[];S.pxMm=l.meta.pxMm||null;}S.aiRois=[];upCal();toast('Historique charg\u00e9');};im.onerror=function(){toast('Erreur image');};if(l.img instanceof Blob){im.src=URL.createObjectURL(l.img);}else{im.src=l.img;}}else{S.imgB=null;S.srcB=null;toast('Dossier vide');}};}catch(e){}};
+window.loadPat=function(){const pid=$('patL').value;if(!pid||!S.db)return;try{S.db.transaction('e','readonly').objectStore('e').index('pid').getAll(parseInt(pid)).onsuccess=function(e){const r=e.target.result;if(r.length>0){const l=r[r.length-1],im=new Image();im.onload=function(){S.imgB=im;S.srcB=im.src;if(l.notes)$('notes').value=l.notes;if(l.meta){S.meas=l.meta.meas||[];S.rois=l.meta.roi||[];S.pxMm=l.meta.pxMm||null;}S.aiRois=[];upCal();toast('Historique charg\u00e9');};im.onerror=function(){toast('Erreur image');};if(l.img instanceof Blob){im.src=URL.createObjectURL(l.img);}else{im.src=l.img;}}else{S.imgB=null;S.srcB=null;toast('Dossier vide');}};}catch(e){}};
 
 /* === CANVAS === */
-function rsz(){var bx=$('vBox');if(!bx||bx.clientWidth<1)return;var pn=S.comp?2:1,cw=Math.floor(bx.clientWidth/pn),ch=bx.clientHeight;var cs=[cA,cB];for(var i=0;i<cs.length;i++){cs[i].width=Math.round(cw*DPR);cs[i].height=Math.round(ch*DPR);cs[i].style.width=cw+'px';cs[i].style.height=ch+'px';}drw();}
+function rsz(){const bx=$('vBox');if(!bx||bx.clientWidth<1)return;const pn=S.comp?2:1,cw=Math.floor(bx.clientWidth/pn),ch=bx.clientHeight;const cs=[cA,cB];for(const i=0;i<cs.length;i++){cs[i].width=Math.round(cw*DPR);cs[i].height=Math.round(ch*DPR);cs[i].style.width=cw+'px';cs[i].style.height=ch+'px';}drw();}
 window.pickF=function(){$('fIn').click();};
-function hFile(inp){var f=inp.files[0];if(!f)return;var r=new FileReader();r.onload=function(e){ldImg(e.target.result);};r.readAsDataURL(f);inp.value='';}
-function ldImg(src){S.pxMm=null;S.meas=[];S.rois=[];S.drw=[];S.aiRois=[];upCal();var im=new Image();im.onload=function(){S.imgA=im;S.srcA=src;S.w=im.width;S.h=im.height;$('lA').textContent='IMG A ('+S.w+'\u00d7'+S.h+')';resetV();try{showImgStats();}catch(e){}};im.onerror=function(){toast('Erreur image');};im.src=src;}
-function upCal(){var el=$('calS');if(S.pxMm){el.textContent='CALIBR\u00c9 ('+S.pxMm.toFixed(3)+' mm/px)';el.style.color='var(--ac)';}else{el.textContent='Non calibr\u00e9 (px)';el.style.color='var(--wn)';}}
+function hFile(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=function(e){ldImg(e.target.result);};r.readAsDataURL(f);inp.value='';}
+function ldImg(src){S.pxMm=null;S.meas=[];S.rois=[];S.drw=[];S.aiRois=[];upCal();const im=new Image();im.onload=function(){S.imgA=im;S.srcA=src;S.w=im.width;S.h=im.height;$('lA').textContent='IMG A ('+S.w+'\u00d7'+S.h+')';resetV();try{showImgStats();}catch(e){}};im.onerror=function(){toast('Erreur image');};im.src=src;}
+function upCal(){const el=$('calS');if(S.pxMm){el.textContent='CALIBR\u00c9 ('+S.pxMm.toFixed(3)+' mm/px)';el.style.color='var(--ac)';}else{el.textContent='Non calibr\u00e9 (px)';el.style.color='var(--wn)';}}
 window.togCmp=function(){if(!S.imgB&&!S.comp)toast('Chargez un patient avec historique');S.comp=!S.comp;$('pB').style.display=S.comp?'block':'none';$('bCmp').className='tb'+(S.comp?' on':'');rsz();};
 
 /* === DRAW === */
 function drw(){rCvs(xA,cA,S.imgA);if(S.comp)rCvs(xB,cB,S.imgB);}
 function rCvs(ctx,cvs,img){
-    var w=cvs.width/DPR,h=cvs.height/DPR;
+    const w=cvs.width/DPR,h=cvs.height/DPR;
     ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);
     ctx.fillStyle='#000';ctx.fillRect(0,0,w,h);
     if(!img){ctx.restore();return;}
@@ -458,57 +466,57 @@ function rCvs(ctx,cvs,img){
     ctx.lineCap='round';ctx.lineJoin='round';
 
     // User ROIs (orange dashed)
-    for(var r=0;r<S.rois.length;r++){var roi=S.rois[r];ctx.strokeStyle='#f59e0b';ctx.lineWidth=2/S.sc;ctx.setLineDash([5/S.sc]);ctx.strokeRect(roi.x,roi.y,roi.w,roi.h);ctx.setLineDash([]);}
+    for(const r=0;r<S.rois.length;r++){const roi=S.rois[r];ctx.strokeStyle='#f59e0b';ctx.lineWidth=2/S.sc;ctx.setLineDash([5/S.sc]);ctx.strokeRect(roi.x,roi.y,roi.w,roi.h);ctx.setLineDash([]);}
 
     // AI ROIs (cyan glow)
     if(S.aiRois.length>0){
         ctx.shadowBlur=15;ctx.shadowColor='#00e5ff';ctx.strokeStyle='#00e5ff';ctx.lineWidth=3/S.sc;
-        for(var a=0;a<S.aiRois.length;a++){
-            var bx=S.aiRois[a];
-            var rx=bx.xmin*S.w,ry=bx.ymin*S.h,rw=(bx.xmax-bx.xmin)*S.w,rh=(bx.ymax-bx.ymin)*S.h;
+        for(const a=0;a<S.aiRois.length;a++){
+            const bx=S.aiRois[a];
+            const rx=bx.xmin*S.w,ry=bx.ymin*S.h,rw=(bx.xmax-bx.xmin)*S.w,rh=(bx.ymax-bx.ymin)*S.h;
             ctx.strokeRect(rx,ry,rw,rh);
-            ctx.fillStyle='#00e5ff';var fs=Math.max(10,14/S.sc);ctx.font='bold '+fs+'px monospace';
+            ctx.fillStyle='#00e5ff';const fs=Math.max(10,14/S.sc);ctx.font='bold '+fs+'px monospace';
             ctx.fillText((bx.label||'?').toUpperCase(),rx,ry-5/S.sc);
         }
         ctx.shadowBlur=0;
     }
 
     // Drawings (red)
-    for(var d=0;d<S.drw.length;d++){var pa=S.drw[d];if(pa.length<1)continue;ctx.strokeStyle='#ef4444';ctx.lineWidth=3/S.sc;ctx.beginPath();for(var p=0;p<pa.length;p++){p===0?ctx.moveTo(pa[p].x,pa[p].y):ctx.lineTo(pa[p].x,pa[p].y);}ctx.stroke();}
+    for(const d=0;d<S.drw.length;d++){const pa=S.drw[d];if(pa.length<1)continue;ctx.strokeStyle='#ef4444';ctx.lineWidth=3/S.sc;ctx.beginPath();for(const p=0;p<pa.length;p++){p===0?ctx.moveTo(pa[p].x,pa[p].y):ctx.lineTo(pa[p].x,pa[p].y);}ctx.stroke();}
 
     // Measurements (green + enhanced labels)
-    for(var m=0;m<S.meas.length;m++)dMeas(ctx,S.meas[m]);
+    for(const m=0;m<S.meas.length;m++)dMeas(ctx,S.meas[m]);
     if(tM)dMeas(ctx,tM);
     ctx.restore();
 }
 function dMeas(ctx,m){
-    var dp=Math.sqrt(Math.pow(m.b.x-m.a.x,2)+Math.pow(m.b.y-m.a.y,2));
-    var txt=S.pxMm?(dp*S.pxMm).toFixed(1)+'mm':Math.round(dp)+'px';
+    const dp=Math.sqrt(Math.pow(m.b.x-m.a.x,2)+Math.pow(m.b.y-m.a.y,2));
+    const txt=S.pxMm?(dp*S.pxMm).toFixed(1)+'mm':Math.round(dp)+'px';
     ctx.strokeStyle='#06d6a0';ctx.lineWidth=2/S.sc;
     ctx.beginPath();ctx.moveTo(m.a.x,m.a.y);ctx.lineTo(m.b.x,m.b.y);ctx.stroke();
     // Endpoints
-    var r=3/S.sc;ctx.fillStyle='#06d6a0';
+    const r=3/S.sc;ctx.fillStyle='#06d6a0';
     ctx.beginPath();ctx.arc(m.a.x,m.a.y,r,0,6.28);ctx.fill();
     ctx.beginPath();ctx.arc(m.b.x,m.b.y,r,0,6.28);ctx.fill();
     // Label with background
-    var fs=Math.max(12,16/S.sc);ctx.font='bold '+fs+'px monospace';
-    var tw=ctx.measureText(txt).width;
-    var mx=(m.a.x+m.b.x)/2,my=(m.a.y+m.b.y)/2;
+    const fs=Math.max(12,16/S.sc);ctx.font='bold '+fs+'px monospace';
+    const tw=ctx.measureText(txt).width;
+    const mx=(m.a.x+m.b.x)/2,my=(m.a.y+m.b.y)/2;
     ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(mx-tw/2-4,my-fs,tw+8,fs+4);
     ctx.fillStyle='#fff';ctx.textAlign='center';ctx.fillText(txt,mx,my);ctx.textAlign='start';
 }
 
 /* === POINTER EVENTS === */
-var dn=false,lP=null,sP=null,tM=null;
-function gP(e){var r=cA.getBoundingClientRect(),cx,cy;if(e.touches&&e.touches.length>0){cx=e.touches[0].clientX;cy=e.touches[0].clientY;}else if(e.changedTouches&&e.changedTouches.length>0){cx=e.changedTouches[0].clientX;cy=e.changedTouches[0].clientY;}else{cx=e.clientX;cy=e.clientY;}var ax=cx-r.left,ay=cy-r.top;return{ax:ax,ay:ay,x:(ax-S.ox)/S.sc,y:(ay-S.oy)/S.sc};}
+const dn=false,lP=null,sP=null,tM=null;
+function gP(e){const r=cA.getBoundingClientRect(),cx,cy;if(e.touches&&e.touches.length>0){cx=e.touches[0].clientX;cy=e.touches[0].clientY;}else if(e.changedTouches&&e.changedTouches.length>0){cx=e.changedTouches[0].clientX;cy=e.changedTouches[0].clientY;}else{cx=e.clientX;cy=e.clientY;}const ax=cx-r.left,ay=cy-r.top;return{ax:ax,ay:ay,x:(ax-S.ox)/S.sc,y:(ay-S.oy)/S.sc};}
 function pDist(e){if(!e.touches||e.touches.length<2)return 0;return Math.sqrt(Math.pow(e.touches[0].clientX-e.touches[1].clientX,2)+Math.pow(e.touches[0].clientY-e.touches[1].clientY,2));}
-function pCtr(e){if(!e.touches||e.touches.length<2)return null;var r=cA.getBoundingClientRect();return{ax:(e.touches[0].clientX+e.touches[1].clientX)/2-r.left,ay:(e.touches[0].clientY+e.touches[1].clientY)/2-r.top};}
+function pCtr(e){if(!e.touches||e.touches.length<2)return null;const r=cA.getBoundingClientRect();return{ax:(e.touches[0].clientX+e.touches[1].clientX)/2-r.left,ay:(e.touches[0].clientY+e.touches[1].clientY)/2-r.top};}
 
 function onTS(e){e.preventDefault();if(e.touches.length===2){S.ip=true;S.pd=pDist(e);S.ps=S.sc;dn=false;return;}S.ip=false;dn=true;lP=gP(e);sP=lP;if(S.tool==='draw')S.drw.push([lP]);if(S.tool==='meas')tM={a:lP,b:lP};}
 function onMD(e){dn=true;S.ip=false;lP=gP(e);sP=lP;if(S.tool==='draw')S.drw.push([lP]);if(S.tool==='meas')tM={a:lP,b:lP};}
 function onMV(e){
-    if(S.ip){var ts=e.touches;if(ts&&ts.length===2){e.preventDefault();var nd=pDist(e);if(S.pd>0&&nd>0){var c=pCtr(e),ratio=nd/S.pd,ns=Math.max(.1,Math.min(S.ps*ratio,20));if(c){var ix=(c.ax-S.ox)/S.sc,iy=(c.ay-S.oy)/S.sc;S.sc=ns;S.ox=c.ax-ix*S.sc;S.oy=c.ay-iy*S.sc;}else S.sc=ns;drw();}}return;}
-    if(!dn)return;var p=gP(e);
+    if(S.ip){const ts=e.touches;if(ts&&ts.length===2){e.preventDefault();const nd=pDist(e);if(S.pd>0&&nd>0){const c=pCtr(e),ratio=nd/S.pd,ns=Math.max(.1,Math.min(S.ps*ratio,20));if(c){const ix=(c.ax-S.ox)/S.sc,iy=(c.ay-S.oy)/S.sc;S.sc=ns;S.ox=c.ax-ix*S.sc;S.oy=c.ay-iy*S.sc;}else S.sc=ns;drw();}}return;}
+    if(!dn)return;const p=gP(e);
     if(S.tool==='pan'){S.ox+=p.ax-lP.ax;S.oy+=p.ay-lP.ay;}
     else if(S.tool==='draw'&&S.drw.length>0){S.drw[S.drw.length-1].push(p);}
     else if(S.tool==='roi'){S.rois=[{x:Math.min(sP.x,p.x),y:Math.min(sP.y,p.y),w:Math.abs(p.x-sP.x),h:Math.abs(p.y-sP.y)}];}
@@ -516,23 +524,23 @@ function onMV(e){
     lP=p;drw();
 }
 function onMU(e){
-    if(S.ip){var t=e.touches||[];if(t.length<2)S.ip=false;return;}
-    if(S.tool==='meas'&&tM){var d=Math.sqrt(Math.pow(tM.b.x-tM.a.x,2)+Math.pow(tM.b.y-tM.a.y,2));if(d>5){if(!S.pxMm){var mm=prompt('Calibration: taille r\u00e9elle en mm?');if(mm&&!isNaN(parseFloat(mm))){S.pxMm=parseFloat(mm)/d;upCal();toast('Calibr\u00e9!');}}S.meas.push(tM);}tM=null;}
+    if(S.ip){const t=e.touches||[];if(t.length<2)S.ip=false;return;}
+    if(S.tool==='meas'&&tM){const d=Math.sqrt(Math.pow(tM.b.x-tM.a.x,2)+Math.pow(tM.b.y-tM.a.y,2));if(d>5){if(!S.pxMm){const mm=prompt('Calibration: taille r\u00e9elle en mm?');if(mm&&!isNaN(parseFloat(mm))){S.pxMm=parseFloat(mm)/d;upCal();toast('Calibr\u00e9!');}}S.meas.push(tM);}tM=null;}
     dn=false;drw();
 }
-function onWh(e){e.preventDefault();var r=cA.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;var ix=(mx-S.ox)/S.sc,iy=(my-S.oy)/S.sc;S.sc=Math.max(.1,Math.min(S.sc*(e.deltaY<0?1.1:.9),20));S.ox=mx-ix*S.sc;S.oy=my-iy*S.sc;drw();}
+function onWh(e){e.preventDefault();const r=cA.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;const ix=(mx-S.ox)/S.sc,iy=(my-S.oy)/S.sc;S.sc=Math.max(.1,Math.min(S.sc*(e.deltaY<0?1.1:.9),20));S.ox=mx-ix*S.sc;S.oy=my-iy*S.sc;drw();}
 
-window.setT=function(t){S.tool=t;var bs=document.querySelectorAll('#tbar .tb');for(var i=0;i<bs.length;i++)bs[i].classList.remove('on');var b=$('t-'+t);if(b)b.classList.add('on');};
+window.setT=function(t){S.tool=t;const bs=document.querySelectorAll('#tbar .tb');for(const i=0;i<bs.length;i++)bs[i].classList.remove('on');const b=$('t-'+t);if(b)b.classList.add('on');};
 window.undo=function(){if(S.drw.length)S.drw.pop();else if(S.meas.length)S.meas.pop();else if(S.rois.length)S.rois=[];drw();};
-window.resetV=function(){S.drw=[];S.meas=[];S.rois=[];S.aiRois=[];if(S.imgA){var dw=cA.width/DPR,dh=cA.height/DPR,r=Math.min(dw/S.w,dh/S.h);S.sc=r*.95;S.ox=(dw-S.w*S.sc)/2;S.oy=(dh-S.h*S.sc)/2;}else{S.ox=0;S.oy=0;S.sc=1;}drw();};
+window.resetV=function(){S.drw=[];S.meas=[];S.rois=[];S.aiRois=[];if(S.imgA){const dw=cA.width/DPR,dh=cA.height/DPR,r=Math.min(dw/S.w,dh/S.h);S.sc=r*.95;S.ox=(dw-S.w*S.sc)/2;S.oy=(dh-S.h*S.sc)/2;}else{S.ox=0;S.oy=0;S.sc=1;}drw();};
 
 /* === AGENTS === */
-function renderAg(){var g=$('aG');g.innerHTML='';var ks=Object.keys(AG);for(var i=0;i<ks.length;i++){(function(k){var a=AG[k],d=document.createElement('div');d.className='ac';d.setAttribute('data-id',k);d.innerHTML='<div class="sdot"></div><div class="ac-i">'+a.i+'</div><div class="ac-n">'+a.n+'</div>';d.addEventListener('click',function(){d.classList.toggle('on');});g.appendChild(d);})(ks[i]);}}
-window.openApiM=function(){$('apiM').classList.add('open');$('akIn').value=S.ak||'';try{var sv=localStorage.getItem('mv_mdl');if(sv)$('mdlSel').value=sv;}catch(e){}upMdlInfo();$('akStat').textContent=S.ak?'Cle: '+S.ak.length+' car. chargee':'Aucune cle configuree';};
+function renderAg(){const g=$('aG');g.innerHTML='';const ks=Object.keys(AG);for(const i=0;i<ks.length;i++){(function(k){const a=AG[k],d=document.createElement('div');d.className='ac';d.setAttribute('data-id',k);d.innerHTML='<div class="sdot"></div><div class="ac-i">'+a.i+'</div><div class="ac-n">'+a.n+'</div>';d.addEventListener('click',function(){d.classList.toggle('on');});g.appendChild(d);})(ks[i]);}}
+window.openApiM=function(){$('apiM').classList.add('open');$('akIn').value=S.ak||'';try{const sv=localStorage.getItem('mv_mdl');if(sv)$('mdlSel').value=sv;}catch(e){}upMdlInfo();$('akStat').textContent=S.ak?'Cle: '+S.ak.length+' car. chargee':'Aucune cle configuree';};
 function clM(id){$(id).classList.remove('open');}window.clM=clM;
 
 // Model info descriptions
-var MDL_INFO={
+const MDL_INFO={
     'mistral-large-latest':'Flagship 2025. Top qualite texte+vision. ~2$/M tokens.',
     'mistral-medium-latest':'Frontier multimodal Mai 2025. Excellent rapport qualite/prix.',
     'pixtral-large-latest':'124B params. Expert imagerie medicale, documents, graphiques.',
@@ -543,11 +551,11 @@ var MDL_INFO={
     'ministral-8b-latest':'8B edge. Ultra-rapide, bon pour triage initial.',
     'ministral-3b-latest':'3B micro. Minimum viable pour edge/mobile.'
 };
-function upMdlInfo(){var v=$('mdlSel').value;$('mdlInfo').textContent=MDL_INFO[v]||'';}
+function upMdlInfo(){const v=$('mdlSel').value;$('mdlInfo').textContent=MDL_INFO[v]||'';}
 if($('mdlSel'))$('mdlSel').addEventListener('change',upMdlInfo);
 
 window.saveKey=function(){
-    var raw=$('akIn').value||'';
+    const raw=$('akIn').value||'';
     S.ak=raw.replace(/[\x00-\x1f\x7f\s]/g,'');
     if(!S.ak){toast('Cle vide!');return;}
     S.mdl=$('mdlSel').value||'pixtral-large-latest';
@@ -558,13 +566,13 @@ window.saveKey=function(){
 
 // Test API Key
 window.testKey=function(){
-    var raw=$('akIn').value||'';
-    var k=raw.replace(/[\x00-\x1f\x7f\s]/g,'');
+    const raw=$('akIn').value||'';
+    const k=raw.replace(/[\x00-\x1f\x7f\s]/g,'');
     if(!k){$('akStat').textContent='Entrez une cle';$('akStat').style.color='var(--wn)';return;}
     $('akStat').textContent='Test en cours...';$('akStat').style.color='var(--txd)';
     $('testBtn').disabled=true;
-    var mdl=$('mdlSel').value||'pixtral-large-latest';
-    var x=new XMLHttpRequest();
+    const mdl=$('mdlSel').value||'pixtral-large-latest';
+    const x=new XMLHttpRequest();
     x.open('POST','https://api.mistral.ai/v1/chat/completions',true);
     x.setRequestHeader('Content-Type','application/json');
     x.setRequestHeader('Authorization','Bearer '+k);
@@ -596,7 +604,7 @@ window.testKey=function(){
    MEDICAL KNOWLEDGE BASE (MedKB)
    Structured medical ontology for enhanced AI prompting
    ==================================================================== */
-var MedKB={
+const MedKB={
     // Image type signatures for auto-detection
     imgTypes:{
         xray:{kw:['radiograph','x-ray','xray','radio','thorax','chest','os','bone','poumon','lung'],
@@ -670,35 +678,35 @@ var MedKB={
    IMAGE PREPROCESSING ENGINE
    Client-side Canvas analysis & enhancement
    ==================================================================== */
-var ImgProc={
+const ImgProc={
     // Compute image histogram & statistics
     getStats:function(img){
-        var c=document.createElement('canvas'),w=Math.min(img.width||img.naturalWidth,512),
+        const c=document.createElement('canvas'),w=Math.min(img.width||img.naturalWidth,512),
             h=Math.min(img.height||img.naturalHeight,512);
         c.width=w;c.height=h;
-        var ctx=c.getContext('2d');ctx.drawImage(img,0,0,w,h);
-        var d=ctx.getImageData(0,0,w,h).data;
-        var hist=new Array(256);for(var i=0;i<256;i++)hist[i]=0;
-        var rSum=0,gSum=0,bSum=0,lumSum=0,n=d.length/4;
-        var lumArr=[];
-        for(var i=0;i<d.length;i+=4){
-            var r=d[i],g=d[i+1],b=d[i+2];
-            var lum=Math.round(0.299*r+0.587*g+0.114*b);
+        const ctx=c.getContext('2d');ctx.drawImage(img,0,0,w,h);
+        const d=ctx.getImageData(0,0,w,h).data;
+        const hist=new Array(256);for(const i=0;i<256;i++)hist[i]=0;
+        const rSum=0,gSum=0,bSum=0,lumSum=0,n=d.length/4;
+        const lumArr=[];
+        for(const i=0;i<d.length;i+=4){
+            const r=d[i],g=d[i+1],b=d[i+2];
+            const lum=Math.round(0.299*r+0.587*g+0.114*b);
             hist[lum]++;lumArr.push(lum);
             rSum+=r;gSum+=g;bSum+=b;lumSum+=lum;
         }
-        var mean=lumSum/n;
-        var variance=0;for(var i=0;i<lumArr.length;i++){var df=lumArr[i]-mean;variance+=df*df;}
-        variance/=n;var stddev=Math.sqrt(variance);
+        const mean=lumSum/n;
+        const variance=0;for(const i=0;i<lumArr.length;i++){const df=lumArr[i]-mean;variance+=df*df;}
+        variance/=n;const stddev=Math.sqrt(variance);
         // Percentiles
-        var sorted=lumArr.slice().sort(function(a,b){return a-b;});
-        var p5=sorted[Math.floor(n*0.05)],p95=sorted[Math.floor(n*0.95)];
-        var p25=sorted[Math.floor(n*0.25)],p75=sorted[Math.floor(n*0.75)];
+        const sorted=lumArr.slice().sort(function(a,b){return a-b;});
+        const p5=sorted[Math.floor(n*0.05)],p95=sorted[Math.floor(n*0.95)];
+        const p25=sorted[Math.floor(n*0.25)],p75=sorted[Math.floor(n*0.75)];
         // Dominant channel
-        var rAvg=rSum/n,gAvg=gSum/n,bAvg=bSum/n;
-        var isGray=(Math.abs(rAvg-gAvg)<10&&Math.abs(gAvg-bAvg)<10);
+        const rAvg=rSum/n,gAvg=gSum/n,bAvg=bSum/n;
+        const isGray=(Math.abs(rAvg-gAvg)<10&&Math.abs(gAvg-bAvg)<10);
         // Detect if likely medical image type
-        var guessType='photo';
+        const guessType='photo';
         if(isGray&&mean<100)guessType='xray';
         else if(isGray&&mean>100&&stddev<40)guessType='ct';
         else if(isGray&&stddev>50)guessType='mri';
@@ -717,29 +725,29 @@ var ImgProc={
     // CLAHE-like contrast enhancement
     enhance:function(img,clipLimit){
         clipLimit=clipLimit||2.5;
-        var c=document.createElement('canvas'),w=img.width||img.naturalWidth,h=img.height||img.naturalHeight;
-        if(w>1500){var r=1500/w;w=1500;h=Math.round(h*r);}
+        const c=document.createElement('canvas'),w=img.width||img.naturalWidth,h=img.height||img.naturalHeight;
+        if(w>1500){const r=1500/w;w=1500;h=Math.round(h*r);}
         c.width=w;c.height=h;
-        var ctx=c.getContext('2d');ctx.drawImage(img,0,0,w,h);
-        var id=ctx.getImageData(0,0,w,h),d=id.data;
+        const ctx=c.getContext('2d');ctx.drawImage(img,0,0,w,h);
+        const id=ctx.getImageData(0,0,w,h),d=id.data;
         // Build histogram
-        var hist=new Array(256);for(var i=0;i<256;i++)hist[i]=0;
-        var n=d.length/4;
-        for(var i=0;i<d.length;i+=4){var l=Math.round(0.299*d[i]+0.587*d[i+1]+0.114*d[i+2]);hist[l]++;}
+        const hist=new Array(256);for(const i=0;i<256;i++)hist[i]=0;
+        const n=d.length/4;
+        for(const i=0;i<d.length;i+=4){const l=Math.round(0.299*d[i]+0.587*d[i+1]+0.114*d[i+2]);hist[l]++;}
         // Clip histogram
-        var cl=Math.round(n/256*clipLimit),excess=0;
-        for(var i=0;i<256;i++){if(hist[i]>cl){excess+=hist[i]-cl;hist[i]=cl;}}
-        var inc=Math.round(excess/256);for(var i=0;i<256;i++)hist[i]+=inc;
+        const cl=Math.round(n/256*clipLimit),excess=0;
+        for(const i=0;i<256;i++){if(hist[i]>cl){excess+=hist[i]-cl;hist[i]=cl;}}
+        const inc=Math.round(excess/256);for(const i=0;i<256;i++)hist[i]+=inc;
         // Build CDF
-        var cdf=new Array(256);cdf[0]=hist[0];
-        for(var i=1;i<256;i++)cdf[i]=cdf[i-1]+hist[i];
-        var cdfMin=cdf[0];for(var i=0;i<256;i++){if(cdf[i]>0){cdfMin=cdf[i];break;}}
-        var lut=new Array(256);
-        for(var i=0;i<256;i++)lut[i]=Math.round((cdf[i]-cdfMin)/(n-cdfMin)*255);
+        const cdf=new Array(256);cdf[0]=hist[0];
+        for(const i=1;i<256;i++)cdf[i]=cdf[i-1]+hist[i];
+        const cdfMin=cdf[0];for(const i=0;i<256;i++){if(cdf[i]>0){cdfMin=cdf[i];break;}}
+        const lut=new Array(256);
+        for(const i=0;i<256;i++)lut[i]=Math.round((cdf[i]-cdfMin)/(n-cdfMin)*255);
         // Apply
-        for(var i=0;i<d.length;i+=4){
-            var l=Math.round(0.299*d[i]+0.587*d[i+1]+0.114*d[i+2]);
-            var nl=lut[l],f=(l>0)?nl/l:1;
+        for(const i=0;i<d.length;i+=4){
+            const l=Math.round(0.299*d[i]+0.587*d[i+1]+0.114*d[i+2]);
+            const nl=lut[l],f=(l>0)?nl/l:1;
             d[i]=Math.min(255,Math.round(d[i]*f));
             d[i+1]=Math.min(255,Math.round(d[i+1]*f));
             d[i+2]=Math.min(255,Math.round(d[i+2]*f));
@@ -749,51 +757,51 @@ var ImgProc={
 
     // Sobel edge detection
     edges:function(img){
-        var c=document.createElement('canvas'),w=Math.min(img.width||img.naturalWidth,800),
+        const c=document.createElement('canvas'),w=Math.min(img.width||img.naturalWidth,800),
             h=Math.min(img.height||img.naturalHeight,800);
         c.width=w;c.height=h;
-        var ctx=c.getContext('2d');ctx.drawImage(img,0,0,w,h);
-        var id=ctx.getImageData(0,0,w,h),d=id.data;
-        var gray=new Array(w*h);
-        for(var i=0;i<d.length;i+=4)gray[i/4]=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
-        var out=new Uint8ClampedArray(w*h);
-        for(var y=1;y<h-1;y++){for(var x=1;x<w-1;x++){
-            var idx=y*w+x;
-            var gx=(-gray[(y-1)*w+(x-1)]-2*gray[y*w+(x-1)]-gray[(y+1)*w+(x-1)]+
+        const ctx=c.getContext('2d');ctx.drawImage(img,0,0,w,h);
+        const id=ctx.getImageData(0,0,w,h),d=id.data;
+        const gray=new Array(w*h);
+        for(const i=0;i<d.length;i+=4)gray[i/4]=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+        const out=new Uint8ClampedArray(w*h);
+        for(const y=1;y<h-1;y++){for(const x=1;x<w-1;x++){
+            const idx=y*w+x;
+            const gx=(-gray[(y-1)*w+(x-1)]-2*gray[y*w+(x-1)]-gray[(y+1)*w+(x-1)]+
                      gray[(y-1)*w+(x+1)]+2*gray[y*w+(x+1)]+gray[(y+1)*w+(x+1)]);
-            var gy=(-gray[(y-1)*w+(x-1)]-2*gray[(y-1)*w+x]-gray[(y-1)*w+(x+1)]+
+            const gy=(-gray[(y-1)*w+(x-1)]-2*gray[(y-1)*w+x]-gray[(y-1)*w+(x+1)]+
                      gray[(y+1)*w+(x-1)]+2*gray[(y+1)*w+x]+gray[(y+1)*w+(x+1)]);
             out[idx]=Math.min(255,Math.round(Math.sqrt(gx*gx+gy*gy)));
         }}
-        var od=ctx.createImageData(w,h);
-        for(var i=0;i<out.length;i++){od.data[i*4]=out[i];od.data[i*4+1]=out[i];od.data[i*4+2]=out[i];od.data[i*4+3]=255;}
+        const od=ctx.createImageData(w,h);
+        for(const i=0;i<out.length;i++){od.data[i*4]=out[i];od.data[i*4+1]=out[i];od.data[i*4+2]=out[i];od.data[i*4+3]=255;}
         ctx.putImageData(od,0,0);return c;
     },
 
     // Invert (for X-ray viewing)
     invert:function(img){
-        var c=document.createElement('canvas'),w=img.width||img.naturalWidth,h=img.height||img.naturalHeight;
-        if(w>1500){var r=1500/w;w=1500;h=Math.round(h*r);}
+        const c=document.createElement('canvas'),w=img.width||img.naturalWidth,h=img.height||img.naturalHeight;
+        if(w>1500){const r=1500/w;w=1500;h=Math.round(h*r);}
         c.width=w;c.height=h;
-        var ctx=c.getContext('2d');ctx.drawImage(img,0,0,w,h);
-        var id=ctx.getImageData(0,0,w,h),d=id.data;
-        for(var i=0;i<d.length;i+=4){d[i]=255-d[i];d[i+1]=255-d[i+1];d[i+2]=255-d[i+2];}
+        const ctx=c.getContext('2d');ctx.drawImage(img,0,0,w,h);
+        const id=ctx.getImageData(0,0,w,h),d=id.data;
+        for(const i=0;i<d.length;i+=4){d[i]=255-d[i];d[i+1]=255-d[i+1];d[i+2]=255-d[i+2];}
         ctx.putImageData(id,0,0);return c;
     },
 
     // Sharpen
     sharpen:function(img){
-        var c=document.createElement('canvas'),w=Math.min(img.width||img.naturalWidth,1200),
+        const c=document.createElement('canvas'),w=Math.min(img.width||img.naturalWidth,1200),
             h=Math.min(img.height||img.naturalHeight,1200);
         c.width=w;c.height=h;
-        var ctx=c.getContext('2d');ctx.drawImage(img,0,0,w,h);
-        var id=ctx.getImageData(0,0,w,h),d=id.data;
-        var kern=[0,-1,0,-1,5,-1,0,-1,0];
-        var od=ctx.createImageData(w,h),o=od.data;
-        for(var y=1;y<h-1;y++){for(var x=1;x<w-1;x++){
-            for(var ch=0;ch<3;ch++){
-                var sum=0;
-                for(var ky=-1;ky<=1;ky++){for(var kx=-1;kx<=1;kx++){
+        const ctx=c.getContext('2d');ctx.drawImage(img,0,0,w,h);
+        const id=ctx.getImageData(0,0,w,h),d=id.data;
+        const kern=[0,-1,0,-1,5,-1,0,-1,0];
+        const od=ctx.createImageData(w,h),o=od.data;
+        for(const y=1;y<h-1;y++){for(const x=1;x<w-1;x++){
+            for(const ch=0;ch<3;ch++){
+                const sum=0;
+                for(const ky=-1;ky<=1;ky++){for(const kx=-1;kx<=1;kx++){
                     sum+=d[((y+ky)*w+(x+kx))*4+ch]*kern[(ky+1)*3+(kx+1)];
                 }}
                 o[(y*w+x)*4+ch]=Math.max(0,Math.min(255,sum));
@@ -808,7 +816,7 @@ var ImgProc={
    AUTO-ANALYSIS PIPELINE
    Multi-step automated medical image analysis
    ==================================================================== */
-var Pipeline={
+const Pipeline={
     steps:[
         {id:'preproc',label:'Pre-traitement image',icon:'1'},
         {id:'detect',label:'Detection type imagerie',icon:'2'},
@@ -823,9 +831,9 @@ var Pipeline={
 
     // Render pipeline UI
     render:function(){
-        var w=$('pipeWrap');w.style.display='block';
-        var h='';for(var i=0;i<this.steps.length;i++){
-            var s=this.steps[i],cls='';
+        const w=$('pipeWrap');w.style.display='block';
+        const h='';for(const i=0;i<this.steps.length;i++){
+            const s=this.steps[i],cls='';
             if(i<this.current)cls='done';else if(i===this.current)cls='active';
             h+='<div class="pipe-step '+cls+'" id="ps-'+s.id+'"><div class="pi">'+
                 (cls==='done'?'&#x2713;':s.icon)+'</div><div class="pt">'+s.label+'</div>'+
@@ -836,24 +844,24 @@ var Pipeline={
 
     setStep:function(idx,val){
         this.current=idx;this.render();
-        if(val){var pv=$('pv-'+this.steps[idx].id);if(pv)pv.textContent=val;}
+        if(val){const pv=$('pv-'+this.steps[idx].id);if(pv)pv.textContent=val;}
     },
     stepDone:function(idx,val){
         this.current=idx+1;this.render();
-        if(val){var pv=$('pv-'+this.steps[idx].id);if(pv)pv.textContent=val;}
+        if(val){const pv=$('pv-'+this.steps[idx].id);if(pv)pv.textContent=val;}
     },
     stepErr:function(idx,msg){
-        var el=$('ps-'+this.steps[idx].id);if(el)el.className='pipe-step err';
-        var pv=$('pv-'+this.steps[idx].id);if(pv){pv.textContent=msg;pv.style.color='var(--dg)';}
+        const el=$('ps-'+this.steps[idx].id);if(el)el.className='pipe-step err';
+        const pv=$('pv-'+this.steps[idx].id);if(pv){pv.textContent=msg;pv.style.color='var(--dg)';}
     }
 };
 
 // Show image stats in UI
 function showImgStats(){
     if(!S.imgA){$('imgStats').style.display='none';return;}
-    var st=ImgProc.getStats(S.imgA);
+    const st=ImgProc.getStats(S.imgA);
     S._imgStats=st;
-    var t=MedKB.imgTypes[st.guessType]||{desc:'Inconnu',modality:'?'};
+    const t=MedKB.imgTypes[st.guessType]||{desc:'Inconnu',modality:'?'};
     $('imgStats').style.display='';
     $('imgStats').innerHTML=
         '<span>'+st.width+'x'+st.height+'</span>'+
@@ -868,21 +876,21 @@ function showImgStats(){
 }
 
 function showPPstrip(st){
-    var area=$('ppArea'),strip=$('ppStrip');
+    const area=$('ppArea'),strip=$('ppStrip');
     area.style.display='';strip.innerHTML='';
-    var ops=[
+    const ops=[
         {name:'Original',fn:null},
         {name:'Contraste+',fn:function(){return ImgProc.enhance(S.imgA,2.5);}},
         {name:'Contours',fn:function(){return ImgProc.edges(S.imgA);}},
         {name:'Negatif',fn:function(){return ImgProc.invert(S.imgA);}},
         {name:'Nettet\u00e9+',fn:function(){return ImgProc.sharpen(S.imgA);}}
     ];
-    for(var i=0;i<ops.length;i++){(function(op,idx){
-        var pc=document.createElement('canvas');
+    for(const i=0;i<ops.length;i++){(function(op,idx){
+        const pc=document.createElement('canvas');
         pc.width=120;pc.height=90;pc.title=op.name;
-        var pctx=pc.getContext('2d');
+        const pctx=pc.getContext('2d');
         if(op.fn){
-            try{var res=op.fn();pctx.drawImage(res,0,0,120,90);}catch(e){pctx.fillStyle='#222';pctx.fillRect(0,0,120,90);}
+            try{const res=op.fn();pctx.drawImage(res,0,0,120,90);}catch(e){pctx.fillStyle='#222';pctx.fillRect(0,0,120,90);}
         }else{pctx.drawImage(S.imgA,0,0,120,90);}
         // Label
         pctx.fillStyle='rgba(0,0,0,.6)';pctx.fillRect(0,72,120,18);
@@ -890,7 +898,7 @@ function showPPstrip(st){
         pctx.fillText(op.name,60,84);
         if(idx===0)pc.classList.add('sel');
         pc.addEventListener('click',function(){
-            var all=strip.querySelectorAll('canvas');for(var j=0;j<all.length;j++)all[j].classList.remove('sel');
+            const all=strip.querySelectorAll('canvas');for(const j=0;j<all.length;j++)all[j].classList.remove('sel');
             pc.classList.add('sel');S._ppMode=idx;
         });
         strip.appendChild(pc);
@@ -901,22 +909,22 @@ function showPPstrip(st){
 // Get preprocessed image base64 for AI
 function getPPbase64(){
     return new Promise(function(res){
-        var mode=S._ppMode||0;
-        var ops=S._ppOps;
-        var srcImg=S.imgA;
-        var c;
+        const mode=S._ppMode||0;
+        const ops=S._ppOps;
+        const srcImg=S.imgA;
+        const c;
         if(mode>0&&ops&&ops[mode]&&ops[mode].fn){
             try{c=ops[mode].fn();}catch(e){c=null;}
         }
         if(!c){
             c=document.createElement('canvas');
-            var mx=1500,w=S.w,h=S.h;
-            if(w>mx||h>mx){var s=Math.min(mx/w,mx/h);w=Math.round(w*s);h=Math.round(h*s);}
+            const mx=1500,w=S.w,h=S.h;
+            if(w>mx||h>mx){const s=Math.min(mx/w,mx/h);w=Math.round(w*s);h=Math.round(h*s);}
             c.width=w;c.height=h;c.getContext('2d').drawImage(srcImg,0,0,w,h);
         }
         // If ROI, crop
         if(S.rois.length>0){
-            var r=S.rois[0],rc=document.createElement('canvas');
+            const r=S.rois[0],rc=document.createElement('canvas');
             rc.width=Math.max(1,Math.round(r.w));rc.height=Math.max(1,Math.round(r.h));
             rc.getContext('2d').drawImage(srcImg,r.x,r.y,r.w,r.h,0,0,rc.width,rc.height);
             res(rc.toDataURL('image/jpeg',.85));return;
@@ -929,11 +937,11 @@ function getPPbase64(){
 function callMistral(sysPrompt,userContent,opts){
     return new Promise(function(resolve,reject){
         opts=opts||{};
-        var mdl=opts.model||S.mdl||'pixtral-large-latest';
-        try{var sv=localStorage.getItem('mv_mdl');if(sv)mdl=sv;}catch(e){}
-        var ck=S.ak;
+        const mdl=opts.model||S.mdl||'pixtral-large-latest';
+        try{const sv=localStorage.getItem('mv_mdl');if(sv)mdl=sv;}catch(e){}
+        const ck=S.ak;
         if(!ck||ck.length<8){reject(new Error('Cle API trop courte'));return;}
-        var x=new XMLHttpRequest();
+        const x=new XMLHttpRequest();
         x.open('POST','https://api.mistral.ai/v1/chat/completions',true);
         x.setRequestHeader('Content-Type','application/json');
         x.setRequestHeader('Authorization','Bearer '+ck);
@@ -946,21 +954,21 @@ function callMistral(sysPrompt,userContent,opts){
             if(x.status>=500){reject(new Error('Serveur Mistral erreur ('+x.status+')'));return;}
             if(x.status!==200){reject(new Error('HTTP '+x.status));return;}
             try{
-                var data=JSON.parse(x.responseText);
+                const data=JSON.parse(x.responseText);
                 if(data.error)reject(new Error(data.error.message));
                 else resolve(data);
             }catch(e){reject(e);}
         };
         x.onerror=function(){reject(new Error('Erreur reseau'));};
         x.ontimeout=function(){reject(new Error('Timeout ('+Math.round(x.timeout/1000)+'s)'));};
-        var body={model:mdl,temperature:opts.temp||0.2,max_tokens:opts.maxTok||4096,
+        const body={model:mdl,temperature:opts.temp||0.2,max_tokens:opts.maxTok||4096,
             messages:[{role:'system',content:sysPrompt}]};
         if(typeof userContent==='string'){
             body.messages.push({role:'user',content:userContent});
         }else{body.messages.push({role:'user',content:userContent});}
         // JSON mode for compatible models
-        var jsonOK=['pixtral-large-latest','mistral-large-latest','mistral-medium-latest','mistral-small-latest','pixtral-12b-2409'];
-        if(opts.json!==false){var useJ=false;for(var j=0;j<jsonOK.length;j++){if(mdl===jsonOK[j])useJ=true;}
+        const jsonOK=['pixtral-large-latest','mistral-large-latest','mistral-medium-latest','mistral-small-latest','pixtral-12b-2409'];
+        if(opts.json!==false){const useJ=false;for(const j=0;j<jsonOK.length;j++){if(mdl===jsonOK[j])useJ=true;}
         if(useJ)body.response_format={type:'json_object'};}
         x.send(JSON.stringify(body));
     });
@@ -979,12 +987,12 @@ window.runAutoAI=function(){
     $('aiO').innerHTML='';
     Pipeline.current=-1;Pipeline.results={};Pipeline.render();
 
-    var notes=$('notes').value||'';
-    var b64Prom=getPPbase64();
+    const notes=$('notes').value||'';
+    const b64Prom=getPPbase64();
 
     // ===== STEP 1: Pre-processing =====
     Pipeline.setStep(0,'Analyse pixels...');
-    var stats=S._imgStats;
+    const stats=S._imgStats;
     if(!stats&&S.imgA){stats=ImgProc.getStats(S.imgA);S._imgStats=stats;showImgStats();}
     if(!stats){Pipeline.stepErr(0,'Pas d\'image');return;}
     Pipeline.stepDone(0,stats.width+'x'+stats.height+' | Lum:'+stats.mean+' | C:'+stats.contrast+'%');
@@ -992,68 +1000,68 @@ window.runAutoAI=function(){
     // ===== STEP 2: Image type detection via AI =====
     Pipeline.setStep(1,'Classification via IA...');
     b64Prom.then(function(b64){
-        var detectPr='Identifie le TYPE EXACT de cette image medicale. '+
+        const detectPr='Identifie le TYPE EXACT de cette image medicale. '+
             'Reponds UNIQUEMENT en JSON: {"type":"xray|ct|mri|echo|dermato|fundus|histo|mammo|cardio|photo","modality":"nom","anatomie":"zone anatomique","qualite":"bonne|moyenne|mauvaise","orientation":"face|profil|axial|sagittal|coronal|autre"}';
         return callMistral(detectPr,[
             {type:'text',text:'Classifie cette image medicale.'},
             {type:'image_url',image_url:{url:b64}}
         ],{temp:0.1,maxTok:200,timeout:30000}).then(function(data){
-            var txt=data.choices[0].message.content;
-            try{var det=JSON.parse(txt);Pipeline.results.detect=det;}
+            const txt=data.choices[0].message.content;
+            try{const det=JSON.parse(txt);Pipeline.results.detect=det;}
             catch(e){Pipeline.results.detect={type:stats.guessType,modality:'Auto',anatomie:'?',qualite:'?'};}
-            var d=Pipeline.results.detect;
+            const d=Pipeline.results.detect;
             Pipeline.stepDone(1,d.modality+' | '+d.anatomie+' | Q:'+d.qualite);
             return b64;
         });
     }).then(function(b64){
         // ===== STEP 3: Auto-select agents =====
         Pipeline.setStep(2,'Selection experts...');
-        var det=Pipeline.results.detect||{type:stats.guessType};
-        var imgType=det.type||stats.guessType;
-        var autoAgents=selectAgentsForType(imgType);
+        const det=Pipeline.results.detect||{type:stats.guessType};
+        const imgType=det.type||stats.guessType;
+        const autoAgents=selectAgentsForType(imgType);
         Pipeline.results.agents=autoAgents;
 
         // Activate agents in UI
-        var allCards=document.querySelectorAll('.ac');
-        for(var i=0;i<allCards.length;i++){
-            var aid=allCards[i].getAttribute('data-id');
-            var shouldOn=false;
-            for(var j=0;j<autoAgents.length;j++){if(autoAgents[j]===aid)shouldOn=true;}
+        const allCards=document.querySelectorAll('.ac');
+        for(const i=0;i<allCards.length;i++){
+            const aid=allCards[i].getAttribute('data-id');
+            const shouldOn=false;
+            for(const j=0;j<autoAgents.length;j++){if(autoAgents[j]===aid)shouldOn=true;}
             if(shouldOn)allCards[i].classList.add('on');
         }
-        var names=[];for(var j=0;j<autoAgents.length;j++){var ag=AG[autoAgents[j]];if(ag)names.push(ag.n);}
+        const names=[];for(const j=0;j<autoAgents.length;j++){const ag=AG[autoAgents[j]];if(ag)names.push(ag.n);}
         Pipeline.stepDone(2,names.join(', '));
 
         // ===== STEP 4: Screening (fast pass) =====
         Pipeline.setStep(3,'Screening rapide...');
-        var screenPr=buildScreeningPrompt(imgType,autoAgents,det);
+        const screenPr=buildScreeningPrompt(imgType,autoAgents,det);
         return callMistral(screenPr,[
             {type:'text',text:'SCREENING RAPIDE. '+((notes)?'Notes cliniques: '+notes:'Pas de contexte clinique.')},
             {type:'image_url',image_url:{url:b64}}
         ],{temp:0.15,maxTok:1500,timeout:60000}).then(function(data){
-            var txt=data.choices[0].message.content;
-            try{var sc=JSON.parse(txt);Pipeline.results.screening=sc;}
+            const txt=data.choices[0].message.content;
+            try{const sc=JSON.parse(txt);Pipeline.results.screening=sc;}
             catch(e){Pipeline.results.screening={anomalies_detected:true,summary:txt,severity:'moderate',key_findings:[]};}
-            var s=Pipeline.results.screening;
-            var nAnom=(s.key_findings||[]).length;
+            const s=Pipeline.results.screening;
+            const nAnom=(s.key_findings||[]).length;
             Pipeline.stepDone(3,nAnom+' anomalie(s) | Severite: '+(s.severity||'?'));
             return b64;
         });
     }).then(function(b64){
         // ===== STEP 5: Deep analysis =====
         Pipeline.setStep(4,'Analyse approfondie...');
-        var det=Pipeline.results.detect||{};
-        var screening=Pipeline.results.screening||{};
-        var agents=Pipeline.results.agents||[];
-        var deepPr=buildDeepPrompt(det,screening,agents,notes);
+        const det=Pipeline.results.detect||{};
+        const screening=Pipeline.results.screening||{};
+        const agents=Pipeline.results.agents||[];
+        const deepPr=buildDeepPrompt(det,screening,agents,notes);
         return callMistral(deepPr,[
             {type:'text',text:'ANALYSE APPROFONDIE COMPLETE. Contexte: '+(notes||'Aucun')+(screening.summary?('\nScreening: '+screening.summary):'')},
             {type:'image_url',image_url:{url:b64}}
         ],{temp:0.2,maxTok:4096,timeout:120000}).then(function(data){
-            var txt=data.choices[0].message.content;
-            try{var deep=JSON.parse(txt);Pipeline.results.deep=deep;}
+            const txt=data.choices[0].message.content;
+            try{const deep=JSON.parse(txt);Pipeline.results.deep=deep;}
             catch(e){Pipeline.results.deep={detections:[],html_report:fmtTxt(txt),severity:'moderate'};}
-            var d=Pipeline.results.deep;
+            const d=Pipeline.results.deep;
             if(d.detections&&d.detections.length){
                 S.aiRois=d.detections;drw();
             }
@@ -1063,10 +1071,10 @@ window.runAutoAI=function(){
     }).then(function(){
         // ===== STEP 6: Severity classification =====
         Pipeline.setStep(5,'Classification...');
-        var deep=Pipeline.results.deep||{};
-        var screening=Pipeline.results.screening||{};
-        var sevLevel=deep.severity||screening.severity||'normal';
-        var sevInfo=MedKB.severity[sevLevel]||MedKB.severity.moderate;
+        const deep=Pipeline.results.deep||{};
+        const screening=Pipeline.results.screening||{};
+        const sevLevel=deep.severity||screening.severity||'normal';
+        const sevInfo=MedKB.severity[sevLevel]||MedKB.severity.moderate;
         Pipeline.results.severity=sevInfo;
         Pipeline.stepDone(5,sevInfo.label);
 
@@ -1076,7 +1084,7 @@ window.runAutoAI=function(){
         Pipeline.stepDone(6,'Termine');
 
     }).catch(function(err){
-        var idx=Pipeline.current;
+        const idx=Pipeline.current;
         Pipeline.stepErr(idx,err.message||'Erreur');
         $('aiO').innerHTML='<span style="color:var(--dg)"><b>Erreur pipeline:</b> '+err.message+'</span>'+
             '<br><span style="font-size:.8rem;color:var(--txd)">Etape: '+Pipeline.steps[idx].label+'</span>';
@@ -1085,7 +1093,7 @@ window.runAutoAI=function(){
 
 // Agent selection logic based on image type
 function selectAgentsForType(type){
-    var map={
+    const map={
         xray:['radio','pulmo','cardio','trauma','gen'],
         ct:['radio','neuro','onco','trauma','gen'],
         mri:['neuro','ortho','onco','radio','gen'],
@@ -1102,10 +1110,10 @@ function selectAgentsForType(type){
 
 // Build screening system prompt with MedKB injection
 function buildScreeningPrompt(imgType,agents,detect){
-    var typeInfo=MedKB.imgTypes[imgType]||{desc:'Image medicale',look:'anomalies generales'};
-    var pathos=[];
-    for(var i=0;i<agents.length;i++){
-        var pl=MedKB.pathoDB[agents[i]];
+    const typeInfo=MedKB.imgTypes[imgType]||{desc:'Image medicale',look:'anomalies generales'};
+    const pathos=[];
+    for(const i=0;i<agents.length;i++){
+        const pl=MedKB.pathoDB[agents[i]];
         if(pl)pathos=pathos.concat(pl);
     }
     return 'TU ES un systeme de SCREENING MEDICAL AUTOMATISE.\n'+
@@ -1121,19 +1129,19 @@ function buildScreeningPrompt(imgType,agents,detect){
 
 // Build deep analysis prompt with full medical context
 function buildDeepPrompt(detect,screening,agents,notes){
-    var imgType=detect.type||'photo';
-    var typeInfo=MedKB.imgTypes[imgType]||{desc:'Image medicale',look:''};
-    var expertNames=[];
-    for(var i=0;i<agents.length;i++){var ag=AG[agents[i]];if(ag)expertNames.push(ag.n+': '+ag.s);}
-    var pathos=[];
-    for(var i=0;i<agents.length;i++){var pl=MedKB.pathoDB[agents[i]];if(pl)pathos=pathos.concat(pl);}
+    const imgType=detect.type||'photo';
+    const typeInfo=MedKB.imgTypes[imgType]||{desc:'Image medicale',look:''};
+    const expertNames=[];
+    for(const i=0;i<agents.length;i++){const ag=AG[agents[i]];if(ag)expertNames.push(ag.n+': '+ag.s);}
+    const pathos=[];
+    for(const i=0;i<agents.length;i++){const pl=MedKB.pathoDB[agents[i]];if(pl)pathos=pathos.concat(pl);}
     // ICD-10 hints from screening findings
-    var icdHints=[];
+    const icdHints=[];
     if(screening.key_findings){
-        for(var i=0;i<screening.key_findings.length;i++){
-            var f=screening.key_findings[i].finding||'';
-            var fl=f.toLowerCase();
-            for(var k in MedKB.icd10){if(fl.indexOf(k)>=0)icdHints.push(k+' ('+MedKB.icd10[k]+')');}
+        for(const i=0;i<screening.key_findings.length;i++){
+            const f=screening.key_findings[i].finding||'';
+            const fl=f.toLowerCase();
+            for(const k in MedKB.icd10){if(fl.indexOf(k)>=0)icdHints.push(k+' ('+MedKB.icd10[k]+')');}
         }
     }
     return 'TU ES une equipe d\'EXPERTS MEDICAUX SENIORS:\n'+expertNames.join('\n')+'\n\n'+
@@ -1161,12 +1169,12 @@ function buildDeepPrompt(detect,screening,agents,notes){
 
 // Render final assembled report
 function renderFinalReport(){
-    var deep=Pipeline.results.deep||{};
-    var screening=Pipeline.results.screening||{};
-    var detect=Pipeline.results.detect||{};
-    var sev=Pipeline.results.severity||MedKB.severity.moderate;
-    var agents=Pipeline.results.agents||[];
-    var html='';
+    const deep=Pipeline.results.deep||{};
+    const screening=Pipeline.results.screening||{};
+    const detect=Pipeline.results.detect||{};
+    const sev=Pipeline.results.severity||MedKB.severity.moderate;
+    const agents=Pipeline.results.agents||[];
+    const html='';
 
     // Severity banner
     html+='<div style="text-align:center;margin-bottom:12px"><span class="sev '+sev.cls+'">'+sev.label+'</span></div>';
@@ -1179,7 +1187,7 @@ function renderFinalReport(){
     }
 
     // Agents used
-    var agNames=[];for(var i=0;i<agents.length;i++){var ag=AG[agents[i]];if(ag)agNames.push(ag.i+' '+ag.n);}
+    const agNames=[];for(const i=0;i<agents.length;i++){const ag=AG[agents[i]];if(ag)agNames.push(ag.i+' '+ag.n);}
     if(agNames.length)html+='<div style="font-size:.72rem;color:var(--ac);margin-bottom:10px;text-align:center">'+agNames.join(' &middot; ')+'</div>';
 
     // Main report from deep analysis
@@ -1189,21 +1197,21 @@ function renderFinalReport(){
     // ICD-10 codes
     if(deep.icd10_codes&&deep.icd10_codes.length){
         html+='<h3>CODES CIM-10</h3><p>';
-        for(var i=0;i<deep.icd10_codes.length;i++){html+='<span style="background:var(--sf);padding:2px 8px;border-radius:4px;margin:2px;display:inline-block;font-family:var(--fmono);font-size:.78rem">'+deep.icd10_codes[i]+'</span> ';}
+        for(const i=0;i<deep.icd10_codes.length;i++){html+='<span style="background:var(--sf);padding:2px 8px;border-radius:4px;margin:2px;display:inline-block;font-family:var(--fmono);font-size:.78rem">'+deep.icd10_codes[i]+'</span> ';}
         html+='</p>';
     }
 
     // Differential diagnosis
     if(deep.differential_diagnosis&&deep.differential_diagnosis.length){
         html+='<h3>DIAGNOSTICS DIFFERENTIELS</h3><ul>';
-        for(var i=0;i<deep.differential_diagnosis.length;i++){html+='<li>'+deep.differential_diagnosis[i]+'</li>';}
+        for(const i=0;i<deep.differential_diagnosis.length;i++){html+='<li>'+deep.differential_diagnosis[i]+'</li>';}
         html+='</ul>';
     }
 
     // Recommended actions
     if(deep.recommended_actions&&deep.recommended_actions.length){
         html+='<h3>CONDUITE A TENIR</h3><ul>';
-        for(var i=0;i<deep.recommended_actions.length;i++){html+='<li>'+deep.recommended_actions[i]+'</li>';}
+        for(const i=0;i<deep.recommended_actions.length;i++){html+='<li>'+deep.recommended_actions[i]+'</li>';}
         html+='</ul>';
     }
 
@@ -1211,10 +1219,10 @@ function renderFinalReport(){
     if(deep.detections&&deep.detections.length){
         html+='<h3>ANOMALIES DETECTEES ('+deep.detections.length+')</h3><table style="width:100%;font-size:.78rem;border-collapse:collapse">';
         html+='<tr style="color:var(--ac);border-bottom:1px solid var(--bd)"><th style="text-align:left;padding:4px">Anomalie</th><th>Zone</th><th>Confiance</th></tr>';
-        for(var i=0;i<deep.detections.length;i++){
-            var d=deep.detections[i];
-            var conf=d.confidence||'?';
-            var confCol=conf==='high'?'var(--ac)':conf==='medium'?'var(--wn)':'var(--txd)';
+        for(const i=0;i<deep.detections.length;i++){
+            const d=deep.detections[i];
+            const conf=d.confidence||'?';
+            const confCol=conf==='high'?'var(--ac)':conf==='medium'?'var(--wn)':'var(--txd)';
             html+='<tr style="border-bottom:1px solid rgba(255,255,255,.05)"><td style="padding:4px">'+
                 (d.label||'?')+'</td><td style="text-align:center;font-family:var(--fmono);font-size:.7rem">'+
                 Math.round((d.xmin||0)*100)+'%-'+Math.round((d.xmax||0)*100)+'%</td>'+
@@ -1224,7 +1232,7 @@ function renderFinalReport(){
     }
 
     // Footer
-    var mdlName=(S.mdl||'pixtral-large-latest').replace(/-latest$/,'');
+    const mdlName=(S.mdl||'pixtral-large-latest').replace(/-latest$/,'');
     html+='<div style="margin-top:14px;padding-top:8px;border-top:1px solid var(--bd);font-size:.68rem;color:var(--txd);text-align:right">'+
         'Auto-diagnostic MedVision AI Pro | '+mdlName+' | Pipeline 7 etapes | Nicolas JULIENNE</div>';
 
@@ -1235,32 +1243,32 @@ function renderFinalReport(){
 window.runAI=function(){
     if(!S.ak)return toast('Configurez la cle API');
     if(!S.imgA)return toast('Aucune image');
-    var cs=document.querySelectorAll('.ac.on');
+    const cs=document.querySelectorAll('.ac.on');
     if(cs.length===0)return toast('Selectionnez un expert');
 
-    var pts=[];for(var i=0;i<cs.length;i++){var a=AG[cs[i].getAttribute('data-id')];if(a)pts.push(a.n+' ('+a.s+')');}
-    var experts=pts.join(', ');
+    const pts=[];for(const i=0;i<cs.length;i++){const a=AG[cs[i].getAttribute('data-id')];if(a)pts.push(a.n+' ('+a.s+')');}
+    const experts=pts.join(', ');
 
     // Get agent IDs for MedKB lookup
-    var agIds=[];for(var i=0;i<cs.length;i++)agIds.push(cs[i].getAttribute('data-id'));
-    var pathos=[];for(var i=0;i<agIds.length;i++){var pl=MedKB.pathoDB[agIds[i]];if(pl)pathos=pathos.concat(pl);}
-    var stats=S._imgStats||ImgProc.getStats(S.imgA);
-    var typeInfo=MedKB.imgTypes[stats.guessType]||{desc:'Image medicale',look:'anomalies'};
+    const agIds=[];for(const i=0;i<cs.length;i++)agIds.push(cs[i].getAttribute('data-id'));
+    const pathos=[];for(const i=0;i<agIds.length;i++){const pl=MedKB.pathoDB[agIds[i]];if(pl)pathos=pathos.concat(pl);}
+    const stats=S._imgStats||ImgProc.getStats(S.imgA);
+    const typeInfo=MedKB.imgTypes[stats.guessType]||{desc:'Image medicale',look:'anomalies'};
 
     S.aiRois=[];drw();
-    var mdl=S.mdl||'pixtral-large-latest';
-    try{var sv=localStorage.getItem('mv_mdl');if(sv)mdl=sv;}catch(e){}
-    var mdlShort=mdl.replace(/-latest$/,'').replace(/-\d{4}$/,'');
+    const mdl=S.mdl||'pixtral-large-latest';
+    try{const sv=localStorage.getItem('mv_mdl');if(sv)mdl=sv;}catch(e){}
+    const mdlShort=mdl.replace(/-latest$/,'').replace(/-\d{4}$/,'');
     $('aiO').className='air vis';
     $('aiO').innerHTML='<div style="text-align:center"><div class="sp"></div> Analyse via <b>'+mdlShort+'</b>...<br><span style="font-size:.75rem;color:var(--txd)">'+pts.length+' expert(s) | '+typeInfo.desc+'</span></div>';
 
-    var sysPr='TU ES : Un expert medical senior ('+experts+').\n'+
+    const sysPr='TU ES : Un expert medical senior ('+experts+').\n'+
         'TYPE IMAGE DETECTE: '+typeInfo.desc+'\n'+
         'ELEMENTS A RECHERCHER: '+typeInfo.look+'\n'+
         'PATHOLOGIES DE REFERENCE: '+pathos.slice(0,20).join(', ')+'\n\n'+
         'MISSION : Analyser l\'image, detecter les anomalies et rediger un rapport.\n'+
         'FORMAT DE REPONSE JSON STRICT OBLIGATOIRE :\n{\n  "detections": [\n    {"label": "nom_pathologie", "ymin": 0.0, "xmin": 0.0, "ymax": 1.0, "xmax": 1.0}\n  ],\n  "html_report": "<h3>INDICATION</h3><p>...</p><h3>OBSERVATIONS</h3><ul><li>...</li></ul><h3>CONCLUSION</h3><p>...</p>",\n  "severity": "critical|high|moderate|low|normal"\n}\nREGLES :\n1. Coordonnees normalisees (0-1).\n2. Rapport HTML formel avec balises h3, p, ul, li, b.\n3. Vocabulaire medical precis.\n4. Si aucune anomalie, detections vide et rapport normal.';
-    var usrPr='ANALYSE CLINIQUE. Contexte: '+($('notes').value||'Aucun contexte fourni.');
+    const usrPr='ANALYSE CLINIQUE. Contexte: '+($('notes').value||'Aucun contexte fourni.');
 
     getPPbase64().then(function(b64){
         return callMistral(sysPr,[
@@ -1268,16 +1276,16 @@ window.runAI=function(){
             {type:'image_url',image_url:{url:b64}}
         ],{temp:0.2,maxTok:4096});
     }).then(function(data){
-        var content=data.choices[0].message.content;
-        var usage=data.usage?(' | Tokens: '+data.usage.total_tokens):'';
+        const content=data.choices[0].message.content;
+        const usage=data.usage?(' | Tokens: '+data.usage.total_tokens):'';
         try{
-            var json=JSON.parse(content);
+            const json=JSON.parse(content);
             if(json.detections&&json.detections.length){
                 S.aiRois=json.detections;drw();
                 toast(S.aiRois.length+' anomalie(s) detectee(s)');
             }else{toast('Aucune anomalie detectee');}
-            var sevHtml='';
-            if(json.severity){var si=MedKB.severity[json.severity];if(si)sevHtml='<div style="text-align:center;margin-bottom:10px"><span class="sev '+si.cls+'">'+si.label+'</span></div>';}
+            const sevHtml='';
+            if(json.severity){const si=MedKB.severity[json.severity];if(si)sevHtml='<div style="text-align:center;margin-bottom:10px"><span class="sev '+si.cls+'">'+si.label+'</span></div>';}
             if(json.html_report){
                 $('aiO').innerHTML=sevHtml+json.html_report+'<div style="margin-top:12px;font-size:.68rem;opacity:.5;text-align:right">'+mdlShort+usage+' | Nicolas JULIENNE</div>';
             }else{$('aiO').innerHTML=sevHtml+'<p>Analyse terminee.</p>';}
@@ -1291,36 +1299,36 @@ window.runAI=function(){
 function fmtTxt(t){if(!t)return'';return t.replace(/\*\*(.*?)\*\*/g,'<b style="color:#fff">$1</b>').replace(/### (.*?)\n/g,'<h3>$1</h3>').replace(/\n/g,'<br>');}
 
 /* === CAMERA (Quality + Preview + Flip) === */
-var CQ={low:{px:800,q:.6},med:{px:1280,q:.75},high:{px:1920,q:.88}};
-var cQl='med',cFc='environment',cStr=null,cDt=null;
-window.setQ=function(q){cQl=q;var bs=document.querySelectorAll('#qG .qb');for(var i=0;i<bs.length;i++)bs[i].classList.toggle('on',bs[i].getAttribute('data-q')===q);};
+const CQ={low:{px:800,q:.6},med:{px:1280,q:.75},high:{px:1920,q:.88}};
+const cQl='med',cFc='environment',cStr=null,cDt=null;
+window.setQ=function(q){cQl=q;const bs=document.querySelectorAll('#qG .qb');for(const i=0;i<bs.length;i++)bs[i].classList.toggle('on',bs[i].getAttribute('data-q')===q);};
 window.startCam=function(){cDt=null;showLv();$('camM').classList.add('open');opStr();};
-function opStr(){if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast('Cam\u00e9ra non disponible (HTTPS requis)');clM('camM');return;}var q=CQ[cQl];navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:cFc},width:{ideal:q.px},height:{ideal:Math.round(q.px*.75)}},audio:false}).then(function(s){cStr=s;var v=$('vid');v.srcObject=s;var pp=v.play();if(pp&&pp.catch)pp.catch(function(){});v.onloadedmetadata=function(){$('cRes').textContent=v.videoWidth+'\u00d7'+v.videoHeight;};}).catch(function(){toast('Erreur Cam\u00e9ra');clM('camM');});}
-function kStr(){if(cStr){var t=cStr.getTracks();for(var i=0;i<t.length;i++)t[i].stop();cStr=null;}$('vid').srcObject=null;}
+function opStr(){if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast('Cam\u00e9ra non disponible (HTTPS requis)');clM('camM');return;}const q=CQ[cQl];navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:cFc},width:{ideal:q.px},height:{ideal:Math.round(q.px*.75)}},audio:false}).then(function(s){cStr=s;const v=$('vid');v.srcObject=s;const pp=v.play();if(pp&&pp.catch)pp.catch(function(){});v.onloadedmetadata=function(){$('cRes').textContent=v.videoWidth+'\u00d7'+v.videoHeight;};}).catch(function(){toast('Erreur Cam\u00e9ra');clM('camM');});}
+function kStr(){if(cStr){const t=cStr.getTracks();for(const i=0;i<t.length;i++)t[i].stop();cStr=null;}$('vid').srcObject=null;}
 window.stopCam=function(){kStr();cDt=null;clM('camM');};
 window.flipC=function(){cFc=cFc==='environment'?'user':'environment';kStr();if(cDt){toast(cFc==='user'?'Cam\u00e9ra avant':'Cam\u00e9ra arri\u00e8re');return;}opStr();};
 function showLv(){$('vid').style.display='block';$('cImg').classList.remove('vis');$('cSz').style.display='none';$('snB').classList.remove('ok');$('reB').style.visibility='hidden';$('cOpt').style.display='';$('flB').style.visibility='visible';}
 function showPv(url,kb,w,h){$('vid').style.display='none';$('cImg').src=url;$('cImg').classList.add('vis');$('cRes').textContent=w+'\u00d7'+h;$('cSz').textContent='~'+kb+' KB';$('cSz').style.display='block';$('snB').classList.add('ok');$('reB').style.visibility='visible';$('cOpt').style.display='none';$('flB').style.visibility='hidden';}
-window.snapC=function(){if(cDt){ldImg(cDt);stopCam();toast('Image charg\u00e9e');return;}var v=$('vid');if(!v.videoWidth)return toast('Cam\u00e9ra non pr\u00eate');var q=CQ[cQl],sw=v.videoWidth,sh=v.videoHeight,ow=sw,oh=sh;if(ow>q.px||oh>q.px){var r=Math.min(q.px/ow,q.px/oh);ow=Math.round(ow*r);oh=Math.round(oh*r);}var c=document.createElement('canvas');c.width=ow;c.height=oh;var cx=c.getContext('2d');if(cFc==='user'){cx.translate(ow,0);cx.scale(-1,1);}cx.drawImage(v,0,0,ow,oh);cDt=c.toDataURL('image/jpeg',q.q);var kb=Math.round(cDt.length*.75/1024);kStr();showPv(cDt,kb,ow,oh);};
+window.snapC=function(){if(cDt){ldImg(cDt);stopCam();toast('Image charg\u00e9e');return;}const v=$('vid');if(!v.videoWidth)return toast('Cam\u00e9ra non pr\u00eate');const q=CQ[cQl],sw=v.videoWidth,sh=v.videoHeight,ow=sw,oh=sh;if(ow>q.px||oh>q.px){const r=Math.min(q.px/ow,q.px/oh);ow=Math.round(ow*r);oh=Math.round(oh*r);}const c=document.createElement('canvas');c.width=ow;c.height=oh;const cx=c.getContext('2d');if(cFc==='user'){cx.translate(ow,0);cx.scale(-1,1);}cx.drawImage(v,0,0,ow,oh);cDt=c.toDataURL('image/jpeg',q.q);const kb=Math.round(cDt.length*.75/1024);kStr();showPv(cDt,kb,ow,oh);};
 window.retake=function(){cDt=null;showLv();opStr();};
 
 /* === SPEECH === */
-var rec=null;
-window.togMic=function(){var SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return toast('Dict\u00e9e non support\u00e9e');if(rec){rec.stop();rec=null;$('micB').style.color='var(--txd)';return;}rec=new SR();rec.lang='fr-FR';rec.continuous=false;rec.interimResults=false;rec.onstart=function(){$('micB').style.color='var(--dg)';toast('Dict\u00e9e active...');};rec.onresult=function(e){var t=e.results[0][0].transcript,n=$('notes');n.value+=((n.value&&!/\s$/.test(n.value))?' ':'')+t;};rec.onend=function(){$('micB').style.color='var(--txd)';rec=null;};rec.onerror=function(){$('micB').style.color='var(--txd)';rec=null;toast('Erreur dict\u00e9e');};try{rec.start();}catch(e){toast('Erreur micro');rec=null;}};
+const rec=null;
+window.togMic=function(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return toast('Dict\u00e9e non support\u00e9e');if(rec){rec.stop();rec=null;$('micB').style.color='var(--txd)';return;}rec=new SR();rec.lang='fr-FR';rec.continuous=false;rec.interimResults=false;rec.onstart=function(){$('micB').style.color='var(--dg)';toast('Dict\u00e9e active...');};rec.onresult=function(e){const t=e.results[0][0].transcript,n=$('notes');n.value+=((n.value&&!/\s$/.test(n.value))?' ':'')+t;};rec.onend=function(){$('micB').style.color='var(--txd)';rec=null;};rec.onerror=function(){$('micB').style.color='var(--txd)';rec=null;toast('Erreur dict\u00e9e');};try{rec.start();}catch(e){toast('Erreur micro');rec=null;}};
 
 /* === PDF EXPORT PROFESSIONNEL v2 === */
 window.exportPDF=function(){
 if(!S.imgA)return toast('Rien a exporter');
 try{
-var J=window.jspdf;if(!J)return toast('jsPDF non charge');
-var doc=new J.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-var W=210,H=297,MG=15,CW=W-2*MG,FOOT=28;
-var now=new Date();
-var dateFR=now.toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-var heure=now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-var patName='';try{var pSel=$('patL');if(pSel&&pSel.selectedIndex>0)patName=pSel.options[pSel.selectedIndex].text;}catch(ex){}
-var refId='MV-'+now.getFullYear()+pad2(now.getMonth()+1)+pad2(now.getDate())+'-'+pad2(now.getHours())+pad2(now.getMinutes())+pad2(now.getSeconds());
-var pgNum=0,totalPages=0;
+const J=window.jspdf;if(!J)return toast('jsPDF non charge');
+const doc=new J.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+const W=210,H=297,MG=15,CW=W-2*MG,FOOT=28;
+const now=new Date();
+const dateFR=now.toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+const heure=now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+const patName='';try{const pSel=$('patL');if(pSel&&pSel.selectedIndex>0)patName=pSel.options[pSel.selectedIndex].text;}catch(ex){}
+const refId='MV-'+now.getFullYear()+pad2(now.getMonth()+1)+pad2(now.getDate())+'-'+pad2(now.getHours())+pad2(now.getMinutes())+pad2(now.getSeconds());
+const pgNum=0,totalPages=0;
 
 function pad2(n){return n<10?'0'+n:''+n;}
 
@@ -1391,13 +1399,13 @@ function hLine(y,r,g,b){
 }
 
 // ========== PAGE 1 ==========
-var y=startPage(true);
+const y=startPage(true);
 
 // --- BLOC INFORMATIONS PATIENT ---
-var notesTxt=pdfSafe($('notes').value||'');
-var nLinesArr=notesTxt?doc.splitTextToSize(notesTxt,CW-10):[];
-var notesH=nLinesArr.length>0?Math.min(nLinesArr.length,3)*4.5+8:0;
-var infoH=22+notesH;
+const notesTxt=pdfSafe($('notes').value||'');
+const nLinesArr=notesTxt?doc.splitTextToSize(notesTxt,CW-10):[];
+const notesH=nLinesArr.length>0?Math.min(nLinesArr.length,3)*4.5+8:0;
+const infoH=22+notesH;
 doc.setFillColor(245,247,250);doc.roundedRect(MG,y,CW,infoH,3,3,'F');
 doc.setDrawColor(200,210,220);doc.setLineWidth(0.3);doc.roundedRect(MG,y,CW,infoH,3,3,'S');
 
@@ -1420,7 +1428,7 @@ if(nLinesArr.length>0){
     doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(100,110,130);
     doc.text('NOTES CLINIQUES',MG+5,y+24);
     doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(30,30,50);
-    for(var ni=0;ni<Math.min(nLinesArr.length,3);ni++){
+    for(const ni=0;ni<Math.min(nLinesArr.length,3);ni++){
         doc.text(nLinesArr[ni],MG+5,y+29+ni*4.5);
     }
     if(nLinesArr.length>3)doc.text('[...]',MG+5,y+29+3*4.5);
@@ -1428,9 +1436,9 @@ if(nLinesArr.length>0){
 y+=infoH+5;
 
 // --- EXPERTS SOLLICITES ---
-var selAgents=[];
-var agCards=document.querySelectorAll('.ac.on');
-for(var ei=0;ei<agCards.length;ei++){var agx=AG[agCards[ei].getAttribute('data-id')];if(agx)selAgents.push(agx.n);}
+const selAgents=[];
+const agCards=document.querySelectorAll('.ac.on');
+for(const ei=0;ei<agCards.length;ei++){const agx=AG[agCards[ei].getAttribute('data-id')];if(agx)selAgents.push(agx.n);}
 if(selAgents.length>0){
     doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(6,140,110);
     doc.text('EXPERTS IA SOLLICITES :',MG,y+2);
@@ -1441,18 +1449,18 @@ if(selAgents.length>0){
 
 // --- ANOMALIES DETECTEES ---
 if(S.aiRois.length>0){
-    var aBoxH=9+S.aiRois.length*5.5;
+    const aBoxH=9+S.aiRois.length*5.5;
     y=needSpace(y,aBoxH+4);
     doc.setFillColor(255,242,242);doc.roundedRect(MG,y,CW,aBoxH,2,2,'F');
     doc.setDrawColor(220,60,60);doc.setLineWidth(0.5);doc.roundedRect(MG,y,CW,aBoxH,2,2,'S');
     doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(180,30,30);
     doc.text('ANOMALIES DETECTEES PAR L\'IA ('+S.aiRois.length+')',MG+5,y+5.5);
     doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(80,20,20);
-    for(var ai=0;ai<S.aiRois.length;ai++){
-        var det=S.aiRois[ai];
-        var zx1=((det.xmin||0)*100).toFixed(0),zx2=((det.xmax||0)*100).toFixed(0);
-        var zy1=((det.ymin||0)*100).toFixed(0),zy2=((det.ymax||0)*100).toFixed(0);
-        var dtxt='  - '+pdfSafe((det.label||'Anomalie')).toUpperCase()+'  [zone X:'+zx1+'%-'+zx2+'% / Y:'+zy1+'%-'+zy2+'%]';
+    for(const ai=0;ai<S.aiRois.length;ai++){
+        const det=S.aiRois[ai];
+        const zx1=((det.xmin||0)*100).toFixed(0),zx2=((det.xmax||0)*100).toFixed(0);
+        const zy1=((det.ymin||0)*100).toFixed(0),zy2=((det.ymax||0)*100).toFixed(0);
+        const dtxt='  - '+pdfSafe((det.label||'Anomalie')).toUpperCase()+'  [zone X:'+zx1+'%-'+zx2+'% / Y:'+zy1+'%-'+zy2+'%]';
         doc.text(dtxt,MG+5,y+11+ai*5.5);
     }
     y+=aBoxH+4;
@@ -1467,16 +1475,16 @@ doc.text('Resolution source : '+S.w+' x '+S.h+' px',W-MG,y+4,{align:'right'});
 y+=8;
 
 // Capture canvas (avec annotations, ROI, mesures dessinees)
-var ec=document.createElement('canvas');
-var edw=Math.round(cA.width/DPR),edh=Math.round(cA.height/DPR);
+const ec=document.createElement('canvas');
+const edw=Math.round(cA.width/DPR),edh=Math.round(cA.height/DPR);
 ec.width=edw;ec.height=edh;
 ec.getContext('2d').drawImage(cA,0,0,cA.width,cA.height,0,0,edw,edh);
-var imgData=ec.toDataURL('image/jpeg',0.92);
-var imgRatio=edw/edh,imgW=CW,imgH=imgW/imgRatio;
+const imgData=ec.toDataURL('image/jpeg',0.92);
+const imgRatio=edw/edh,imgW=CW,imgH=imgW/imgRatio;
 if(imgH>120){imgH=120;imgW=imgH*imgRatio;}
-var imgAvail=H-FOOT-y-4;
+const imgAvail=H-FOOT-y-4;
 if(imgH>imgAvail){imgH=imgAvail;imgW=imgH*imgRatio;}
-var imgX=MG+(CW-imgW)/2;
+const imgX=MG+(CW-imgW)/2;
 
 // Ombre douce + cadre
 doc.setFillColor(230,232,236);doc.rect(imgX+1,y+1,imgW,imgH,'F');
@@ -1495,7 +1503,7 @@ if(S.meas.length>0){
     doc.setFillColor(235,238,242);doc.rect(MG,y,CW,6.5,'F');
     doc.setDrawColor(200,205,215);doc.setLineWidth(0.2);doc.rect(MG,y,CW,6.5,'S');
     doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(70,80,100);
-    var colX=[MG+3,MG+18,MG+62,MG+108,MG+148];
+    const colX=[MG+3,MG+18,MG+62,MG+108,MG+148];
     doc.text('No.',colX[0],y+4.5);
     doc.text('Point A (px)',colX[1],y+4.5);
     doc.text('Point B (px)',colX[2],y+4.5);
@@ -1504,10 +1512,10 @@ if(S.meas.length>0){
     y+=8;
 
     doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(40,40,60);
-    for(var mi=0;mi<S.meas.length;mi++){
+    for(const mi=0;mi<S.meas.length;mi++){
         y=needSpace(y,7);
-        var me=S.meas[mi];
-        var dpx=Math.sqrt(Math.pow(me.b.x-me.a.x,2)+Math.pow(me.b.y-me.a.y,2));
+        const me=S.meas[mi];
+        const dpx=Math.sqrt(Math.pow(me.b.x-me.a.x,2)+Math.pow(me.b.y-me.a.y,2));
         // Alternance lignes
         if(mi%2===0){doc.setFillColor(248,249,252);doc.rect(MG,y-3,CW,6.5,'F');}
         doc.setDrawColor(230,232,238);doc.setLineWidth(0.1);doc.line(MG,y+3.5,W-MG,y+3.5);
@@ -1516,7 +1524,7 @@ if(S.meas.length>0){
         doc.text(Math.round(me.a.x)+', '+Math.round(me.a.y),colX[1],y+1);
         doc.text(Math.round(me.b.x)+', '+Math.round(me.b.y),colX[2],y+1);
         doc.text(dpx.toFixed(1)+' px',colX[3],y+1);
-        var mmTxt=S.pxMm?(dpx*S.pxMm).toFixed(2)+' mm':'--';
+        const mmTxt=S.pxMm?(dpx*S.pxMm).toFixed(2)+' mm':'--';
         doc.text(mmTxt,colX[4],y+1);
         y+=6.5;
     }
@@ -1524,7 +1532,7 @@ if(S.meas.length>0){
 }
 
 // --- RAPPORT D'ANALYSE IA ---
-var rawAiTxt='';
+const rawAiTxt='';
 try{rawAiTxt=$('aiO').innerText||$('aiO').textContent||'';}catch(ex){}
 rawAiTxt=pdfSafe(rawAiTxt)
     .replace(/Genere par Mistral.*/gi,'')
@@ -1540,21 +1548,21 @@ if(rawAiTxt&&rawAiTxt.length>5){
     doc.text("RAPPORT D'ANALYSE IA",MG,y+4);y+=10;
 
     doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(40,45,60);
-    var aiLines=doc.splitTextToSize(rawAiTxt,CW-2);
+    const aiLines=doc.splitTextToSize(rawAiTxt,CW-2);
 
-    var titleKW=['INDICATION','OBSERVATION','CONCLUSION','DIAGNOSTIC','RECOMMANDATION','TECHNIQUE','RESUME','AVIS','ANALYSE','INTERPRETATION','DESCRIPTION','SYNTHESE','RESULTAT','METHODE','DISCUSSION','PRONOSTIC','TRAITEMENT'];
+    const titleKW=['INDICATION','OBSERVATION','CONCLUSION','DIAGNOSTIC','RECOMMANDATION','TECHNIQUE','RESUME','AVIS','ANALYSE','INTERPRETATION','DESCRIPTION','SYNTHESE','RESULTAT','METHODE','DISCUSSION','PRONOSTIC','TRAITEMENT'];
 
-    for(var li=0;li<aiLines.length;li++){
+    for(const li=0;li<aiLines.length;li++){
         y=needSpace(y,6);
-        var ln=aiLines[li];
-        var trimLn=(ln||'').replace(/^\s+/,'');
-        var isTitle=false;
+        const ln=aiLines[li];
+        const trimLn=(ln||'').replace(/^\s+/,'');
+        const isTitle=false;
 
         // Detection titres : tout majuscules OU commence par un mot-cle
         if(trimLn.length>2&&trimLn.length<65){
-            var upTrim=trimLn.toUpperCase();
+            const upTrim=trimLn.toUpperCase();
             if(trimLn===upTrim&&/[A-Z]{3,}/.test(trimLn)){isTitle=true;}
-            for(var tk=0;tk<titleKW.length;tk++){
+            for(const tk=0;tk<titleKW.length;tk++){
                 if(upTrim.indexOf(titleKW[tk])===0){isTitle=true;break;}
             }
         }
@@ -1587,16 +1595,16 @@ doc.text('/!\\',MG+4,y+6);
 doc.setFontSize(7.5);doc.setTextColor(120,120,135);
 doc.text('AVERTISSEMENT LEGAL',MG+14,y+5.5);
 doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(130,130,145);
-var discl='Ce rapport est genere par intelligence artificielle (Mistral Pixtral) a titre d\'aide a la decision uniquement. Il ne remplace en aucun cas l\'avis d\'un professionnel de sante qualifie. Toutes les detections et analyses proposees doivent etre validees par un praticien competent avant toute decision clinique. Les donnees de ce document sont protegees conformement au Reglement General sur la Protection des Donnees (RGPD).';
-var dLines=doc.splitTextToSize(discl,CW-10);
-for(var di=0;di<dLines.length;di++){
+const discl='Ce rapport est genere par intelligence artificielle (Mistral Pixtral) a titre d\'aide a la decision uniquement. Il ne remplace en aucun cas l\'avis d\'un professionnel de sante qualifie. Toutes les detections et analyses proposees doivent etre validees par un praticien competent avant toute decision clinique. Les donnees de ce document sont protegees conformement au Reglement General sur la Protection des Donnees (RGPD).';
+const dLines=doc.splitTextToSize(discl,CW-10);
+for(const di=0;di<dLines.length;di++){
     doc.text(dLines[di],MG+5,y+10.5+di*3.5);
 }
 
 // --- FOOTER sur toutes les pages ---
 // On boucle sur toutes les pages pour ajouter le footer
 totalPages=pgNum;
-for(var fp=1;fp<=totalPages;fp++){
+for(const fp=1;fp<=totalPages;fp++){
     doc.setPage(fp);
     // Remplacer pgNum pour affichage correct
     doc.setDrawColor(200,200,200);doc.setLineWidth(0.3);
@@ -1612,11 +1620,11 @@ for(var fp=1;fp<=totalPages;fp++){
 }
 
 // === SAUVEGARDE CROSS-PLATFORM ===
-var fName='Rapport_MedVision_'+(patName?patName.replace(/[^a-zA-Z0-9]/g,'_')+'_':'')+now.toISOString().slice(0,10)+'.pdf';
+const fName='Rapport_MedVision_'+(patName?patName.replace(/[^a-zA-Z0-9]/g,'_')+'_':'')+now.toISOString().slice(0,10)+'.pdf';
 if(IOS||SAF){
-    var pBlob=doc.output('blob');
-    var pUrl=URL.createObjectURL(pBlob);
-    var pLink=document.createElement('a');
+    const pBlob=doc.output('blob');
+    const pUrl=URL.createObjectURL(pBlob);
+    const pLink=document.createElement('a');
     pLink.href=pUrl;pLink.download=fName;
     pLink.style.display='none';
     document.body.appendChild(pLink);
@@ -1630,8 +1638,27 @@ toast('Rapport PDF exporte');
 };
 
 /* === TOAST === */
-var tT;function toast(m){var t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(function(){t.classList.remove('show');},3e3);}
+const tT;function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(function(){t.classList.remove('show');},3e3);}
 })();
+</script>
+
+</main>
+
+<script>
+if('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    const swCode = `
+const CACHE='niko-v1';
+const ASSETS=['./','/index.html'];
+self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS))));
+self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));
+self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k))))));
+    `;
+    const blob = new Blob([swCode],{type:'text/javascript'});
+    const swURL = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(swURL).catch(()=>{});
+  });
+}
 </script>
 </body>
 </html>
