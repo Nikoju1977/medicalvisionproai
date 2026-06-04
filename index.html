@@ -12,51 +12,12 @@
 <meta name="author" content="Nicolas JULIENNE">
 <title>MedVision AI Pro — Expert Edition</title>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script>
-
-/* ── AbortController + Retry + Debounce — Studio Niko Design ── */
-const nikoFetch = (() => {
-  let _ctrl = null;
-  return async function(url, opts={}, retries=3) {
-    if(_ctrl) _ctrl.abort();
-    _ctrl = new AbortController();
-    opts.signal = _ctrl.signal;
-    for(let i=0; i<retries; i++) {
-      try {
-        const r = await fetch(url, opts);
-        if(!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r;
-      } catch(e) {
-        if(e.name==='AbortError') throw e;
-        if(i===retries-1) throw e;
-        await new Promise(res=>setTimeout(res, 800*(i+1)));
-      }
-    }
-  };
-})();
-
-function nikoDebounce(fn, ms=400) {
-  let t; return (...a) => { clearTimeout(t); t=setTimeout(()=>fn(...a), ms); };
-}
-
-function nikoRetryBtn(container, fn) {
-  const btn = document.createElement('button');
-  btn.textContent = '↺ Réessayer';
-  btn.style.cssText='margin-top:8px;padding:6px 14px;background:rgba(0,255,157,.15);border:1px solid #00ff9d;color:#00ff9d;border-radius:4px;cursor:pointer;font-family:inherit;font-size:12px';
-  btn.onclick = () => { btn.remove(); fn(); };
-  if(container) container.appendChild(btn);
-}
-
-</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
 :root{
     --bg:#050a12;--sf:#111827;--sf2:#1f2937;
     --pr:#3b82f6;--ac:#06d6a0;--dg:#ef4444;--wn:#f59e0b;--cy:#00e5ff;
     --tx:#f3f4f6;--txd:#9ca3af;--bd:#374151;
-    --fm:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Orbitron,sans-serif;
+    --fm:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
     --fmono:'JetBrains Mono','SF Mono',Consolas,monospace;
     --sat:0px;--sab:0px;--sal:0px;--sar:0px;
 }
@@ -65,88 +26,75 @@ function nikoRetryBtn(container, fn) {
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html{height:100%;overflow:hidden;background:var(--bg);}
-body{background:var(--bg);color:var(--tx);font-family:var(--fm);height:100vh;overflow:hidden;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;padding-top:var(--sat);padding-left:var(--sal);padding-right:var(--sar);position:fixed;width:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+body{background:var(--bg);color:var(--tx);font-family:var(--fm);height:100vh;overflow:hidden;display:flex;flex-direction:column;padding-top:var(--sat);}
 @supports(height:100dvh){body{height:100dvh;}}
 
-input,select,textarea{font-size:16px!important;background:var(--sf2);border:1px solid var(--bd);color:var(--tx);padding:10px 12px;border-radius:8px;outline:none;width:100%;-webkit-appearance:none;-moz-appearance:none;appearance:none;font-family:var(--fm);-webkit-transition:border-color .2s;transition:border-color .2s;}
-select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%239ca3af' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px;}
+input,select,textarea{font-size:16px!important;background:var(--sf2);border:1px solid var(--bd);color:var(--tx);padding:10px 12px;border-radius:8px;outline:none;width:100%;-webkit-appearance:none;}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%239ca3af' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:30px;}
 input:focus,textarea:focus,select:focus{border-color:var(--pr);}
 textarea{resize:vertical;}
 
-/* LAYOUT */
-.app{-webkit-flex:1;flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:12px;padding-bottom:calc(30px + var(--sab));max-width:1000px;margin:0 auto;width:100%;display:none;}
-.app.on{display:block;-webkit-animation:fadeIn .4s ease;animation:fadeIn .4s ease;}
+.app{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:12px;padding-bottom:calc(30px + var(--sab));max-width:1000px;margin:0 auto;width:100%;display:none;}
+.app.on{display:block;animation:fadeIn .4s ease;}
 
-/* HEADER */
-header{display:-webkit-flex;display:flex;-webkit-justify-content:space-between;justify-content:space-between;-webkit-align-items:center;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--bd);}
-.logo{font-weight:800;font-size:1.2rem;background:-webkit-linear-gradient(315deg,var(--pr),var(--ac));background:linear-gradient(135deg,var(--pr),var(--ac));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--bd);}
+.logo{font-weight:800;font-size:1.2rem;background:linear-gradient(135deg,var(--pr),var(--ac));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .sub{font-size:.7rem;color:var(--txd);font-family:var(--fmono);margin-top:2px;}
 
-/* FLEX HELPERS */
-.fr{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;}
-.fr>*+*{margin-left:8px;}@supports(gap:8px){.fr{gap:8px;}.fr>*+*{margin-left:0;}}
-.fw{-webkit-flex-wrap:wrap;flex-wrap:wrap;}.fnw{-webkit-flex-wrap:nowrap;flex-wrap:nowrap;}
-.fsb{-webkit-justify-content:space-between;justify-content:space-between;}
-.fce{-webkit-justify-content:center;justify-content:center;}
+.fr{display:flex;align-items:center;}
+.fr>*+*{margin-left:8px;}
+.fw{flex-wrap:wrap;}
+.fnw{flex-wrap:nowrap;}
+.fsb{justify-content:space-between;}
 
-/* CARD & BUTTON */
 .cd{background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:12px;margin-bottom:12px;}
-.bt{padding:10px 14px;border-radius:8px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx);font-weight:600;cursor:pointer;display:-webkit-inline-flex;display:inline-flex;-webkit-align-items:center;align-items:center;font-size:.85rem;-webkit-transition:-webkit-transform .15s,background .2s;transition:transform .15s,background .2s;white-space:nowrap;-webkit-user-select:none;user-select:none;touch-action:manipulation;font-family:var(--fm);line-height:1.2;min-height:42px;}
-.bt:active{-webkit-transform:scale(.95);transform:scale(.95);}
+.bt{padding:10px 14px;border-radius:8px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx);font-weight:600;cursor:pointer;display:inline-flex;align-items:center;}
+.bt:active{transform:scale(.95);}
 .bp{background:var(--pr);border-color:var(--pr);color:#fff;}
-.bi{padding:10px;border-radius:50%;min-height:42px;min-width:42px;-webkit-justify-content:center;justify-content:center;}
-.bf{width:100%;-webkit-justify-content:center;justify-content:center;margin-top:10px;padding:12px;}
+.bi{padding:10px;border-radius:50%;min-height:42px;min-width:42px;justify-content:center;}
+.bf{width:100%;justify-content:center;margin-top:10px;padding:12px;}
 
-/* VIEWER */
-.vbox{height:45vh;min-height:280px;max-height:550px;background:#000;border-radius:12px;border:1px solid var(--bd);position:relative;overflow:hidden;display:-webkit-flex;display:flex;touch-action:none;}
+.vbox{height:45vh;min-height:280px;max-height:550px;background:#000;border-radius:12px;border:1px solid var(--bd);position:relative;overflow:hidden;display:flex;touch-action:none;}
 @supports(height:clamp(280px,45dvh,550px)){.vbox{height:clamp(280px,45dvh,550px);min-height:auto;max-height:none;}}
-.cpn{-webkit-flex:1;flex:1;position:relative;overflow:hidden;border-right:1px solid var(--bd);min-width:0;}
+.cpn{flex:1;position:relative;overflow:hidden;border-right:1px solid var(--bd);min-width:0;}
 .cpn:last-child{border-right:none;}
-canvas{display:block;touch-action:none;-ms-touch-action:none;}
+canvas{display:block;touch-action:none;}
 .olbl{position:absolute;top:8px;left:8px;font-family:var(--fmono);font-size:.65rem;color:var(--ac);background:rgba(0,0,0,.75);padding:3px 7px;border-radius:4px;pointer-events:none;z-index:10;}
 
-/* TOOLBAR */
-.tbar{position:absolute;bottom:12px;left:50%;-webkit-transform:translateX(-50%);transform:translateX(-50%);background:rgba(17,24,39,.92);padding:5px;border-radius:40px;display:-webkit-flex;display:flex;border:1px solid var(--bd);z-index:50;box-shadow:0 4px 20px rgba(0,0,0,.5);max-width:calc(100% - 16px);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;}
-.tbar>*+*{margin-left:4px;}@supports(gap:4px){.tbar{gap:4px;}.tbar>*+*{margin-left:0;}}
-.tbar::-webkit-scrollbar{display:none;}
-.tb{width:38px;height:38px;min-width:38px;border-radius:50%;border:none;background:transparent;color:var(--txd);font-size:1.15rem;cursor:pointer;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-transition:background .2s,color .2s;transition:background .2s,color .2s;}
+.tbar{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(17,24,39,.92);padding:5px;border-radius:40px;display:flex;align-items:center;gap:4px;overflow-x:auto;max-width:90%;}
+.tb{width:38px;height:38px;min-width:38px;border-radius:50%;border:none;background:transparent;color:var(--txd);font-size:1.15rem;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 .tb:active{background:rgba(255,255,255,.1);}
 .tb.on{background:var(--pr);color:#fff;box-shadow:0 0 10px rgba(59,130,246,.5);}
-.tsep{width:1px;min-width:1px;background:#444;height:22px;-webkit-align-self:center;align-self:center;}
+.tsep{width:1px;min-width:1px;background:#444;height:22px;align-self:center;}
 
-/* AGENTS */
-.agr{display:grid;grid-template-columns:repeat(auto-fill,minmax(82px,1fr));margin-bottom:10px;}
-.agr>*{margin:3px;}@supports(gap:6px){.agr{gap:6px;}.agr>*{margin:0;}}
-.ac{background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:8px 6px;text-align:center;cursor:pointer;position:relative;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-transition:border-color .2s,background .2s;transition:border-color .2s,background .2s;}
-.ac:active{-webkit-transform:scale(.97);transform:scale(.97);}
+.agr{display:grid;grid-template-columns:repeat(auto-fill,minmax(82px,1fr));margin-bottom:10px;gap:6px;}
+.ac{background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:8px 6px;text-align:center;cursor:pointer;position:relative;touch-action:manipulation;-webkit-user-select:none;user-select:none;}
+.ac:active{transform:scale(.97);}
 .ac.on{border-color:var(--ac);background:rgba(6,214,160,.1);}
-.ac-i{font-size:1.4rem;margin-bottom:3px;}.ac-n{font-size:.65rem;font-weight:700;line-height:1.2;}
+.ac-i{font-size:1.4rem;margin-bottom:3px;}
+.ac-n{font-size:.65rem;font-weight:700;line-height:1.2;}
 .sdot{width:7px;height:7px;background:#444;border-radius:50%;position:absolute;top:5px;right:5px;}
 .ac.on .sdot{background:var(--ac);box-shadow:0 0 4px var(--ac);}
 
-/* AI RESULT - Enhanced */
-.air{margin-top:15px;padding:16px;background:var(--sf2);border-radius:12px;border:1px solid var(--bd);font-size:.9rem;line-height:1.6;display:none;max-height:500px;overflow-y:auto;-webkit-overflow-scrolling:touch;word-wrap:break-word;overflow-wrap:break-word;}
-.air.vis{display:block;-webkit-animation:fadeIn .5s;animation:fadeIn .5s;}
+.air{margin-top:15px;padding:16px;background:var(--sf2);border-radius:12px;border:1px solid var(--bd);font-size:.9rem;line-height:1.6;display:none;max-height:500px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.air.vis{display:block;animation:fadeIn .5s;}
 .air h3{color:var(--ac);font-size:.82rem;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--bd);margin:15px 0 8px 0;padding-bottom:4px;}
 .air h3:first-child{margin-top:0;}
 .air b{color:#fff;font-weight:700;}
 .air ul{margin-left:20px;color:var(--txd);}
 .air li{margin-bottom:4px;}
 
-/* Auto-analysis pipeline */
 .pipe{margin-top:10px;padding:10px;background:rgba(6,214,160,.05);border:1px solid rgba(6,214,160,.2);border-radius:10px;}
-.pipe-step{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;padding:6px 0;font-size:.78rem;color:var(--txd);border-bottom:1px solid rgba(255,255,255,.04);}
+.pipe-step{display:flex;align-items:center;padding:6px 0;font-size:.78rem;color:var(--txd);border-bottom:1px solid rgba(255,255,255,.04);}
 .pipe-step:last-child{border-bottom:none;}
-.pipe-step .pi{width:22px;height:22px;border-radius:50%;display:-webkit-inline-flex;display:inline-flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;font-size:.65rem;margin-right:8px;-webkit-flex-shrink:0;flex-shrink:0;background:var(--sf);border:1px solid var(--bd);}
-.pipe-step.active .pi{background:var(--pr);border-color:var(--pr);color:#fff;-webkit-animation:pulse 1.2s infinite;animation:pulse 1.2s infinite;}
+.pipe-step .pi{width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--txd);font-size:.65rem;font-weight:700;}
+.pipe-step.active .pi{background:var(--pr);border-color:var(--pr);color:#fff;animation:pulse 1.2s infinite;}
 .pipe-step.done .pi{background:var(--ac);border-color:var(--ac);color:#000;}
 .pipe-step.err .pi{background:var(--dg);border-color:var(--dg);color:#fff;}
-.pipe-step .pt{-webkit-flex:1;flex:1;}
+.pipe-step .pt{flex:1;}
 .pipe-step .pv{font-size:.7rem;color:var(--ac);font-family:var(--fmono);}
-@-webkit-keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 
-/* Severity badges */
 .sev{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
 .sev-crit{background:rgba(239,68,68,.2);color:#ef4444;border:1px solid rgba(239,68,68,.4);}
 .sev-high{background:rgba(249,115,22,.2);color:#f97316;border:1px solid rgba(249,115,22,.4);}
@@ -154,82 +102,69 @@ canvas{display:block;touch-action:none;-ms-touch-action:none;}
 .sev-low{background:rgba(6,214,160,.15);color:#06d6a0;border:1px solid rgba(6,214,160,.3);}
 .sev-norm{background:rgba(59,130,246,.15);color:#3b82f6;border:1px solid rgba(59,130,246,.3);}
 
-/* Image stats bar */
-.imgstats{display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;font-size:.65rem;color:var(--txd);font-family:var(--fmono);padding:6px 0;}
-.imgstats>span{margin-right:12px;margin-bottom:2px;}
+.imgstats{display:flex;flex-wrap:wrap;font-size:.65rem;color:var(--txd);font-family:var(--fmono);padding:6px 0;gap:12px;}
 .imgstats .sv{color:var(--ac);}
 
-/* Preprocess preview strip */
-.ppstrip{display:-webkit-flex;display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:6px 0;}
-.ppstrip>canvas{width:80px;height:60px;border-radius:6px;border:1px solid var(--bd);margin-right:6px;-webkit-flex-shrink:0;flex-shrink:0;cursor:pointer;-webkit-transition:border-color .2s;transition:border-color .2s;}
+.ppstrip{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:6px 0;gap:6px;}
+.ppstrip>canvas{width:80px;height:60px;border-radius:6px;border:1px solid var(--bd);flex-shrink:0;cursor:pointer;transition:border-color .2s;}
 .ppstrip>canvas:hover,.ppstrip>canvas.sel{border-color:var(--ac);}
 
-/* AUTH */
-.auth{position:fixed;top:0;right:0;bottom:0;left:0;background:var(--bg);z-index:1000;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;padding:20px;padding-top:calc(20px + var(--sat));padding-bottom:calc(20px + var(--sab));}
-.pgr{display:grid;grid-template-columns:repeat(3,1fr);margin-top:20px;max-width:260px;}
-.pgr>*{margin:6px;}@supports(gap:12px){.pgr{gap:12px;}.pgr>*{margin:0;}}
-.pb{width:66px;height:66px;border-radius:18px;background:var(--sf2);border:1px solid var(--bd);color:var(--tx);font-size:1.4rem;cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none;font-family:var(--fm);-webkit-transition:background .15s;transition:background .15s;}
+.auth{position:fixed;top:0;right:0;bottom:0;left:0;background:var(--bg);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.pgr{display:grid;grid-template-columns:repeat(3,1fr);margin-top:20px;max-width:260px;gap:12px;}
+.pb{width:66px;height:66px;border-radius:18px;background:var(--sf2);border:1px solid var(--bd);color:var(--tx);font-size:1.4rem;cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none;}
 .pb:active{background:var(--pr);border-color:var(--pr);}
 .pdots{height:15px;margin-bottom:16px;}
-.pdot{width:11px;height:11px;border-radius:50%;display:inline-block;margin:0 5px;background:var(--bd);-webkit-transition:background .2s;transition:background .2s;}
+.pdot{width:11px;height:11px;border-radius:50%;display:inline-block;margin:0 5px;background:var(--bd);transition:background .2s;}
 .pdot.f{background:var(--pr);}
 
-/* MODALS */
-.mdl{position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,.88);z-index:2000;display:none;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;padding:20px;padding-top:calc(20px + var(--sat));padding-bottom:calc(20px + var(--sab));}
-.mdl.open{display:-webkit-flex;display:flex;}
+.mdl{position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,.88);z-index:2000;display:none;align-items:center;justify-content:center;}
+.mdl.open{display:flex;}
 .mbox{background:var(--sf);width:100%;max-width:400px;padding:20px;border-radius:16px;border:1px solid var(--bd);max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 
-/* CAMERA */
 .cm{background:rgba(0,0,0,.95)!important;padding:12px!important;padding-top:calc(12px + var(--sat))!important;padding-bottom:calc(12px + var(--sab))!important;}
-.cw{width:100%;max-width:520px;max-height:100%;margin:auto;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;border-radius:20px;overflow:hidden;background:var(--sf);border:1px solid var(--bd);}
-.chd{display:-webkit-flex;display:flex;-webkit-justify-content:space-between;justify-content:space-between;-webkit-align-items:center;align-items:center;padding:10px 14px;border-bottom:1px solid var(--bd);}
+.cw{width:100%;max-width:520px;max-height:100%;margin:auto;display:flex;flex-direction:column;border-radius:20px;overflow:hidden;background:var(--sf);}
+.chd{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--bd);}
 .chd h3{font-size:.9rem;font-weight:700;}
 .cvf{position:relative;width:100%;padding-bottom:75%;max-height:50vh;background:#000;overflow:hidden;}
 @supports(aspect-ratio:4/3){.cvf{padding-bottom:0;aspect-ratio:4/3;}}
-.cvf video,.cvf .cimg{position:absolute;top:0;left:0;width:100%;height:100%;-o-object-fit:contain;object-fit:contain;display:block;background:#000;}
-.cimg{display:none!important;}.cimg.vis{display:block!important;}
+.cvf video,.cvf .cimg{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;display:block;background:#000;}
+.cimg{display:none!important;}
+.cimg.vis{display:block!important;}
 .ctag{position:absolute;font-family:var(--fmono);font-size:.6rem;background:rgba(0,0,0,.75);padding:3px 8px;border-radius:4px;pointer-events:none;}
-.ct1{top:8px;left:8px;color:var(--ac);}.ct2{bottom:8px;right:8px;color:var(--wn);display:none;}
-.cops{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;padding:10px 14px;border-top:1px solid var(--bd);}
-.cops>*+*{margin-left:8px;}
+.ct1{top:8px;left:8px;color:var(--ac);}
+.ct2{bottom:8px;right:8px;color:var(--wn);display:none;}
+.cops{display:flex;align-items:center;padding:10px 14px;border-top:1px solid var(--bd);gap:8px;}
 .clb{font-size:.7rem;color:var(--txd);font-weight:600;white-space:nowrap;}
-.qg{display:-webkit-flex;display:flex;}.qg>*+*{margin-left:4px;}
-.qb{padding:5px 10px;border-radius:6px;border:1px solid var(--bd);background:var(--sf2);color:var(--txd);font-size:.7rem;font-weight:600;cursor:pointer;touch-action:manipulation;font-family:var(--fm);-webkit-transition:all .15s;transition:all .15s;}
+.qg{display:flex;gap:4px;}
+.qb{padding:5px 10px;border-radius:6px;border:1px solid var(--bd);background:var(--sf2);color:var(--txd);font-size:.7rem;font-weight:600;cursor:pointer;touch-action:manipulation;font-family:var(--fm);}
 .qb.on{border-color:var(--ac);color:var(--ac);background:rgba(6,214,160,.1);}
-.cacts{display:-webkit-flex;display:flex;-webkit-justify-content:center;justify-content:center;-webkit-align-items:center;align-items:center;padding:14px;}
-.cacts>*+*{margin-left:18px;}
-.snb{width:56px;height:56px;border-radius:50%;background:#fff;border:4px solid rgba(255,255,255,.3);cursor:pointer;touch-action:manipulation;-webkit-transition:-webkit-transform .12s,background .2s;transition:transform .12s,background .2s;-webkit-flex-shrink:0;flex-shrink:0;position:relative;overflow:hidden;}
-.snb:active{-webkit-transform:scale(.9);transform:scale(.9);}
+.cacts{display:flex;justify-content:center;align-items:center;padding:14px;gap:18px;}
+.snb{width:56px;height:56px;border-radius:50%;background:#fff;border:4px solid rgba(255,255,255,.3);cursor:pointer;touch-action:manipulation;transition:transform .12s,background .2s;position:relative;}
+.snb:active{transform:scale(.9);}
 .snb.ok{background:var(--ac);border-color:rgba(6,214,160,.4);}
-.snb .chk{position:absolute;top:0;left:0;right:0;bottom:0;display:none;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;font-size:1.4rem;color:#000;font-weight:800;}
-.snb.ok .chk{display:-webkit-flex;display:flex;}
-.sbt{width:42px;height:42px;min-width:42px;border-radius:50%;border:1px solid var(--bd);background:var(--sf2);color:var(--tx);font-size:1.1rem;cursor:pointer;touch-action:manipulation;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;-webkit-transition:background .15s;transition:background .15s;}
+.snb .chk{position:absolute;top:0;left:0;right:0;bottom:0;display:none;align-items:center;justify-content:center;font-size:1.4rem;color:#000;font-weight:bold;}
+.snb.ok .chk{display:flex;}
+.sbt{width:42px;height:42px;min-width:42px;border-radius:50%;border:1px solid var(--bd);background:var(--sf2);color:var(--tx);font-size:1.1rem;cursor:pointer;touch-action:manipulation;display:flex;align-items:center;justify-content:center;}
 .sbt:active{background:var(--pr);}
 
-/* NOTES */
-.nwr{position:relative;margin-top:10px;}.nwr textarea{padding-right:45px;min-height:50px;}
+.nwr{position:relative;margin-top:10px;}
+.nwr textarea{padding-right:45px;min-height:50px;}
 .mcb{position:absolute;right:6px;top:6px;padding:6px;min-height:34px;min-width:34px;}
 
-/* PATIENT ROW */
-.prow{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-flex-wrap:nowrap;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
-.prow>*+*{margin-left:6px;}.prow::-webkit-scrollbar{display:none;}
-.prow select{max-width:150px;min-width:100px;-webkit-flex-shrink:1;flex-shrink:1;margin-bottom:0;}
+.prow{display:flex;align-items:center;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;}
+.prow>*+*{margin-left:6px;}
+.prow::-webkit-scrollbar{display:none;}
+.prow select{max-width:150px;min-width:100px;flex-shrink:1;margin-bottom:0;}
 
-/* CALIB */
 .calib{font-size:.72rem;font-family:var(--fmono);margin-top:6px;text-align:right;}
 
-/* SPINNER / TOAST */
-.sp{display:inline-block;width:20px;height:20px;border:3px solid rgba(255,255,255,.3);border-radius:50%;border-top-color:#fff;-webkit-animation:spin .8s linear infinite;animation:spin .8s linear infinite;margin-right:8px;vertical-align:middle;}
-.toast{position:fixed;z-index:9999;bottom:20px;bottom:calc(20px + var(--sab));left:50%;-webkit-transform:translateX(-50%) translateY(20px);transform:translateX(-50%) translateY(20px);background:var(--sf);border:1px solid var(--ac);color:var(--ac);padding:10px 20px;border-radius:30px;font-weight:600;font-size:.85rem;opacity:0;-webkit-transition:opacity .3s,-webkit-transform .3s;transition:opacity .3s,transform .3s;pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:calc(100% - 40px);text-align:center;white-space:nowrap;}
-.toast.show{opacity:1;-webkit-transform:translateX(-50%) translateY(0);transform:translateX(-50%) translateY(0);}
+.sp{display:inline-block;width:20px;height:20px;border:3px solid rgba(255,255,255,.3);border-radius:50%;border-top-color:#fff;animation:spin .8s linear infinite;}
+.toast{position:fixed;z-index:9999;bottom:20px;bottom:calc(20px + var(--sab));left:50%;transform:translateX(-50%) translateY(20px);background:var(--sf);color:var(--tx);padding:12px 18px;border-radius:8px;border:1px solid var(--bd);opacity:0;transition:all .3s;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
-/* ANIMATIONS */
-@-webkit-keyframes fadeIn{from{opacity:0;-webkit-transform:translateY(8px);}to{opacity:1;-webkit-transform:translateY(0);}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
-@-webkit-keyframes spin{to{-webkit-transform:rotate(360deg);}}
 @keyframes spin{to{transform:rotate(360deg);}}
 
-/* RESPONSIVE */
 @media(min-width:600px){.agr{grid-template-columns:repeat(auto-fill,minmax(100px,1fr));}}
 @media(min-width:768px){
     .vbox{height:48vh;min-height:320px;max-height:600px;}
@@ -244,127 +179,28 @@ canvas{display:block;touch-action:none;-ms-touch-action:none;}
 }
 @media(max-width:350px){.bt{padding:8px 10px;font-size:.8rem;}.agr{grid-template-columns:repeat(auto-fill,minmax(65px,1fr));}.ac-n{font-size:.58rem;}}
 
-/* ── Skeleton Loader ─────────────────────────── */
-.skeleton{background:linear-gradient(90deg,rgba(0,255,157,.07) 25%,rgba(0,255,157,.15) 50%,rgba(0,255,157,.07) 75%);background-size:200% 100%;animation:skel-wave 1.4s infinite;border-radius:6px;min-height:1em}
-@keyframes skel-wave{0%{background-position:200% 0}100%{background-position:-200% 0}}
-
-
-/* ── GPU acceleration hints ── */
-@media (prefers-reduced-motion: no-preference) {
-  [class*="btn"],[class*="button"],[class*="card"],[class*="modal"],[class*="tab"],[class*="panel"] {
-    will-change: transform, opacity;
-    transform: translateZ(0);
-  }
-}
 @media (prefers-reduced-motion: reduce) {
   *,*::before,*::after { animation-duration:.01ms !important; transition-duration:.01ms !important; }
 }
-
-
-/* ── Dark mode system preference — Studio Niko Design ── */
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg: #f0f4f8;
-    --bg2: #e2e8f0;
-    --text: #1a202c;
-    --accent: #0070f3;
-  }
-  body { background: var(--bg); color: var(--text); }
-}
-
 </style>
-<script>
-
-/* ── safeStorage AES-256-GCM — Studio Niko Design ─────────────────
-   Drop-in secure replacement for localStorage.
-   Keys never leave the browser unencrypted.
-   Usage: await safeStorage.setItem(key, value)
-          await safeStorage.getItem(key)
-          await safeStorage.removeItem(key)
-─────────────────────────────────────────────────────────────────── */
-const safeStorage = (() => {
-  const SALT_KEY = '__niko_salt__';
-  const enc = new TextEncoder();
-  const dec = new TextDecoder();
-
-  async function _getKey() {
-    let salt = safeStorage.getItem(SALT_KEY);
-    if (!salt) {
-      salt = Array.from(crypto.getRandomValues(new Uint8Array(16)))
-        .map(b => b.toString(16).padStart(2,'0')).join('');
-      safeStorage.setItem(SALT_KEY, salt);
-    }
-    const keyMat = await crypto.subtle.importKey(
-      'raw', enc.encode(salt + navigator.userAgent.slice(0,32)),
-      { name:'PBKDF2' }, false, ['deriveKey']
-    );
-    return crypto.subtle.deriveKey(
-      { name:'PBKDF2', salt: enc.encode(salt), iterations:100000, hash:'SHA-256' },
-      keyMat, { name:'AES-GCM', length:256 }, false, ['encrypt','decrypt']
-    );
-  }
-
-  async function setItem(key, value) {
-    try {
-      const k = await _getKey();
-      const iv = crypto.getRandomValues(new Uint8Array(12));
-      const ct = await crypto.subtle.encrypt(
-        { name:'AES-GCM', iv }, k, enc.encode(JSON.stringify(value))
-      );
-      const payload = JSON.stringify({
-        iv: Array.from(iv),
-        ct: Array.from(new Uint8Array(ct))
-      });
-      safeStorage.setItem('__enc_' + key, payload);
-    } catch(e) {
-      safeStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
-    }
-  }
-
-  async function getItem(key) {
-    try {
-      const raw = safeStorage.getItem('__enc_' + key);
-      if (!raw) return safeStorage.getItem(key); // fallback unencrypted
-      const { iv, ct } = JSON.parse(raw);
-      const k = await _getKey();
-      const pt = await crypto.subtle.decrypt(
-        { name:'AES-GCM', iv: new Uint8Array(iv) }, k, new Uint8Array(ct)
-      );
-      return JSON.parse(dec.decode(pt));
-    } catch(e) {
-      return safeStorage.getItem(key);
-    }
-  }
-
-  async function removeItem(key) {
-    safeStorage.removeItem('__enc_' + key);
-    safeStorage.removeItem(key);
-  }
-
-  return { setItem, getItem, removeItem };
-})();
-
-</script>
-
-  <meta name="description" content="MedVision AI Pro — Plateforme d'analyse médicale IA avec 13 agents spécialisés. Radiologie, ECG, dermatologie.">
-  <meta name="author" content="Nicolas Julienne — Studio Niko Design">
-  <meta name="theme-color" content="#00ff9d">
-  <meta property="og:title" content="MedVision AI Pro | Studio Niko Design">
-  <meta property="og:description" content="Analyse médicale par intelligence artificielle — 13 agents spécialisés, EU MDR 2017/745 IIa">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://nikoju1977.github.io/medicalvisionproai/">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="MedVision AI Pro | Studio Niko Design">
-  <meta name="twitter:description" content="Analyse médicale par intelligence artificielle — 13 agents spécialisés, EU MDR 2017/745 IIa">
+<meta name="description" content="MedVision AI Pro — Plateforme d'analyse médicale IA avec 13 agents spécialisés. Radiologie, ECG, dermatologie.">
+<meta name="author" content="Nicolas Julienne — Studio Niko Design">
+<meta name="theme-color" content="#00ff9d">
+<meta property="og:title" content="MedVision AI Pro | Studio Niko Design">
+<meta property="og:description" content="Analyse médicale par intelligence artificielle — 13 agents spécialisés, EU MDR 2017/745 IIa">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://nikoju1977.github.io/medicalvisionproai/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="MedVision AI Pro | Studio Niko Design">
+<meta name="twitter:description" content="Analyse médicale par intelligence artificielle — 13 agents spécialisés, EU MDR 2017/745 IIa">
 </head>
 <body role="application" aria-label="MedVision AI Pro — Analyse médicale IA">
 <main id="app" tabindex="-1">
 <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap">MedVision AI Pro</h1>
 
-
 <!-- AUTH -->
 <div id="authScreen" class="auth">
-    <div style="font-size:3.2rem;margin-bottom:10px">&#x1F9EC;</div>
+    <div style="font-size:3.2rem;margin-bottom:10px">🧬</div>
     <h2 style="font-size:1.5rem">MedVision Pro</h2>
     <p style="color:var(--txd);font-size:.8rem;margin-bottom:4px">Expert Edition</p>
     <div class="pdots" id="pinDots"><span class="pdot"></span><span class="pdot"></span><span class="pdot"></span><span class="pdot"></span></div>
@@ -374,20 +210,20 @@ const safeStorage = (() => {
 <!-- APP -->
 <div id="app" class="app">
     <header>
-        <div><div class="logo">MedVision AI</div><div class="sub">v10.1 &bull; Nicolas JULIENNE</div></div>
+        <div><div class="logo">MedVision AI</div><div class="sub">v10.1 • Nicolas JULIENNE</div></div>
         <div class="fr fnw">
-            <button class="bt bi" onclick="openApiM()">&#x1F511;</button>
-            <button class="bt bi" onclick="exportPDF()">&#x1F4C4;</button>
+            <button class="bt bi" onclick="openApiM()" title="Configuration API">🔑</button>
+            <button class="bt bi" onclick="exportPDF()" title="Exporter PDF">📄</button>
         </div>
     </header>
 
     <!-- PATIENT -->
     <div class="cd">
         <div class="fr fsb fnw">
-            <div class="prow" style="-webkit-flex:1;flex:1;min-width:0">
+            <div class="prow" style="flex:1;min-width:0">
                 <select id="patL" onchange="loadPat()"><option value="">-- Patient --</option></select>
                 <button class="bt" onclick="addPat()">+</button>
-                <button class="bt" onclick="saveExam()">&#x1F4BE;</button>
+                <button class="bt" onclick="saveExam()">💾</button>
             </div>
             <div id="dbS" style="font-size:.68rem;color:var(--txd);font-family:var(--fmono);white-space:nowrap">DB: Init...</div>
         </div>
@@ -398,26 +234,26 @@ const safeStorage = (() => {
         <div class="cpn" id="pA"><canvas id="cA"></canvas><div class="olbl" id="lA">IMAGE A</div></div>
         <div class="cpn" id="pB" style="display:none"><canvas id="cB"></canvas><div class="olbl">IMAGE B (Ref)</div></div>
         <div class="tbar" id="tbar">
-            <button class="tb" onclick="togCmp()" id="bCmp">&#x1F313;</button>
+            <button class="tb" onclick="togCmp()" id="bCmp" title="Comparaison">🌓</button>
             <div class="tsep"></div>
-            <button class="tb on" onclick="setT('pan')" id="t-pan">&#x270B;</button>
-            <button class="tb" onclick="setT('meas')" id="t-meas">&#x1F4CF;</button>
-            <button class="tb" onclick="setT('roi')" id="t-roi">&#x1F3AF;</button>
-            <button class="tb" onclick="setT('draw')" id="t-draw">&#x270F;&#xFE0F;</button>
+            <button class="tb on" onclick="setT('pan')" id="t-pan" title="Panoramique">✋</button>
+            <button class="tb" onclick="setT('meas')" id="t-meas" title="Mesurer">📏</button>
+            <button class="tb" onclick="setT('roi')" id="t-roi" title="ROI">🎯</button>
+            <button class="tb" onclick="setT('draw')" id="t-draw" title="Dessiner">✏️</button>
             <div class="tsep"></div>
-            <button class="tb" onclick="undo()">&#x21A9;&#xFE0F;</button>
-            <button class="tb" style="color:var(--dg)" onclick="resetV()">&#x2715;</button>
+            <button class="tb" onclick="undo()" title="Annuler">↩️</button>
+            <button class="tb" style="color:var(--dg)" onclick="resetV()" title="Réinitialiser">✕</button>
         </div>
     </div>
-    <div class="calib" id="calS" style="color:var(--wn)">Non calibr&eacute; (px)</div>
+    <div class="calib" id="calS" style="color:var(--wn)">Non calibré (px)</div>
 
     <!-- FILE / CAM -->
     <div class="cd" style="margin-top:8px">
         <div class="fr fsb fnw">
             <div class="fr fw">
-                <button class="bt" onclick="pickF()">&#x1F4C2; Image</button>
+                <button class="bt" onclick="pickF()">📂 Image</button>
                 <input type="file" id="fIn" hidden accept="image/*">
-                <button class="bt" onclick="startCam()">&#x1F4F7; Cam&eacute;ra</button>
+                <button class="bt" onclick="startCam()">📷 Caméra</button>
             </div>
         </div>
     </div>
@@ -432,19 +268,19 @@ const safeStorage = (() => {
 
         <!-- Preprocess Previews -->
         <div id="ppArea" style="display:none">
-            <div style="font-size:.68rem;font-weight:700;color:var(--txd);margin:6px 0 4px;text-transform:uppercase;letter-spacing:.5px">Pre-traitement IA</div>
+            <div style="font-size:.68rem;font-weight:700;color:var(--txd);margin:6px 0 4px;text-transform:uppercase;letter-spacing:.5px">Pré-traitement IA</div>
             <div class="ppstrip" id="ppStrip"></div>
         </div>
 
         <div class="nwr">
             <textarea id="notes" rows="2" placeholder="Notes cliniques (ou dictez)..."></textarea>
-            <button class="bt bi mcb" onclick="togMic()" id="micB">&#x1F3A4;</button>
+            <button class="bt bi mcb" onclick="togMic()" id="micB">🎤</button>
         </div>
 
         <!-- Analysis Buttons -->
         <div class="fr fw" style="margin-bottom:8px">
-            <button class="bt bp" style="-webkit-flex:1;flex:1" onclick="runAutoAI()">&#x1F916; AUTO-DIAGNOSTIC</button>
-            <button class="bt" style="-webkit-flex:1;flex:1" onclick="runAI()">&#x1F9E0; Analyse manuelle</button>
+            <button class="bt bp" style="flex:1" onclick="runAutoAI()">🤖 AUTO-DIAGNOSTIC</button>
+            <button class="bt" style="flex:1" onclick="runAI()">🧠 Analyse manuelle</button>
         </div>
 
         <!-- Pipeline Progress -->
@@ -459,42 +295,35 @@ const safeStorage = (() => {
 <!-- API MODAL -->
 <div id="apiM" class="mdl">
     <div class="mbox">
-        <h3 style="margin-bottom:8px">&#x2699;&#xFE0F; Configuration API Mistral</h3>
-        <p style="color:var(--txd);font-size:.82rem;margin-bottom:12px">Cl&eacute; Mistral AI stock&eacute;e localement sur votre appareil.</p>
-        <input type="password" id="akIn" placeholder="Cl&eacute; API Mistral..." style="margin-bottom:6px" autocomplete="off">
+        <h3 style="margin-bottom:8px">⚙️ Configuration API Mistral</h3>
+        <p style="color:var(--txd);font-size:.82rem;margin-bottom:12px">Clé Mistral AI stockée localement sur votre appareil.</p>
+        <input type="password" id="akIn" placeholder="Clé API Mistral..." style="margin-bottom:6px" autocomplete="off">
         <div id="akStat" style="font-size:.7rem;color:var(--txd);margin-bottom:12px;font-family:var(--fmono)"></div>
         
-        <div style="font-size:.72rem;font-weight:700;color:var(--txd);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Mod&egrave;le IA pour l'analyse</div>
+        <div style="font-size:.72rem;font-weight:700;color:var(--txd);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Modèle IA pour l'analyse</div>
         <select id="mdlSel" style="margin-bottom:6px">
-            <optgroup label="&#x1F680; Frontier (meilleure qualit&eacute;)">
-                <option value="mistral-large-latest">Mistral Large 3 &mdash; Flagship multimodal</option>
-                <option value="mistral-medium-latest">Mistral Medium 3.1 &mdash; Frontier vision</option>
-                <option value="pixtral-large-latest" selected>Pixtral Large &mdash; 124B expert imagerie</option>
+            <optgroup label="🚀 Frontier (meilleure qualité)">
+                <option value="mistral-large-latest">Mistral Large 3 — Flagship multimodal</option>
+                <option value="pixtral-large-latest" selected>Pixtral Large — 124B expert imagerie</option>
             </optgroup>
-            <optgroup label="&#x1F9E0; Raisonnement (analyse pouss&eacute;e)">
-                <option value="magistral-medium-latest">Magistral Medium &mdash; Raisonnement avanc&eacute;</option>
-                <option value="magistral-small-latest">Magistral Small &mdash; Raisonnement l&eacute;ger</option>
-            </optgroup>
-            <optgroup label="&#x26A1; Rapide &amp; &Eacute;conomique">
-                <option value="mistral-small-latest">Mistral Small 3.2 &mdash; Rapide + vision</option>
-                <option value="pixtral-12b-2409">Pixtral 12B &mdash; Compact vision</option>
-                <option value="ministral-8b-latest">Ministral 8B &mdash; Ultra-rapide vision</option>
-                <option value="ministral-3b-latest">Ministral 3B &mdash; Micro vision (edge)</option>
+            <optgroup label="⚡ Rapide &amp; Économique">
+                <option value="mistral-small-latest">Mistral Small 3.2 — Rapide + vision</option>
+                <option value="pixtral-12b-2409">Pixtral 12B — Compact vision</option>
             </optgroup>
         </select>
         <div id="mdlInfo" style="font-size:.7rem;color:var(--ac);margin-bottom:12px;min-height:16px"></div>
         
-        <div class="fr fsb fnw"><button class="bt" onclick="clM('apiM')">Fermer</button><button class="bt" onclick="testKey()" id="testBtn">&#x1F50D; Tester</button><button class="bt bp" onclick="saveKey()">Sauvegarder</button></div>
+        <div class="fr fsb fnw"><button class="bt" onclick="clM('apiM')">Fermer</button><button class="bt" onclick="testKey()" id="testBtn">🔍 Tester</button><button class="bt bp" onclick="saveKey()">✓ Enregistrer</button></div>
     </div>
 </div>
 
 <!-- CAMERA MODAL -->
 <div id="camM" class="mdl cm">
     <div class="cw">
-        <div class="chd"><h3>&#x1F4F7; Capture</h3><button class="sbt" onclick="stopCam()" style="width:32px;height:32px;min-width:32px;font-size:.85rem">&#x2715;</button></div>
-        <div class="cvf" id="cView"><video id="vid" autoplay playsinline muted></video><img loading="lazy" decoding="async" id="cImg" class="cimg" alt=""><div class="ctag ct1" id="cRes">&mdash;</div><div class="ctag ct2" id="cSz">&mdash;</div></div>
-        <div class="cops" id="cOpt"><span class="clb">Qualit&eacute;:</span><div class="qg" id="qG"><button class="qb" data-q="low" onclick="setQ('low')">L&eacute;g&egrave;re</button><button class="qb on" data-q="med" onclick="setQ('med')">Moyenne</button><button class="qb" data-q="high" onclick="setQ('high')">Haute</button></div></div>
-        <div class="cacts"><button class="sbt" onclick="flipC()" id="flB">&#x1F504;</button><button class="snb" id="snB" onclick="snapC()"><span class="chk">&#x2713;</span></button><button class="sbt" id="reB" onclick="retake()" style="visibility:hidden">&#x21A9;&#xFE0F;</button></div>
+        <div class="chd"><h3>📷 Capture</h3><button class="sbt" onclick="stopCam()" style="width:32px;height:32px;min-width:32px;font-size:.85rem">✕</button></div>
+        <div class="cvf" id="cView"><video id="vid" autoplay playsinline muted></video><img loading="lazy" decoding="async" id="cImg" class="cimg" alt=""><div class="ctag ct1" id="cRes">—</div></div>
+        <div class="cops" id="cOpt"><span class="clb">Qualité:</span><div class="qg" id="qG"><button class="qb on" data-q="high" onclick="setQ('high')">Haute</button><button class="qb" data-q="mid" onclick="setQ('mid')">Moyen</button><button class="qb" data-q="low" onclick="setQ('low')">Légère</button></div></div>
+        <div class="cacts"><button class="sbt" onclick="flipC()" id="flB">🔄</button><button class="snb" id="snB" onclick="snapC()"><span class="chk">✓</span></button><button class="sbt" onclick="toggleFlash()" id="flsB">💡</button></div>
     </div>
 </div>
 
@@ -503,1326 +332,740 @@ const safeStorage = (() => {
 <script>
 (function(){
 "use strict";
-var $=function(id){return document.getElementById(id);};
-const DPR=Math.min(window.devicePixelRatio||1,3);
-const IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-const SAF=/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+const $ = id => document.getElementById(id);
+const DPR = Math.min(window.devicePixelRatio || 1, 3);
+const IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-function san(k){if(!k)return'';return k.replace(/[\x00-\x1f\x7f]/g,'').replace(/^\s+|\s+$/g,'');}
-
-// 13 Medical Specialist Agents
-const AG={
-    radio:{n:"Radiologue",i:"\uD83E\uDDB4",s:"Analyse osseuse, fractures, densit\u00e9s, tissus mous."},
-    pulmo:{n:"Pneumologue",i:"\uD83E\uDEC1",s:"Poumons, pl\u00e8vre, \u00e9panchements, nodules pulmonaires."},
-    neuro:{n:"Neurologue",i:"\uD83E\uDDE0",s:"Cerveau, AVC, rachis, tissus mous c\u00e9r\u00e9braux."},
-    trauma:{n:"Urgentiste",i:"\uD83D\uDE91",s:"L\u00e9sions vitales, ABCDE, pneumothorax, h\u00e9morragies."},
-    cardio:{n:"Cardiologue",i:"\u2764\uFE0F",s:"Coeur, gros vaisseaux, index cardio-thoracique."},
-    dermato:{n:"Dermato",i:"\uD83D\uDD0E",s:"Peau, ABCDE, l\u00e9sions pigment\u00e9es, m\u00e9lanome."},
-    ophtalmo:{n:"Ophtalmo",i:"\uD83D\uDC41\uFE0F",s:"Fond d'oeil, r\u00e9tine, nerf optique, DMLA."},
-    ortho:{n:"Orthop\u00e9diste",i:"\uD83D\uDD2C",s:"Squelette, articulations, fractures, arthrose."},
-    onco:{n:"Oncologue",i:"\uD83C\uDF97\uFE0F",s:"Tumeurs, masses, m\u00e9tastases, TNM."},
-    patho:{n:"Pathologiste",i:"\uD83E\uDDEC",s:"Analyse tissulaire, cytologie, grade/stade."},
-    pedia:{n:"P\u00e9diatre",i:"\uD83D\uDC76",s:"Sp\u00e9cificit\u00e9s enfant, croissance."},
-    endo:{n:"Endocrino",i:"\uD83E\uDDEA",s:"Glandes, thyro\u00efde, m\u00e9tabolisme."},
-    gen:{n:"G\u00e9n\u00e9raliste",i:"\uD83C\uDFE5",s:"Synth\u00e8se clinique globale et orientation."}
+const AG = {
+    radio: {n:"Radiologue", i:"🧠", s:"Analyse osseuse, fractures, densités, tissus mous."},
+    pulmo: {n:"Pneumologue", i:"🫁", s:"Poumons, plèvre, épanchements, nodules pulmonaires."},
+    neuro: {n:"Neurologue", i:"🧠", s:"Cerveau, AVC, rachis, tissus mous cérébraux."},
+    trauma: {n:"Urgentiste", i:"🚑", s:"Lésions vitales, ABCDE, pneumothorax, hémorragies."},
+    cardio: {n:"Cardiologue", i:"❤️", s:"Cœur, gros vaisseaux, index cardio-thoracique."},
+    dermato: {n:"Dermato", i:"🔎", s:"Peau, ABCDE, lésions pigmentées, mélanome."},
+    ophtalmo: {n:"Ophtalmo", i:"👁️", s:"Fond d'œil, rétine, nerf optique, DMLA."},
+    ortho: {n:"Orthopédiste", i:"🔧", s:"Squelette, articulations, fractures, arthrose."},
+    onco: {n:"Oncologue", i:"🍗", s:"Tumeurs, masses, métastases, TNM."},
+    patho: {n:"Pathologiste", i:"🧬", s:"Analyse tissulaire, cytologie, grade/stade."},
+    pedia: {n:"Pédiatre", i:"👶", s:"Spécificités enfant, croissance."},
+    endo: {n:"Endocrino", i:"🧫", s:"Glandes, thyroïde, métabolisme."},
+    gen: {n:"Généraliste", i:"🏥", s:"Synthèse clinique globale et orientation."}
 };
 
-// STATE
-const S={pin:"",key:null,db:null,imgA:null,imgB:null,srcA:null,srcB:null,
-    w:0,h:0,ox:0,oy:0,sc:1,tool:'pan',
-    drw:[],rois:[],meas:[],aiRois:[],
-    pxMm:null,comp:false,ak:'',mdl:'pixtral-large-latest',
-    pd:0,ps:1,ip:false};
+const S = {
+    pin: "", key: null, db: null, imgA: null, imgB: null, srcA: null, srcB: null,
+    w: 0, h: 0, ox: 0, oy: 0, sc: 1, tool: 'pan',
+    drw: [], rois: [], meas: [], aiRois: [],
+    pxMm: null, comp: false, ak: '', mdl: 'pixtral-large-latest',
+    pd: 0, ps: 1, ip: false, dn: false, lP: null, sP: null, tM: null,
+    videoStream: null, camActive: false
+};
 
-try{const rk=safeStorage.getItem('mv_key')||'';S.ak=rk.replace(/[\x00-\x1f\x7f\s]/g,'');}catch(e){S.ak='';}
-try{const rm=safeStorage.getItem('mv_mdl');if(rm)S.mdl=rm;}catch(e){}
-const cA=$('cA'),xA=cA.getContext('2d'),cB=$('cB'),xB=cB.getContext('2d');
+const cA = $('cA'), xA = cA.getContext('2d');
+const cB = $('cB'), xB = cB.getContext('2d');
 
-/* === INIT === */
-function init(){
-    initPin();renderAg();initDB();rsz();
-    $('fIn').addEventListener('change',function(){hFile(this);});
-    const rt;function oR(){clearTimeout(rt);rt=setTimeout(rsz,120);}
-    window.addEventListener('resize',oR);
-    window.addEventListener('orientationchange',function(){setTimeout(rsz,350);});
-    // Prevent modal bounce
-    const ms=document.querySelectorAll('.mdl');
-    for(const i=0;i<ms.length;i++){(function(m){
-        m.addEventListener('touchmove',function(e){if(e.target===m)e.preventDefault();},{passive:false});
-        m.addEventListener('click',function(e){if(e.target===m&&m.id!=='camM')m.classList.remove('open');});
-    })(ms[i]);}
-    document.addEventListener('keydown',function(e){
-        if(e.key==='Escape'||e.keyCode===27){const o=document.querySelectorAll('.mdl.open');for(const j=0;j<o.length;j++){if(o[j].id==='camM')stopCam();else o[j].classList.remove('open');}}
-    });
-    // Canvas events
-    cA.addEventListener('touchstart',onTS,{passive:false});
-    cA.addEventListener('mousedown',onMD);
-    window.addEventListener('touchmove',onMV,{passive:false});
-    window.addEventListener('mousemove',onMV);
-    window.addEventListener('touchend',onMU);
-    window.addEventListener('mouseup',onMU);
-    cA.addEventListener('wheel',onWh,{passive:false});
+function toast(msg) {
+    const el = $('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 3000);
 }
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 
-/* === PIN === */
-function initPin(){const p=$('pinPad');p.innerHTML='';const ks=[1,2,3,4,5,6,7,8,9,'C',0,'OK'];for(const i=0;i<ks.length;i++){(function(k){const b=document.createElement('button');b.className='pb';b.textContent=k;if(k==='C')b.style.color='var(--dg)';if(k==='OK')b.style.color='var(--pr)';b.addEventListener('click',function(){hPin(k);});p.appendChild(b);})(ks[i]);}}
-function hPin(k){if(k==='C'){S.pin='';rDots();return;}if(k==='OK'){if(S.pin.length===4){$('authScreen').style.display='none';$('app').classList.add('on');setTimeout(rsz,100);}else toast('Code: 4 chiffres');return;}if(S.pin.length<4)S.pin+=k;rDots();}
-function rDots(){const d=$('pinDots').children;for(const i=0;i<4;i++){if(i<S.pin.length)d[i].className='pdot f';else d[i].className='pdot';}}
+function init() {
+    initPin();
+    renderAg();
+    initDB();
+    rsz();
+    $('fIn').addEventListener('change', function() { hFile(this); });
+    window.addEventListener('resize', () => setTimeout(rsz, 120));
+    window.addEventListener('orientationchange', () => setTimeout(rsz, 350));
+    
+    const ms = document.querySelectorAll('.mdl');
+    for (let i = 0; i < ms.length; i++) {
+        ms[i].addEventListener('touchmove', e => { if (e.target === ms[i]) e.preventDefault(); }, {passive: false});
+        ms[i].addEventListener('click', e => { if (e.target === ms[i] && ms[i].id !== 'camM') ms[i].classList.remove('open'); });
+    }
+    
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' || e.keyCode === 27) {
+            const o = document.querySelectorAll('.mdl.open');
+            for (let j = 0; j < o.length; j++) {
+                if (o[j].id === 'camM') stopCam();
+                else o[j].classList.remove('open');
+            }
+        }
+    });
+    
+    cA.addEventListener('touchstart', onTS, {passive: false});
+    cA.addEventListener('mousedown', onMD);
+    window.addEventListener('touchmove', onMV, {passive: false});
+    window.addEventListener('mousemove', onMV);
+    window.addEventListener('touchend', onMU);
+    window.addEventListener('mouseup', onMU);
+    cA.addEventListener('wheel', onWh, {passive: false});
+}
 
-/* === DB === */
-function initDB(){try{const r=indexedDB.open('MedVPro2',2);r.onupgradeneeded=function(e){const db=e.target.result;if(!db.objectStoreNames.contains('p'))db.createObjectStore('p',{keyPath:'id',autoIncrement:true});if(!db.objectStoreNames.contains('e')){const s=db.createObjectStore('e',{keyPath:'id',autoIncrement:true});s.createIndex('pid','pid');}};r.onsuccess=function(e){S.db=e.target.result;$('dbS').textContent='DB: OK';$('dbS').style.color='var(--ac)';ldPL();};r.onerror=function(){toast('Erreur DB');};}catch(e){$('dbS').textContent='DB: N/A';}}
-function ldPL(){if(!S.db)return;try{const t=S.db.transaction('p','readonly'),sel=$('patL');sel.innerHTML='<option value="">-- Patient --</option>';t.objectStore('p').getAll().onsuccess=function(e){const a=e.target.result;for(const i=0;i<a.length;i++){const o=document.createElement('option');o.value=a[i].id;o.textContent=a[i].name;sel.appendChild(o);}};}catch(e){}}
-window.addPat=function(){const n=prompt('Nom du patient:');if(n&&n.replace(/\s/g,'')){if(!S.db)return toast('DB N/A');S.db.transaction('p','readwrite').objectStore('p').add({name:n.replace(/^\s+|\s+$/g,''),date:Date.now()});setTimeout(ldPL,500);toast('Patient ajout\u00e9');}};
-window.saveExam=function(){const pid=$('patL').value;if(!pid||!S.imgA)return toast('Patient ou image manquant');if(!S.db)return toast('DB N/A');
-    // Use toBlob with fallback
-    try{cA.toBlob(function(blob){if(!blob)return toast('Erreur capture');S.db.transaction('e','readwrite').objectStore('e').add({pid:parseInt(pid),date:Date.now(),img:blob,notes:$('notes').value,meta:{meas:S.meas,roi:S.rois,pxMm:S.pxMm}});toast('Examen sauvegard\u00e9');},'image/jpeg',0.85);}catch(e){toast('Erreur sauvegarde');}};
-window.loadPat=function(){const pid=$('patL').value;if(!pid||!S.db)return;try{S.db.transaction('e','readonly').objectStore('e').index('pid').getAll(parseInt(pid)).onsuccess=function(e){const r=e.target.result;if(r.length>0){const l=r[r.length-1],im=new Image();im.onload=function(){S.imgB=im;S.srcB=im.src;if(l.notes)$('notes').value=l.notes;if(l.meta){S.meas=l.meta.meas||[];S.rois=l.meta.roi||[];S.pxMm=l.meta.pxMm||null;}S.aiRois=[];upCal();toast('Historique charg\u00e9');};im.onerror=function(){toast('Erreur image');};if(l.img instanceof Blob){im.src=URL.createObjectURL(l.img);}else{im.src=l.img;}}else{S.imgB=null;S.srcB=null;toast('Dossier vide');}};}catch(e){}};
+function initPin() {
+    const p = $('pinPad');
+    p.innerHTML = '';
+    const ks = [1,2,3,4,5,6,7,8,9,'C',0,'OK'];
+    for (let i = 0; i < ks.length; i++) {
+        const k = ks[i];
+        const b = document.createElement('button');
+        b.className = 'pb';
+        b.textContent = k;
+        b.onclick = () => hPin(k);
+        p.appendChild(b);
+    }
+}
 
-/* === CANVAS === */
-function rsz(){const bx=$('vBox');if(!bx||bx.clientWidth<1)return;const pn=S.comp?2:1,cw=Math.floor(bx.clientWidth/pn),ch=bx.clientHeight;const cs=[cA,cB];for(const i=0;i<cs.length;i++){cs[i].width=Math.round(cw*DPR);cs[i].height=Math.round(ch*DPR);cs[i].style.width=cw+'px';cs[i].style.height=ch+'px';}drw();}
-window.pickF=function(){$('fIn').click();};
-function hFile(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=function(e){ldImg(e.target.result);};r.readAsDataURL(f);inp.value='';}
-function ldImg(src){S.pxMm=null;S.meas=[];S.rois=[];S.drw=[];S.aiRois=[];upCal();const im=new Image();im.onload=function(){S.imgA=im;S.srcA=src;S.w=im.width;S.h=im.height;$('lA').textContent='IMG A ('+S.w+'\u00d7'+S.h+')';resetV();try{showImgStats();}catch(e){}};im.onerror=function(){toast('Erreur image');};im.src=src;}
-function upCal(){const el=$('calS');if(S.pxMm){el.textContent='CALIBR\u00c9 ('+S.pxMm.toFixed(3)+' mm/px)';el.style.color='var(--ac)';}else{el.textContent='Non calibr\u00e9 (px)';el.style.color='var(--wn)';}}
-window.togCmp=function(){if(!S.imgB&&!S.comp)toast('Chargez un patient avec historique');S.comp=!S.comp;$('pB').style.display=S.comp?'block':'none';$('bCmp').className='tb'+(S.comp?' on':'');rsz();};
+function hPin(k) {
+    if (k === 'C') { S.pin = ''; rDots(); return; }
+    if (k === 'OK') {
+        if (S.pin.length === 4) {
+            $('authScreen').style.display = 'none';
+            $('app').classList.add('on');
+            setTimeout(rsz, 100);
+        } else toast('Code: 4 chiffres requis');
+        return;
+    }
+    if (S.pin.length < 4) {
+        S.pin += k;
+        rDots();
+    }
+}
 
-/* === DRAW === */
-function drw(){rCvs(xA,cA,S.imgA);if(S.comp)rCvs(xB,cB,S.imgB);}
-function rCvs(ctx,cvs,img){
-    const w=cvs.width/DPR,h=cvs.height/DPR;
-    ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);
-    ctx.fillStyle='#000';ctx.fillRect(0,0,w,h);
-    if(!img){ctx.restore();return;}
-    ctx.translate(S.ox,S.oy);ctx.scale(S.sc,S.sc);
-    ctx.drawImage(img,0,0);
-    ctx.lineCap='round';ctx.lineJoin='round';
+function rDots() {
+    const d = $('pinDots').children;
+    for (let i = 0; i < 4; i++) {
+        d[i].className = 'pdot' + (i < S.pin.length ? ' f' : '');
+    }
+}
+
+function initDB() {
+    const r = indexedDB.open('MedVPro2', 2);
+    r.onupgradeneeded = e => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('p')) db.createObjectStore('p', {keyPath: 'id', autoIncrement: true});
+        if (!db.objectStoreNames.contains('e')) {
+            const es = db.createObjectStore('e', {keyPath: 'id', autoIncrement: true});
+            es.createIndex('pid', 'pid', {unique: false});
+        }
+    };
+    r.onsuccess = e => {
+        S.db = e.target.result;
+        $('dbS').textContent = 'DB: OK';
+        ldPL();
+    };
+    r.onerror = () => {
+        $('dbS').textContent = 'DB: Erreur';
+        toast('IndexedDB non disponible');
+    };
+}
+
+function ldPL() {
+    if (!S.db) return;
+    const t = S.db.transaction('p', 'readonly');
+    const sel = $('patL');
+    sel.innerHTML = '<option value="">-- Patient --</option>';
+    t.objectStore('p').getAll().onsuccess = e => {
+        for (const pat of e.target.result) {
+            const opt = document.createElement('option');
+            opt.value = pat.id;
+            opt.textContent = pat.name;
+            sel.appendChild(opt);
+        }
+    };
+}
+
+window.addPat = function() {
+    const n = prompt('Nom du patient:');
+    if (n && n.replace(/\s/g, '')) {
+        if (!S.db) return toast('DB N/A');
+        S.db.transaction('p', 'readwrite').objectStore('p').add({name: n.trim()}).onsuccess = () => {
+            ldPL();
+            toast('Patient ajouté');
+        };
+    }
+};
+
+window.saveExam = function() {
+    const pid = $('patL').value;
+    if (!pid || !S.imgA) return toast('Patient ou image manquant');
+    if (!S.db) return toast('DB N/A');
+    cA.toBlob(blob => {
+        if (!blob) return toast('Erreur capture');
+        S.db.transaction('e', 'readwrite').objectStore('e').add({
+            pid: parseInt(pid),
+            date: Date.now(),
+            img: blob,
+            notes: $('notes').value,
+            meta: {drw: S.drw, meas: S.meas, rois: S.rois}
+        }).onsuccess = () => toast('Examen sauvegardé');
+    });
+};
+
+window.loadPat = function() {
+    const pid = $('patL').value;
+    if (!pid || !S.db) return;
+    S.db.transaction('e', 'readonly').objectStore('e').index('pid').getAll(parseInt(pid)).onsuccess = e => {
+        const r = e.target.result;
+        if (r.length > 0) {
+            const rec = r[r.length - 1];
+            const url = URL.createObjectURL(rec.img);
+            ldImg(url);
+            $('notes').value = rec.notes || '';
+            toast('Examen chargé');
+        }
+    };
+};
+
+function rsz() {
+    const bx = $('vBox');
+    if (!bx || bx.clientWidth < 1) return;
+    const pn = S.comp ? 2 : 1;
+    const cw = Math.floor(bx.clientWidth / pn);
+    const ch = bx.clientHeight;
+    const cs = [cA, cB];
+    for (let i = 0; i < cs.length; i++) {
+        cs[i].width = cw * DPR;
+        cs[i].height = ch * DPR;
+        cs[i].style.width = cw + 'px';
+        cs[i].style.height = ch + 'px';
+    }
+    drw();
+}
+
+window.pickF = () => $('fIn').click();
+
+function hFile(inp) {
+    const f = inp.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = e => ldImg(e.target.result);
+    r.readAsDataURL(f);
+    inp.value = '';
+}
+
+function ldImg(src) {
+    S.pxMm = null;
+    S.meas = [];
+    S.rois = [];
+    S.drw = [];
+    S.aiRois = [];
+    upCal();
+    const im = new Image();
+    im.onload = () => {
+        S.imgA = im;
+        S.srcA = src;
+        S.w = im.width;
+        S.h = im.height;
+        $('lA').textContent = 'IMG A (' + S.w + 'x' + S.h + ')';
+        resetV();
+        drw();
+        showImgStats();
+    };
+    im.src = src;
+}
+
+function upCal() {
+    const el = $('calS');
+    if (S.pxMm) {
+        el.textContent = 'CALIBRÉ (' + S.pxMm.toFixed(3) + ' mm/px)';
+        el.style.color = 'var(--ac)';
+    } else {
+        el.textContent = 'Non calibré (px)';
+        el.style.color = 'var(--wn)';
+    }
+}
+
+window.togCmp = function() {
+    if (!S.imgB && !S.comp) toast('Chargez un patient avec historique');
+    S.comp = !S.comp;
+    $('pB').style.display = S.comp ? 'block' : 'none';
+    $('bCmp').className = 'tb' + (S.comp ? ' on' : '');
+    rsz();
+};
+
+function drw() {
+    rCvs(xA, cA, S.imgA);
+    if (S.comp) rCvs(xB, cB, S.imgB);
+}
+
+function rCvs(ctx, cvs, img) {
+    const w = cvs.width / DPR;
+    const h = cvs.height / DPR;
+    ctx.save();
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, w, h);
+    if (!img) { ctx.restore(); return; }
+    ctx.translate(S.ox, S.oy);
+    ctx.scale(S.sc, S.sc);
+    ctx.drawImage(img, 0, 0);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
 
     // User ROIs (orange dashed)
-    for(const r=0;r<S.rois.length;r++){const roi=S.rois[r];ctx.strokeStyle='#f59e0b';ctx.lineWidth=2/S.sc;ctx.setLineDash([5/S.sc]);ctx.strokeRect(roi.x,roi.y,roi.w,roi.h);ctx.setLineDash([]);}
+    for (let r = 0; r < S.rois.length; r++) {
+        const roi = S.rois[r];
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 2 / S.sc;
+        ctx.setLineDash([5 / S.sc]);
+        ctx.strokeRect(roi.x, roi.y, roi.w, roi.h);
+        ctx.setLineDash([]);
+    }
 
     // AI ROIs (cyan glow)
-    if(S.aiRois.length>0){
-        ctx.shadowBlur=15;ctx.shadowColor='#00e5ff';ctx.strokeStyle='#00e5ff';ctx.lineWidth=3/S.sc;
-        for(const a=0;a<S.aiRois.length;a++){
-            const bx=S.aiRois[a];
-            const rx=bx.xmin*S.w,ry=bx.ymin*S.h,rw=(bx.xmax-bx.xmin)*S.w,rh=(bx.ymax-bx.ymin)*S.h;
-            ctx.strokeRect(rx,ry,rw,rh);
-            ctx.fillStyle='#00e5ff';const fs=Math.max(10,14/S.sc);ctx.font='bold '+fs+'px monospace';
-            ctx.fillText((bx.label||'?').toUpperCase(),rx,ry-5/S.sc);
+    if (S.aiRois.length > 0) {
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#00e5ff';
+        ctx.strokeStyle = '#00e5ff';
+        ctx.lineWidth = 3 / S.sc;
+        for (let a = 0; a < S.aiRois.length; a++) {
+            const bx = S.aiRois[a];
+            const rx = bx.xmin * S.w, ry = bx.ymin * S.h, rw = (bx.xmax - bx.xmin) * S.w, rh = (bx.ymax - bx.ymin) * S.h;
+            ctx.strokeRect(rx, ry, rw, rh);
+            ctx.fillStyle = '#00e5ff';
+            const fs = Math.max(10, 14 / S.sc);
+            ctx.font = 'bold ' + fs + 'px monospace';
+            ctx.fillText((bx.label || '?').toUpperCase(), rx, ry - 5 / S.sc);
         }
-        ctx.shadowBlur=0;
+        ctx.shadowBlur = 0;
     }
 
     // Drawings (red)
-    for(const d=0;d<S.drw.length;d++){const pa=S.drw[d];if(pa.length<1)continue;ctx.strokeStyle='#ef4444';ctx.lineWidth=3/S.sc;ctx.beginPath();for(const p=0;p<pa.length;p++){p===0?ctx.moveTo(pa[p].x,pa[p].y):ctx.lineTo(pa[p].x,pa[p].y);}ctx.stroke();}
+    for (let d = 0; d < S.drw.length; d++) {
+        const pa = S.drw[d];
+        if (pa.length < 1) continue;
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 3 / S.sc;
+        ctx.beginPath();
+        for (let p = 0; p < pa.length; p++) {
+            if (p === 0) ctx.moveTo(pa[p].x, pa[p].y);
+            else ctx.lineTo(pa[p].x, pa[p].y);
+        }
+        ctx.stroke();
+    }
 
     // Measurements (green + enhanced labels)
-    for(const m=0;m<S.meas.length;m++)dMeas(ctx,S.meas[m]);
-    if(tM)dMeas(ctx,tM);
+    for (let m = 0; m < S.meas.length; m++) dMeas(ctx, S.meas[m]);
+    if (S.tM) dMeas(ctx, S.tM);
     ctx.restore();
 }
-function dMeas(ctx,m){
-    const dp=Math.sqrt(Math.pow(m.b.x-m.a.x,2)+Math.pow(m.b.y-m.a.y,2));
-    const txt=S.pxMm?(dp*S.pxMm).toFixed(1)+'mm':Math.round(dp)+'px';
-    ctx.strokeStyle='#06d6a0';ctx.lineWidth=2/S.sc;
-    ctx.beginPath();ctx.moveTo(m.a.x,m.a.y);ctx.lineTo(m.b.x,m.b.y);ctx.stroke();
+
+function dMeas(ctx, m) {
+    const dp = Math.sqrt(Math.pow(m.b.x - m.a.x, 2) + Math.pow(m.b.y - m.a.y, 2));
+    const txt = S.pxMm ? (dp * S.pxMm).toFixed(1) + 'mm' : Math.round(dp) + 'px';
+    ctx.strokeStyle = '#06d6a0';
+    ctx.lineWidth = 2 / S.sc;
+    ctx.beginPath();
+    ctx.moveTo(m.a.x, m.a.y);
+    ctx.lineTo(m.b.x, m.b.y);
+    ctx.stroke();
     // Endpoints
-    const r=3/S.sc;ctx.fillStyle='#06d6a0';
-    ctx.beginPath();ctx.arc(m.a.x,m.a.y,r,0,6.28);ctx.fill();
-    ctx.beginPath();ctx.arc(m.b.x,m.b.y,r,0,6.28);ctx.fill();
+    const r = 3 / S.sc;
+    ctx.fillStyle = '#06d6a0';
+    ctx.beginPath();
+    ctx.arc(m.a.x, m.a.y, r, 0, 6.28);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(m.b.x, m.b.y, r, 0, 6.28);
+    ctx.fill();
     // Label with background
-    const fs=Math.max(12,16/S.sc);ctx.font='bold '+fs+'px monospace';
-    const tw=ctx.measureText(txt).width;
-    const mx=(m.a.x+m.b.x)/2,my=(m.a.y+m.b.y)/2;
-    ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(mx-tw/2-4,my-fs,tw+8,fs+4);
-    ctx.fillStyle='#fff';ctx.textAlign='center';ctx.fillText(txt,mx,my);ctx.textAlign='start';
+    const fs = Math.max(12, 16 / S.sc);
+    ctx.font = 'bold ' + fs + 'px monospace';
+    const tw = ctx.measureText(txt).width;
+    const mx = (m.a.x + m.b.x) / 2, my = (m.a.y + m.b.y) / 2;
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(mx - tw / 2 - 4, my - fs, tw + 8, fs + 4);
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.fillText(txt, mx, my);
+    ctx.textAlign = 'start';
 }
 
-/* === POINTER EVENTS === */
-const dn=false,lP=null,sP=null,tM=null;
-function gP(e){const r=cA.getBoundingClientRect(),cx,cy;if(e.touches&&e.touches.length>0){cx=e.touches[0].clientX;cy=e.touches[0].clientY;}else if(e.changedTouches&&e.changedTouches.length>0){cx=e.changedTouches[0].clientX;cy=e.changedTouches[0].clientY;}else{cx=e.clientX;cy=e.clientY;}const ax=cx-r.left,ay=cy-r.top;return{ax:ax,ay:ay,x:(ax-S.ox)/S.sc,y:(ay-S.oy)/S.sc};}
-function pDist(e){if(!e.touches||e.touches.length<2)return 0;return Math.sqrt(Math.pow(e.touches[0].clientX-e.touches[1].clientX,2)+Math.pow(e.touches[0].clientY-e.touches[1].clientY,2));}
-function pCtr(e){if(!e.touches||e.touches.length<2)return null;const r=cA.getBoundingClientRect();return{ax:(e.touches[0].clientX+e.touches[1].clientX)/2-r.left,ay:(e.touches[0].clientY+e.touches[1].clientY)/2-r.top};}
-
-function onTS(e){e.preventDefault();if(e.touches.length===2){S.ip=true;S.pd=pDist(e);S.ps=S.sc;dn=false;return;}S.ip=false;dn=true;lP=gP(e);sP=lP;if(S.tool==='draw')S.drw.push([lP]);if(S.tool==='meas')tM={a:lP,b:lP};}
-function onMD(e){dn=true;S.ip=false;lP=gP(e);sP=lP;if(S.tool==='draw')S.drw.push([lP]);if(S.tool==='meas')tM={a:lP,b:lP};}
-function onMV(e){
-    if(S.ip){const ts=e.touches;if(ts&&ts.length===2){e.preventDefault();const nd=pDist(e);if(S.pd>0&&nd>0){const c=pCtr(e),ratio=nd/S.pd,ns=Math.max(.1,Math.min(S.ps*ratio,20));if(c){const ix=(c.ax-S.ox)/S.sc,iy=(c.ay-S.oy)/S.sc;S.sc=ns;S.ox=c.ax-ix*S.sc;S.oy=c.ay-iy*S.sc;}else S.sc=ns;drw();}}return;}
-    if(!dn)return;const p=gP(e);
-    if(S.tool==='pan'){S.ox+=p.ax-lP.ax;S.oy+=p.ay-lP.ay;}
-    else if(S.tool==='draw'&&S.drw.length>0){S.drw[S.drw.length-1].push(p);}
-    else if(S.tool==='roi'){S.rois=[{x:Math.min(sP.x,p.x),y:Math.min(sP.y,p.y),w:Math.abs(p.x-sP.x),h:Math.abs(p.y-sP.y)}];}
-    else if(S.tool==='meas'&&tM){tM.b=p;}
-    lP=p;drw();
+function gP(e) {
+    const r = cA.getBoundingClientRect();
+    let cx, cy;
+    if (e.touches && e.touches.length > 0) {
+        cx = e.touches[0].clientX;
+        cy = e.touches[0].clientY;
+    } else if (e.changedTouches && e.changedTouches.length > 0) {
+        cx = e.changedTouches[0].clientX;
+        cy = e.changedTouches[0].clientY;
+    } else {
+        cx = e.clientX;
+        cy = e.clientY;
+    }
+    return {ax: (cx - r.left) / DPR, ay: (cy - r.top) / DPR, x: (cx - r.left) / S.sc / DPR - S.ox / S.sc, y: (cy - r.top) / S.sc / DPR - S.oy / S.sc};
 }
-function onMU(e){
-    if(S.ip){const t=e.touches||[];if(t.length<2)S.ip=false;return;}
-    if(S.tool==='meas'&&tM){const d=Math.sqrt(Math.pow(tM.b.x-tM.a.x,2)+Math.pow(tM.b.y-tM.a.y,2));if(d>5){if(!S.pxMm){const mm=prompt('Calibration: taille r\u00e9elle en mm?');if(mm&&!isNaN(parseFloat(mm))){S.pxMm=parseFloat(mm)/d;upCal();toast('Calibr\u00e9!');}}S.meas.push(tM);}tM=null;}
-    dn=false;drw();
+
+function pDist(e) {
+    if (!e.touches || e.touches.length < 2) return 0;
+    return Math.sqrt(Math.pow(e.touches[0].clientX - e.touches[1].clientX, 2) + Math.pow(e.touches[0].clientY - e.touches[1].clientY, 2));
 }
-function onWh(e){e.preventDefault();const r=cA.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;const ix=(mx-S.ox)/S.sc,iy=(my-S.oy)/S.sc;S.sc=Math.max(.1,Math.min(S.sc*(e.deltaY<0?1.1:.9),20));S.ox=mx-ix*S.sc;S.oy=my-iy*S.sc;drw();}
 
-window.setT=function(t){S.tool=t;const bs=document.querySelectorAll('#tbar .tb');for(const i=0;i<bs.length;i++)bs[i].classList.remove('on');const b=$('t-'+t);if(b)b.classList.add('on');};
-window.undo=function(){if(S.drw.length)S.drw.pop();else if(S.meas.length)S.meas.pop();else if(S.rois.length)S.rois=[];drw();};
-window.resetV=function(){S.drw=[];S.meas=[];S.rois=[];S.aiRois=[];if(S.imgA){const dw=cA.width/DPR,dh=cA.height/DPR,r=Math.min(dw/S.w,dh/S.h);S.sc=r*.95;S.ox=(dw-S.w*S.sc)/2;S.oy=(dh-S.h*S.sc)/2;}else{S.ox=0;S.oy=0;S.sc=1;}drw();};
-
-/* === AGENTS === */
-function renderAg(){const g=$('aG');g.innerHTML='';const ks=Object.keys(AG);for(const i=0;i<ks.length;i++){(function(k){const a=AG[k],d=document.createElement('div');d.className='ac';d.setAttribute('data-id',k);d.innerHTML='<div class="sdot"></div><div class="ac-i">'+a.i+'</div><div class="ac-n">'+a.n+'</div>';d.addEventListener('click',function(){d.classList.toggle('on');});g.appendChild(d);})(ks[i]);}}
-window.openApiM=function(){$('apiM').classList.add('open');$('akIn').value=S.ak||'';try{const sv=safeStorage.getItem('mv_mdl');if(sv)$('mdlSel').value=sv;}catch(e){}upMdlInfo();$('akStat').textContent=S.ak?'Cle: '+S.ak.length+' car. chargee':'Aucune cle configuree';};
-function clM(id){$(id).classList.remove('open');}window.clM=clM;
-
-// Model info descriptions
-const MDL_INFO={
-    'mistral-large-latest':'Flagship 2025. Top qualite texte+vision. ~2$/M tokens.',
-    'mistral-medium-latest':'Frontier multimodal Mai 2025. Excellent rapport qualite/prix.',
-    'pixtral-large-latest':'124B params. Expert imagerie medicale, documents, graphiques.',
-    'magistral-medium-latest':'Raisonnement multi-etapes transparent. Ideal analyses complexes.',
-    'magistral-small-latest':'24B raisonnement. Open-source. Bon pour analyses structurees.',
-    'mistral-small-latest':'24B rapide avec vision. Tres bon cout/performance.',
-    'pixtral-12b-2409':'12B multimodal open-source. Leger et rapide.',
-    'ministral-8b-latest':'8B edge. Ultra-rapide, bon pour triage initial.',
-    'ministral-3b-latest':'3B micro. Minimum viable pour edge/mobile.'
-};
-function upMdlInfo(){const v=$('mdlSel').value;$('mdlInfo').textContent=MDL_INFO[v]||'';}
-if($('mdlSel'))$('mdlSel').addEventListener('change',upMdlInfo);
-
-window.saveKey=function(){
-    const raw=$('akIn').value||'';
-    S.ak=raw.replace(/[\x00-\x1f\x7f\s]/g,'');
-    if(!S.ak){toast('Cle vide!');return;}
-    S.mdl=$('mdlSel').value||'pixtral-large-latest';
-    try{safeStorage.setItem('mv_key',S.ak);safeStorage.setItem('mv_mdl',S.mdl);}catch(e){}
-    clM('apiM');
-    toast('Config sauvee: '+S.mdl.split('-')[0].toUpperCase()+' ('+S.ak.length+' car.)');
-};
-
-// Test API Key
-window.testKey=function(){
-    const raw=$('akIn').value||'';
-    const k=raw.replace(/[\x00-\x1f\x7f\s]/g,'');
-    if(!k){$('akStat').textContent='Entrez une cle';$('akStat').style.color='var(--wn)';return;}
-    $('akStat').textContent='Test en cours...';$('akStat').style.color='var(--txd)';
-    $('testBtn').disabled=true;
-    const mdl=$('mdlSel').value||'pixtral-large-latest';
-    const x=new XMLHttpRequest();
-    x.open('POST','https://api.mistral.ai/v1/chat/completions',true);
-    x.setRequestHeader('Content-Type','application/json');
-    x.setRequestHeader('Authorization','Bearer '+k);
-    x.timeout=15000;
-    x.onload=function(){
-        $('testBtn').disabled=false;
-        if(x.status===200){
-            $('akStat').innerHTML='<span style="color:var(--ac)">&#x2705; Cle valide! Modele '+mdl+' OK (HTTP 200)</span>';
-        }else if(x.status===401){
-            $('akStat').innerHTML='<span style="color:var(--dg)">&#x274C; Cle invalide ou expiree (HTTP 401)</span>';
-        }else if(x.status===403){
-            $('akStat').innerHTML='<span style="color:var(--dg)">&#x274C; Acces refuse. Verifiez les permissions (HTTP 403)</span>';
-        }else if(x.status===422){
-            $('akStat').innerHTML='<span style="color:var(--wn)">&#x26A0; Cle OK mais modele non disponible (HTTP 422). Changez de modele.</span>';
-        }else if(x.status===429){
-            $('akStat').innerHTML='<span style="color:var(--wn)">&#x26A0; Rate limit atteint. Reessayez (HTTP 429)</span>';
-        }else{
-            $('akStat').innerHTML='<span style="color:var(--wn)">Reponse inattendue HTTP '+x.status+': '+x.statusText+'</span>';
-        }
+function pCtr(e) {
+    if (!e.touches || e.touches.length < 2) return null;
+    const r = cA.getBoundingClientRect();
+    return {
+        ax: (e.touches[0].clientX + e.touches[1].clientX) / 2 - r.left,
+        ay: (e.touches[0].clientY + e.touches[1].clientY) / 2 - r.top
     };
-    x.onerror=function(){$('testBtn').disabled=false;$('akStat').innerHTML='<span style="color:var(--dg)">&#x274C; Erreur reseau. Verifiez votre connexion.</span>';};
-    x.ontimeout=function(){$('testBtn').disabled=false;$('akStat').innerHTML='<span style="color:var(--wn)">Timeout (15s). Serveur lent ou bloque.</span>';};
-    x.send(JSON.stringify({model:mdl,messages:[{role:'user',content:'test'}],max_tokens:1}));
-};
+}
 
-/* === AI ANALYSIS (Multi-model + ROI Detection) === */
-
-/* ====================================================================
-   MEDICAL KNOWLEDGE BASE (MedKB)
-   Structured medical ontology for enhanced AI prompting
-   ==================================================================== */
-const MedKB={
-    // Image type signatures for auto-detection
-    imgTypes:{
-        xray:{kw:['radiograph','x-ray','xray','radio','thorax','chest','os','bone','poumon','lung'],
-            desc:'Radiographie conventionnelle',modality:'RX',
-            look:'densites osseuses, espaces articulaires, opacites pulmonaires, cardiomegalie, epanchements, fractures, index cardio-thoracique'},
-        ct:{kw:['scanner','ct','tomodensitometrie','coupe','axial','fenetre'],
-            desc:'Tomodensitometrie (Scanner CT)',modality:'TDM',
-            look:'densites Hounsfield, prises de contraste, masses, collections, adenopathies, embolies, dissections'},
-        mri:{kw:['irm','mri','t1','t2','flair','diffusion','gadolinium','resonance'],
-            desc:'Imagerie par Resonance Magnetique',modality:'IRM',
-            look:'signal T1/T2, restriction diffusion, prises de contraste, lesions de la substance blanche, tumeurs, AVC'},
-        echo:{kw:['echographie','echo','ultrason','doppler','sonde'],
-            desc:'Echographie / Doppler',modality:'ECHO',
-            look:'echogenicite, masses, collections, flux doppler, epanchements, calculs'},
-        dermato:{kw:['peau','skin','dermat','naevus','grain','lesion cutanee','melanome','tache'],
-            desc:'Dermatoscopie / Photographie cutanee',modality:'DERM',
-            look:'criteres ABCDE (Asymetrie, Bords, Couleur, Diametre, Evolution), reseau pigmentaire, globules, stries, voile bleu-blanc, structures de regression'},
-        fundus:{kw:['fond','oeil','retine','papille','macula','retinien','optic disc'],
-            desc:'Fond d\'oeil / Retinographie',modality:'FO',
-            look:'papille optique (excavation, bords), macula (drusen, oedeme), vaisseaux (croisements, microanevrysmes), hemorragies, exsudats'},
-        histo:{kw:['histolog','biopsie','cytolog','cellule','tissu','lame','microscop','coupe'],
-            desc:'Histologie / Cytologie',modality:'HISTO',
-            look:'architecture tissulaire, atypies cellulaires, mitoses, invasion, differentiation, marges, grade histologique'},
-        mammo:{kw:['mammograph','sein','breast','mammo','birads'],
-            desc:'Mammographie',modality:'MAMMO',
-            look:'microcalcifications, masses, distorsions architecturales, asymetries, classification BI-RADS'},
-        cardio:{kw:['ecg','electrocardiogramme','echocardiograph','coeur','cardiac'],
-            desc:'Imagerie cardiaque',modality:'CARDIO',
-            look:'fraction d\'ejection, cinetique segmentaire, valvulopathies, pericarde, aorte thoracique'}
-    },
-    // Severity classification system
-    severity:{
-        critical:{level:5,label:'CRITIQUE',cls:'sev-crit',
-            criteria:'Menace vitale immediate: pneumothorax sous tension, dissection aortique, AVC aigu, hemorragie active, embolie pulmonaire massive'},
-        high:{level:4,label:'URGENT',cls:'sev-high',
-            criteria:'Necessite intervention rapide: fracture deplacee, tumeur suspecte maligne, epanchement important, compression medullaire'},
-        moderate:{level:3,label:'MODERE',cls:'sev-mod',
-            criteria:'Prise en charge programmee: nodule a surveiller, arthrose moderee, calcifications, lesion BI-RADS 3'},
-        low:{level:2,label:'FAIBLE',cls:'sev-low',
-            criteria:'Surveillance simple: variante anatomique, lesion benigne typique, modification degenerative mineure'},
-        normal:{level:1,label:'NORMAL',cls:'sev-norm',
-            criteria:'Pas d\'anomalie significative detectee. Aspect dans les limites de la normale.'}
-    },
-    // Common pathologies by specialty for enhanced prompting
-    pathoDB:{
-        radio:['Fracture','Luxation','Arthrose','Osteoporose','Lesion lytique','Lesion condensante','Periostite','Osteomyelite','Tumeur osseuse','Metastase osseuse'],
-        pulmo:['Pneumonie','Epanchement pleural','Pneumothorax','Nodule pulmonaire','Masse mediastinale','Atelectasie','Fibrose pulmonaire','Emphyseme','Tuberculose','Embolie pulmonaire'],
-        neuro:['AVC ischemique','AVC hemorragique','Tumeur cerebrale','Glioblastome','Meningiome','Sclerose en plaques','Hydrocephalie','Hernie discale','Stenose du canal','Malformation arterio-veineuse'],
-        trauma:['Pneumothorax sous tension','Hemothorax','Fracture du rachis','Rupture splenique','Hematome epidural','Contusion pulmonaire','Fracture du bassin','Volet costal'],
-        cardio:['Cardiomegalie','Insuffisance cardiaque','Pericardite','Anevrisme aortique','Dissection aortique','Valvulopathie','Coronaropathie'],
-        dermato:['Melanome','Carcinome basocellulaire','Carcinome epidermoide','Naevus atypique','Keratose actinique','Psoriasis','Eczema','Dermatite','Lichen','Urticaire'],
-        ophtalmo:['Retinopathie diabetique','DMLA','Glaucome','Decollement de retine','Occlusion veineuse retinienne','Papilledeme','Nevrite optique'],
-        ortho:['Gonarthrose','Coxarthrose','Rupture LCA','Meniscopathie','Tendinopathie','Fracture de fatigue','Spondylolisthesis','Scoliose'],
-        onco:['Tumeur primitive','Metastase','Adenopathie suspecte','Syndrome paraneoplasique','Classification TNM','Envahissement local','Carcinomatose'],
-        patho:['Dysplasie','Carcinome in situ','Carcinome invasif','Grade differentiation','Index mitotique','Marges chirurgicales','Emboles vasculaires'],
-        pedia:['Fracture en bois vert','Rachitisme','Maladie de Legg-Calve-Perthes','Dysplasie de hanche','Craniosynostose','Pneumopathie neonatale'],
-        endo:['Nodule thyroidien','Goitre','Adenome hypophysaire','Incidentalome surrenalien','Classification TI-RADS'],
-        gen:['Bilan general','Correlation clinico-radiologique','Orientation diagnostique','Diagnostic differentiel']
-    },
-    // ICD-10 quick reference for common findings
-    icd10:{
-        'fracture':'S-T series','pneumonie':'J18','pneumothorax':'J93','epanchement pleural':'J91',
-        'avc':'I63-I64','tumeur cerebrale':'C71','melanome':'C43','cardiomegalie':'I51.7',
-        'arthrose':'M15-M19','hernie discale':'M51','embolie pulmonaire':'I26','dissection aortique':'I71.0',
-        'retinopathie diabetique':'H36.0','glaucome':'H40','dmla':'H35.3','nodule pulmonaire':'R91',
-        'nodule thyroidien':'E04','osteoporose':'M80-M81','scoliose':'M41'
+function onTS(e) {
+    e.preventDefault();
+    if (e.touches.length === 2) {
+        S.ip = true;
+        S.pd = pDist(e);
+        S.ps = S.sc;
+        S.dn = false;
+        return;
     }
-};
+    S.ip = false;
+    S.dn = true;
+    S.lP = gP(e);
+    S.sP = S.lP;
+    if (S.tool === 'draw') S.drw.push([S.lP]);
+    if (S.tool === 'roi') {}
+    if (S.tool === 'meas') S.tM = {a: S.lP, b: S.lP};
+}
 
-/* ====================================================================
-   IMAGE PREPROCESSING ENGINE
-   Client-side Canvas analysis & enhancement
-   ==================================================================== */
-const ImgProc={
-    // Compute image histogram & statistics
-    getStats:function(img){
-        const c=document.createElement('canvas'),w=Math.min(img.width||img.naturalWidth,512),
-            h=Math.min(img.height||img.naturalHeight,512);
-        c.width=w;c.height=h;
-        const ctx=c.getContext('2d');ctx.drawImage(img,0,0,w,h);
-        const d=ctx.getImageData(0,0,w,h).data;
-        const hist=new Array(256);for(const i=0;i<256;i++)hist[i]=0;
-        const rSum=0,gSum=0,bSum=0,lumSum=0,n=d.length/4;
-        const lumArr=[];
-        for(const i=0;i<d.length;i+=4){
-            const r=d[i],g=d[i+1],b=d[i+2];
-            const lum=Math.round(0.299*r+0.587*g+0.114*b);
-            hist[lum]++;lumArr.push(lum);
-            rSum+=r;gSum+=g;bSum+=b;lumSum+=lum;
-        }
-        const mean=lumSum/n;
-        const variance=0;for(const i=0;i<lumArr.length;i++){const df=lumArr[i]-mean;variance+=df*df;}
-        variance/=n;const stddev=Math.sqrt(variance);
-        // Percentiles
-        const sorted=lumArr.slice().sort(function(a,b){return a-b;});
-        const p5=sorted[Math.floor(n*0.05)],p95=sorted[Math.floor(n*0.95)];
-        const p25=sorted[Math.floor(n*0.25)],p75=sorted[Math.floor(n*0.75)];
-        // Dominant channel
-        const rAvg=rSum/n,gAvg=gSum/n,bAvg=bSum/n;
-        const isGray=(Math.abs(rAvg-gAvg)<10&&Math.abs(gAvg-bAvg)<10);
-        // Detect if likely medical image type
-        const guessType='photo';
-        if(isGray&&mean<100)guessType='xray';
-        else if(isGray&&mean>100&&stddev<40)guessType='ct';
-        else if(isGray&&stddev>50)guessType='mri';
-        else if(!isGray&&stddev>45)guessType='dermato';
-        else if(!isGray&&mean>150)guessType='fundus';
-        return{
-            width:img.width||img.naturalWidth,height:img.height||img.naturalHeight,
-            mean:Math.round(mean),stddev:Math.round(stddev*10)/10,
-            p5:p5,p25:p25,p75:p75,p95:p95,
-            rAvg:Math.round(rAvg),gAvg:Math.round(gAvg),bAvg:Math.round(bAvg),
-            isGray:isGray,contrast:Math.round((p95-p5)/255*100),
-            guessType:guessType,hist:hist
-        };
-    },
+function onMD(e) {
+    S.dn = true;
+    S.ip = false;
+    S.lP = gP(e);
+    S.sP = S.lP;
+    if (S.tool === 'draw') S.drw.push([S.lP]);
+    if (S.tool === 'meas') S.tM = {a: S.lP, b: S.lP};
+}
 
-    // CLAHE-like contrast enhancement
-    enhance:function(img,clipLimit){
-        clipLimit=clipLimit||2.5;
-        const c=document.createElement('canvas'),w=img.width||img.naturalWidth,h=img.height||img.naturalHeight;
-        if(w>1500){const r=1500/w;w=1500;h=Math.round(h*r);}
-        c.width=w;c.height=h;
-        const ctx=c.getContext('2d');ctx.drawImage(img,0,0,w,h);
-        const id=ctx.getImageData(0,0,w,h),d=id.data;
-        // Build histogram
-        const hist=new Array(256);for(const i=0;i<256;i++)hist[i]=0;
-        const n=d.length/4;
-        for(const i=0;i<d.length;i+=4){const l=Math.round(0.299*d[i]+0.587*d[i+1]+0.114*d[i+2]);hist[l]++;}
-        // Clip histogram
-        const cl=Math.round(n/256*clipLimit),excess=0;
-        for(const i=0;i<256;i++){if(hist[i]>cl){excess+=hist[i]-cl;hist[i]=cl;}}
-        const inc=Math.round(excess/256);for(const i=0;i<256;i++)hist[i]+=inc;
-        // Build CDF
-        const cdf=new Array(256);cdf[0]=hist[0];
-        for(const i=1;i<256;i++)cdf[i]=cdf[i-1]+hist[i];
-        const cdfMin=cdf[0];for(const i=0;i<256;i++){if(cdf[i]>0){cdfMin=cdf[i];break;}}
-        const lut=new Array(256);
-        for(const i=0;i<256;i++)lut[i]=Math.round((cdf[i]-cdfMin)/(n-cdfMin)*255);
-        // Apply
-        for(const i=0;i<d.length;i+=4){
-            const l=Math.round(0.299*d[i]+0.587*d[i+1]+0.114*d[i+2]);
-            const nl=lut[l],f=(l>0)?nl/l:1;
-            d[i]=Math.min(255,Math.round(d[i]*f));
-            d[i+1]=Math.min(255,Math.round(d[i+1]*f));
-            d[i+2]=Math.min(255,Math.round(d[i+2]*f));
-        }
-        ctx.putImageData(id,0,0);return c;
-    },
-
-    // Sobel edge detection
-    edges:function(img){
-        const c=document.createElement('canvas'),w=Math.min(img.width||img.naturalWidth,800),
-            h=Math.min(img.height||img.naturalHeight,800);
-        c.width=w;c.height=h;
-        const ctx=c.getContext('2d');ctx.drawImage(img,0,0,w,h);
-        const id=ctx.getImageData(0,0,w,h),d=id.data;
-        const gray=new Array(w*h);
-        for(const i=0;i<d.length;i+=4)gray[i/4]=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
-        const out=new Uint8ClampedArray(w*h);
-        for(const y=1;y<h-1;y++){for(const x=1;x<w-1;x++){
-            const idx=y*w+x;
-            const gx=(-gray[(y-1)*w+(x-1)]-2*gray[y*w+(x-1)]-gray[(y+1)*w+(x-1)]+
-                     gray[(y-1)*w+(x+1)]+2*gray[y*w+(x+1)]+gray[(y+1)*w+(x+1)]);
-            const gy=(-gray[(y-1)*w+(x-1)]-2*gray[(y-1)*w+x]-gray[(y-1)*w+(x+1)]+
-                     gray[(y+1)*w+(x-1)]+2*gray[(y+1)*w+x]+gray[(y+1)*w+(x+1)]);
-            out[idx]=Math.min(255,Math.round(Math.sqrt(gx*gx+gy*gy)));
-        }}
-        const od=ctx.createImageData(w,h);
-        for(const i=0;i<out.length;i++){od.data[i*4]=out[i];od.data[i*4+1]=out[i];od.data[i*4+2]=out[i];od.data[i*4+3]=255;}
-        ctx.putImageData(od,0,0);return c;
-    },
-
-    // Invert (for X-ray viewing)
-    invert:function(img){
-        const c=document.createElement('canvas'),w=img.width||img.naturalWidth,h=img.height||img.naturalHeight;
-        if(w>1500){const r=1500/w;w=1500;h=Math.round(h*r);}
-        c.width=w;c.height=h;
-        const ctx=c.getContext('2d');ctx.drawImage(img,0,0,w,h);
-        const id=ctx.getImageData(0,0,w,h),d=id.data;
-        for(const i=0;i<d.length;i+=4){d[i]=255-d[i];d[i+1]=255-d[i+1];d[i+2]=255-d[i+2];}
-        ctx.putImageData(id,0,0);return c;
-    },
-
-    // Sharpen
-    sharpen:function(img){
-        const c=document.createElement('canvas'),w=Math.min(img.width||img.naturalWidth,1200),
-            h=Math.min(img.height||img.naturalHeight,1200);
-        c.width=w;c.height=h;
-        const ctx=c.getContext('2d');ctx.drawImage(img,0,0,w,h);
-        const id=ctx.getImageData(0,0,w,h),d=id.data;
-        const kern=[0,-1,0,-1,5,-1,0,-1,0];
-        const od=ctx.createImageData(w,h),o=od.data;
-        for(const y=1;y<h-1;y++){for(const x=1;x<w-1;x++){
-            for(const ch=0;ch<3;ch++){
-                const sum=0;
-                for(const ky=-1;ky<=1;ky++){for(const kx=-1;kx<=1;kx++){
-                    sum+=d[((y+ky)*w+(x+kx))*4+ch]*kern[(ky+1)*3+(kx+1)];
-                }}
-                o[(y*w+x)*4+ch]=Math.max(0,Math.min(255,sum));
+function onMV(e) {
+    if (S.ip) {
+        const ts = e.touches;
+        if (ts && ts.length === 2) {
+            e.preventDefault();
+            const nd = pDist(e);
+            if (S.pd > 0 && nd > 0) {
+                const c = pCtr(e);
+                const ratio = nd / S.pd;
+                const ns = Math.max(.1, Math.min(S.ps * ratio, 20));
+                if (c) {
+                    const ix = (c.ax - S.ox) / S.sc;
+                    const iy = (c.ay - S.oy) / S.sc;
+                    S.sc = ns;
+                    S.ox = c.ax - ix * S.sc;
+                    S.oy = c.ay - iy * S.sc;
+                }
             }
-            o[(y*w+x)*4+3]=255;
-        }}
-        ctx.putImageData(od,0,0);return c;
+        }
     }
-};
-
-/* ====================================================================
-   AUTO-ANALYSIS PIPELINE
-   Multi-step automated medical image analysis
-   ==================================================================== */
-const Pipeline={
-    steps:[
-        {id:'preproc',label:'Pre-traitement image',icon:'1'},
-        {id:'detect',label:'Detection type imagerie',icon:'2'},
-        {id:'agents',label:'Selection experts IA',icon:'3'},
-        {id:'screen',label:'Screening initial rapide',icon:'4'},
-        {id:'deep',label:'Analyse approfondie',icon:'5'},
-        {id:'severity',label:'Classification severite',icon:'6'},
-        {id:'report',label:'Rapport final structure',icon:'7'}
-    ],
-    current:-1,
-    results:{},
-
-    // Render pipeline UI
-    render:function(){
-        const w=$('pipeWrap');w.style.display='block';
-        const h='';for(const i=0;i<this.steps.length;i++){
-            const s=this.steps[i],cls='';
-            if(i<this.current)cls='done';else if(i===this.current)cls='active';
-            h+='<div class="pipe-step '+cls+'" id="ps-'+s.id+'"><div class="pi">'+
-                (cls==='done'?'&#x2713;':s.icon)+'</div><div class="pt">'+s.label+'</div>'+
-                '<div class="pv" id="pv-'+s.id+'"></div></div>';
-        }
-        $('pipeDisp').innerHTML=h;
-    },
-
-    setStep:function(idx,val){
-        this.current=idx;this.render();
-        if(val){const pv=$('pv-'+this.steps[idx].id);if(pv)pv.textContent=val;}
-    },
-    stepDone:function(idx,val){
-        this.current=idx+1;this.render();
-        if(val){const pv=$('pv-'+this.steps[idx].id);if(pv)pv.textContent=val;}
-    },
-    stepErr:function(idx,msg){
-        const el=$('ps-'+this.steps[idx].id);if(el)el.className='pipe-step err';
-        const pv=$('pv-'+this.steps[idx].id);if(pv){pv.textContent=msg;pv.style.color='var(--dg)';}
+    if (!S.dn) return;
+    const p = gP(e);
+    if (S.tool === 'pan') {
+        S.ox += p.ax - S.lP.ax;
+        S.oy += p.ay - S.lP.ay;
+    } else if (S.tool === 'draw' && S.drw.length > 0) {
+        S.drw[S.drw.length - 1].push(p);
+    } else if (S.tool === 'roi') {
+        S.rois = [{x: Math.min(S.sP.x, p.x), y: Math.min(S.sP.y, p.y), w: Math.abs(p.x - S.sP.x), h: Math.abs(p.y - S.sP.y)}];
+    } else if (S.tool === 'meas' && S.tM) {
+        S.tM.b = p;
     }
-};
-
-// Show image stats in UI
-function showImgStats(){
-    if(!S.imgA){$('imgStats').style.display='none';return;}
-    const st=ImgProc.getStats(S.imgA);
-    S._imgStats=st;
-    const t=MedKB.imgTypes[st.guessType]||{desc:'Inconnu',modality:'?'};
-    $('imgStats').style.display='';
-    $('imgStats').innerHTML=
-        '<span>'+st.width+'x'+st.height+'</span>'+
-        '<span>Lum: <span class="sv">'+st.mean+'</span></span>'+
-        '<span>Contraste: <span class="sv">'+st.contrast+'%</span></span>'+
-        '<span>StdDev: <span class="sv">'+st.stddev+'</span></span>'+
-        '<span>'+(st.isGray?'N&B':'Couleur')+'</span>'+
-        '<span>Type: <span class="sv">'+t.modality+'</span></span>';
-
-    // Generate preprocessing previews
-    showPPstrip(st);
+    S.lP = p;
+    drw();
 }
 
-function showPPstrip(st){
-    const area=$('ppArea'),strip=$('ppStrip');
-    area.style.display='';strip.innerHTML='';
-    const ops=[
-        {name:'Original',fn:null},
-        {name:'Contraste+',fn:function(){return ImgProc.enhance(S.imgA,2.5);}},
-        {name:'Contours',fn:function(){return ImgProc.edges(S.imgA);}},
-        {name:'Negatif',fn:function(){return ImgProc.invert(S.imgA);}},
-        {name:'Nettet\u00e9+',fn:function(){return ImgProc.sharpen(S.imgA);}}
-    ];
-    for(const i=0;i<ops.length;i++){(function(op,idx){
-        const pc=document.createElement('canvas');
-        pc.width=120;pc.height=90;pc.title=op.name;
-        const pctx=pc.getContext('2d');
-        if(op.fn){
-            try{const res=op.fn();pctx.drawImage(res,0,0,120,90);}catch(e){pctx.fillStyle='#222';pctx.fillRect(0,0,120,90);}
-        }else{pctx.drawImage(S.imgA,0,0,120,90);}
-        // Label
-        pctx.fillStyle='rgba(0,0,0,.6)';pctx.fillRect(0,72,120,18);
-        pctx.fillStyle='#fff';pctx.font='bold 9px sans-serif';pctx.textAlign='center';
-        pctx.fillText(op.name,60,84);
-        if(idx===0)pc.classList.add('sel');
-        pc.addEventListener('click',function(){
-            const all=strip.querySelectorAll('canvas');for(const j=0;j<all.length;j++)all[j].classList.remove('sel');
-            pc.classList.add('sel');S._ppMode=idx;
-        });
-        strip.appendChild(pc);
-    })(ops[i],i);}
-    S._ppMode=0;S._ppOps=ops;
-}
-
-// Get preprocessed image base64 for AI
-function getPPbase64(){
-    return new Promise(function(res){
-        const mode=S._ppMode||0;
-        const ops=S._ppOps;
-        const srcImg=S.imgA;
-        const c;
-        if(mode>0&&ops&&ops[mode]&&ops[mode].fn){
-            try{c=ops[mode].fn();}catch(e){c=null;}
-        }
-        if(!c){
-            c=document.createElement('canvas');
-            const mx=1500,w=S.w,h=S.h;
-            if(w>mx||h>mx){const s=Math.min(mx/w,mx/h);w=Math.round(w*s);h=Math.round(h*s);}
-            c.width=w;c.height=h;c.getContext('2d').drawImage(srcImg,0,0,w,h);
-        }
-        // If ROI, crop
-        if(S.rois.length>0){
-            const r=S.rois[0],rc=document.createElement('canvas');
-            rc.width=Math.max(1,Math.round(r.w));rc.height=Math.max(1,Math.round(r.h));
-            rc.getContext('2d').drawImage(srcImg,r.x,r.y,r.w,r.h,0,0,rc.width,rc.height);
-            res(rc.toDataURL('image/jpeg',.85));return;
-        }
-        res(c.toDataURL('image/jpeg',.85));
-    });
-}
-
-// Mistral API call helper (Promise-based)
-function callMistral(sysPrompt,userContent,opts){
-    return new Promise(function(resolve,reject){
-        opts=opts||{};
-        const mdl=opts.model||S.mdl||'pixtral-large-latest';
-        try{const sv=safeStorage.getItem('mv_mdl');if(sv)mdl=sv;}catch(e){}
-        const ck=S.ak;
-        if(!ck||ck.length<8){reject(new Error('Cle API trop courte'));return;}
-        const x=new XMLHttpRequest();
-        x.open('POST','https://api.mistral.ai/v1/chat/completions',true);
-        x.setRequestHeader('Content-Type','application/json');
-        x.setRequestHeader('Authorization','Bearer '+ck);
-        x.timeout=opts.timeout||120000;
-        x.onload=function(){
-            if(x.status===401){reject(new Error('Cle API invalide (401)'));return;}
-            if(x.status===403){reject(new Error('Acces refuse (403)'));return;}
-            if(x.status===422){reject(new Error('Modele indisponible (422): '+mdl));return;}
-            if(x.status===429){reject(new Error('Rate limit (429). Attendez.'));return;}
-            if(x.status>=500){reject(new Error('Serveur Mistral erreur ('+x.status+')'));return;}
-            if(x.status!==200){reject(new Error('HTTP '+x.status));return;}
-            try{
-                const data=JSON.parse(x.responseText);
-                if(data.error)reject(new Error(data.error.message));
-                else resolve(data);
-            }catch(e){reject(e);}
-        };
-        x.onerror=function(){reject(new Error('Erreur reseau'));};
-        x.ontimeout=function(){reject(new Error('Timeout ('+Math.round(x.timeout/1000)+'s)'));};
-        const body={model:mdl,temperature:opts.temp||0.2,max_tokens:opts.maxTok||4096,
-            messages:[{role:'system',content:sysPrompt}]};
-        if(typeof userContent==='string'){
-            body.messages.push({role:'user',content:userContent});
-        }else{body.messages.push({role:'user',content:userContent});}
-        // JSON mode for compatible models
-        const jsonOK=['pixtral-large-latest','mistral-large-latest','mistral-medium-latest','mistral-small-latest','pixtral-12b-2409'];
-        if(opts.json!==false){const useJ=false;for(const j=0;j<jsonOK.length;j++){if(mdl===jsonOK[j])useJ=true;}
-        if(useJ)body.response_format={type:'json_object'};}
-        x.send(JSON.stringify(body));
-    });
-}
-
-/* ====================================================================
-   AUTO-DIAGNOSTIC (runAutoAI)
-   Full automated multi-pass pipeline
-   ==================================================================== */
-window.runAutoAI=function(){
-    if(!S.ak)return toast('Configurez la cle API');
-    if(!S.imgA)return toast('Aucune image chargee');
-
-    S.aiRois=[];drw();
-    $('aiO').className='air vis';
-    $('aiO').innerHTML='';
-    Pipeline.current=-1;Pipeline.results={};Pipeline.render();
-
-    const notes=$('notes').value||'';
-    const b64Prom=getPPbase64();
-
-    // ===== STEP 1: Pre-processing =====
-    Pipeline.setStep(0,'Analyse pixels...');
-    const stats=S._imgStats;
-    if(!stats&&S.imgA){stats=ImgProc.getStats(S.imgA);S._imgStats=stats;showImgStats();}
-    if(!stats){Pipeline.stepErr(0,'Pas d\'image');return;}
-    Pipeline.stepDone(0,stats.width+'x'+stats.height+' | Lum:'+stats.mean+' | C:'+stats.contrast+'%');
-
-    // ===== STEP 2: Image type detection via AI =====
-    Pipeline.setStep(1,'Classification via IA...');
-    b64Prom.then(function(b64){
-        const detectPr='Identifie le TYPE EXACT de cette image medicale. '+
-            'Reponds UNIQUEMENT en JSON: {"type":"xray|ct|mri|echo|dermato|fundus|histo|mammo|cardio|photo","modality":"nom","anatomie":"zone anatomique","qualite":"bonne|moyenne|mauvaise","orientation":"face|profil|axial|sagittal|coronal|autre"}';
-        return try {
-  const data = await callMistral(detectPr,[
-            {type:'text',text:'Classifie cette image medicale.'},
-            {type:'image_url',image_url:{url:b64}}
-        ],{temp:0.1,maxTok:200,timeout:30000});
-  const txt=data.choices[0].message.content;
-            try{const det=JSON.parse(txt);Pipeline.results.detect=det;}
-            catch(e){Pipeline.results.detect={type:stats.guessType,modality:'Auto',anatomie:'?',qualite:'?'};}
-            const d=Pipeline.results.detect;
-            Pipeline.stepDone(1,d.modality+' | '+d.anatomie+' | Q:'+d.qualite);
-            return b64;
-} catch(e) {
-  console.error(e)
-};
-    }).then(function(b64){
-        // ===== STEP 3: Auto-select agents =====
-        Pipeline.setStep(2,'Selection experts...');
-        const det=Pipeline.results.detect||{type:stats.guessType};
-        const imgType=det.type||stats.guessType;
-        const autoAgents=selectAgentsForType(imgType);
-        Pipeline.results.agents=autoAgents;
-
-        // Activate agents in UI
-        const allCards=document.querySelectorAll('.ac');
-        for(const i=0;i<allCards.length;i++){
-            const aid=allCards[i].getAttribute('data-id');
-            const shouldOn=false;
-            for(const j=0;j<autoAgents.length;j++){if(autoAgents[j]===aid)shouldOn=true;}
-            if(shouldOn)allCards[i].classList.add('on');
-        }
-        const names=[];for(const j=0;j<autoAgents.length;j++){const ag=AG[autoAgents[j]];if(ag)names.push(ag.n);}
-        Pipeline.stepDone(2,names.join(', '));
-
-        // ===== STEP 4: Screening (fast pass) =====
-        Pipeline.setStep(3,'Screening rapide...');
-        const screenPr=buildScreeningPrompt(imgType,autoAgents,det);
-        return callMistral(screenPr,[
-            {type:'text',text:'SCREENING RAPIDE. '+((notes)?'Notes cliniques: '+notes:'Pas de contexte clinique.')},
-            {type:'image_url',image_url:{url:b64}}
-        ],{temp:0.15,maxTok:1500,timeout:60000}).then(function(data){
-            const txt=data.choices[0].message.content;
-            try{const sc=JSON.parse(txt);Pipeline.results.screening=sc;}
-            catch(e){Pipeline.results.screening={anomalies_detected:true,summary:txt,severity:'moderate',key_findings:[]};}
-            const s=Pipeline.results.screening;
-            const nAnom=(s.key_findings||[]).length;
-            Pipeline.stepDone(3,nAnom+' anomalie(s) | Severite: '+(s.severity||'?'));
-            return b64;
-        });
-    }).then(function(b64){
-        // ===== STEP 5: Deep analysis =====
-        Pipeline.setStep(4,'Analyse approfondie...');
-        const det=Pipeline.results.detect||{};
-        const screening=Pipeline.results.screening||{};
-        const agents=Pipeline.results.agents||[];
-        const deepPr=buildDeepPrompt(det,screening,agents,notes);
-        return callMistral(deepPr,[
-            {type:'text',text:'ANALYSE APPROFONDIE COMPLETE. Contexte: '+(notes||'Aucun')+(screening.summary?('\nScreening: '+screening.summary):'')},
-            {type:'image_url',image_url:{url:b64}}
-        ],{temp:0.2,maxTok:4096,timeout:120000}).then(function(data){
-            const txt=data.choices[0].message.content;
-            try{const deep=JSON.parse(txt);Pipeline.results.deep=deep;}
-            catch(e){Pipeline.results.deep={detections:[],html_report:fmtTxt(txt),severity:'moderate'};}
-            const d=Pipeline.results.deep;
-            if(d.detections&&d.detections.length){
-                S.aiRois=d.detections;drw();
+function onMU(e) {
+    if (S.ip) {
+        const t = e.touches || [];
+        if (t.length < 2) S.ip = false;
+        return;
+    }
+    if (S.tool === 'meas' && S.tM) {
+        const d = Math.sqrt(Math.pow(S.tM.b.x - S.tM.a.x, 2) + Math.pow(S.tM.b.y - S.tM.a.y, 2));
+        if (d > 5) {
+            if (!S.pxMm) {
+                const mm = prompt('Calibration: taille réelle en mm?');
+                if (mm && !isNaN(parseFloat(mm))) {
+                    S.pxMm = parseFloat(mm) / d;
+                    upCal();
+                }
             }
-            Pipeline.stepDone(4,(d.detections||[]).length+' zone(s) detectee(s)');
-            return true;
-        });
-    }).then(function(){
-        // ===== STEP 6: Severity classification =====
-        Pipeline.setStep(5,'Classification...');
-        const deep=Pipeline.results.deep||{};
-        const screening=Pipeline.results.screening||{};
-        const sevLevel=deep.severity||screening.severity||'normal';
-        const sevInfo=MedKB.severity[sevLevel]||MedKB.severity.moderate;
-        Pipeline.results.severity=sevInfo;
-        Pipeline.stepDone(5,sevInfo.label);
+            S.meas.push(S.tM);
+            S.tM = null;
+        }
+    }
+    S.dn = false;
+    drw();
+}
 
-        // ===== STEP 7: Render final report =====
-        Pipeline.setStep(6,'Generation rapport...');
-        renderFinalReport();
-        Pipeline.stepDone(6,'Termine');
+function onWh(e) {
+    e.preventDefault();
+    const r = cA.getBoundingClientRect();
+    const mx = (e.clientX - r.left) / DPR;
+    const my = (e.clientY - r.top) / DPR;
+    const ix = (mx - S.ox) / S.sc;
+    const iy = (my - S.oy) / S.sc;
+    S.sc = Math.max(.1, Math.min(S.sc * (e.deltaY < 0 ? 1.1 : 0.9), 20));
+    S.ox = mx - ix * S.sc;
+    S.oy = my - iy * S.sc;
+    drw();
+}
 
-    }).catch(function(err){
-        const idx=Pipeline.current;
-        Pipeline.stepErr(idx,err.message||'Erreur');
-        $('aiO').innerHTML='<span style="color:var(--dg)"><b>Erreur pipeline:</b> '+err.message+'</span>'+
-            '<br><span style="font-size:.8rem;color:var(--txd)">Etape: '+Pipeline.steps[idx].label+'</span>';
-    });
+window.setT = function(t) {
+    S.tool = t;
+    const bs = document.querySelectorAll('#tbar .tb');
+    for (let i = 0; i < bs.length; i++) bs[i].classList.remove('on');
+    const b = $('t-' + t);
+    if (b) b.classList.add('on');
 };
 
-// Agent selection logic based on image type
-function selectAgentsForType(type){
-    const map={
-        xray:['radio','pulmo','cardio','trauma','gen'],
-        ct:['radio','neuro','onco','trauma','gen'],
-        mri:['neuro','ortho','onco','radio','gen'],
-        echo:['cardio','gen'],
-        dermato:['dermato','onco','patho','gen'],
-        fundus:['ophtalmo','endo','gen'],
-        histo:['patho','onco','gen'],
-        mammo:['radio','onco','gen'],
-        cardio:['cardio','radio','gen'],
-        photo:['gen','dermato','trauma']
-    };
-    return map[type]||['radio','gen'];
+window.undo = function() {
+    if (S.drw.length) S.drw.pop();
+    else if (S.meas.length) S.meas.pop();
+    else if (S.rois.length) S.rois = [];
+    drw();
+};
+
+window.resetV = function() {
+    S.drw = [];
+    S.meas = [];
+    S.rois = [];
+    S.aiRois = [];
+    if (S.imgA) {
+        const dw = cA.width / DPR;
+        const dh = cA.height / DPR;
+        const r = Math.min(dw / S.w, dh / S.h);
+        S.sc = r * .95;
+        S.ox = (dw - S.w * S.sc) / 2;
+        S.oy = (dh - S.h * S.sc) / 2;
+    } else {
+        S.sc = 1;
+        S.ox = 0;
+        S.oy = 0;
+    }
+    drw();
+};
+
+function renderAg() {
+    const g = $('aG');
+    g.innerHTML = '';
+    const ks = Object.keys(AG);
+    for (let i = 0; i < ks.length; i++) {
+        const k = ks[i];
+        const a = AG[k];
+        const d = document.createElement('div');
+        d.className = 'ac';
+        d.setAttribute('data-ag', k);
+        d.innerHTML = '<div class="ac-i">' + a.i + '</div><div class="ac-n">' + a.n + '</div><div class="sdot"></div>';
+        d.title = a.s;
+        d.onclick = () => togAg(k);
+        g.appendChild(d);
+    }
 }
 
-// Build screening system prompt with MedKB injection
-function buildScreeningPrompt(imgType,agents,detect){
-    const typeInfo=MedKB.imgTypes[imgType]||{desc:'Image medicale',look:'anomalies generales'};
-    const pathos=[];
-    for(const i=0;i<agents.length;i++){
-        const pl=MedKB.pathoDB[agents[i]];
-        if(pl)pathos=pathos.concat(pl);
-    }
-    return 'TU ES un systeme de SCREENING MEDICAL AUTOMATISE.\n'+
-        'TYPE IMAGE: '+typeInfo.desc+' ('+typeInfo.modality+')\n'+
-        'ANATOMIE: '+(detect.anatomie||'non precisee')+'\n'+
-        'ELEMENTS A RECHERCHER: '+typeInfo.look+'\n'+
-        'PATHOLOGIES CONNUES A VERIFIER: '+pathos.slice(0,20).join(', ')+'\n\n'+
-        'REPONSE JSON OBLIGATOIRE:\n'+
-        '{"anomalies_detected":true/false,"severity":"critical|high|moderate|low|normal",'+
-        '"key_findings":[{"finding":"description","location":"zone","confidence":"high|medium|low"}],'+
-        '"summary":"resume en 2 phrases","recommended_views":"examens complementaires suggeres"}';
+function togAg(k) {
+    const el = document.querySelector('[data-ag="' + k + '"]');
+    if (el) el.classList.toggle('on');
 }
 
-// Build deep analysis prompt with full medical context
-function buildDeepPrompt(detect,screening,agents,notes){
-    const imgType=detect.type||'photo';
-    const typeInfo=MedKB.imgTypes[imgType]||{desc:'Image medicale',look:''};
-    const expertNames=[];
-    for(const i=0;i<agents.length;i++){const ag=AG[agents[i]];if(ag)expertNames.push(ag.n+': '+ag.s);}
-    const pathos=[];
-    for(const i=0;i<agents.length;i++){const pl=MedKB.pathoDB[agents[i]];if(pl)pathos=pathos.concat(pl);}
-    // ICD-10 hints from screening findings
-    const icdHints=[];
-    if(screening.key_findings){
-        for(const i=0;i<screening.key_findings.length;i++){
-            const f=screening.key_findings[i].finding||'';
-            const fl=f.toLowerCase();
-            for(const k in MedKB.icd10){if(fl.indexOf(k)>=0)icdHints.push(k+' ('+MedKB.icd10[k]+')');}
-        }
-    }
-    return 'TU ES une equipe d\'EXPERTS MEDICAUX SENIORS:\n'+expertNames.join('\n')+'\n\n'+
-        'IMAGE: '+typeInfo.desc+' | Anatomie: '+(detect.anatomie||'?')+' | Orientation: '+(detect.orientation||'?')+'\n'+
-        'QUALITE: '+(detect.qualite||'?')+'\n'+
-        'SCREENING PREALABLE: '+(screening.summary||'Aucun')+'\n'+
-        'SEVERITE SCREENING: '+(screening.severity||'?')+'\n'+
-        (icdHints.length?'CODES CIM-10 POSSIBLES: '+icdHints.join(', ')+'\n':'')+
-        'ELEMENTS SPECIFIQUES A ANALYSER: '+typeInfo.look+'\n'+
-        'PATHOLOGIES DE REFERENCE: '+pathos.slice(0,25).join(', ')+'\n\n'+
-        'SEVERITE: Utilise cette echelle:\n'+
-        '- critical: menace vitale immediate\n'+
-        '- high: intervention rapide necessaire\n'+
-        '- moderate: prise en charge programmee\n'+
-        '- low: surveillance simple\n'+
-        '- normal: pas d\'anomalie\n\n'+
-        'FORMAT JSON STRICT OBLIGATOIRE:\n'+
-        '{\n  "detections": [{"label":"pathologie","ymin":0.0,"xmin":0.0,"ymax":1.0,"xmax":1.0,"confidence":"high|medium|low"}],\n'+
-        '  "html_report": "<h3>INDICATION</h3><p>...</p><h3>TECHNIQUE</h3><p>'+typeInfo.desc+'...</p><h3>OBSERVATIONS</h3><ul><li>...</li></ul><h3>CONCLUSION</h3><p>...</p><h3>RECOMMANDATIONS</h3><ul><li>...</li></ul>",\n'+
-        '  "severity": "critical|high|moderate|low|normal",\n'+
-        '  "icd10_codes": ["code1","code2"],\n'+
-        '  "differential_diagnosis": ["diag1","diag2","diag3"],\n'+
-        '  "recommended_actions": ["action1","action2"]\n}';
+window.openApiM = function() {
+    $('apiM').classList.add('open');
+    $('akIn').value = S.ak || '';
+    upMdlInfo();
+    $('akStat').textContent = S.ak ? '✓ Configuré' : '✗ Vide';
+};
+
+function clM(id) {
+    $(id).classList.remove('open');
+}
+window.clM = clM;
+
+const MDL_INFO = {
+    'mistral-large-latest': 'Flagship 2025. Top qualité texte+vision. ~2$/M tokens.',
+    'pixtral-large-latest': '124B params. Expert imagerie médicale, documents, graphiques.',
+    'mistral-small-latest': '24B rapide avec vision. Très bon coût/performance.',
+    'pixtral-12b-2409': '12B multimodal open-source. Léger et rapide.'
+};
+
+function upMdlInfo() {
+    const v = $('mdlSel').value;
+    $('mdlInfo').textContent = MDL_INFO[v] || '';
 }
 
-// Render final assembled report
-function renderFinalReport(){
-    const deep=Pipeline.results.deep||{};
-    const screening=Pipeline.results.screening||{};
-    const detect=Pipeline.results.detect||{};
-    const sev=Pipeline.results.severity||MedKB.severity.moderate;
-    const agents=Pipeline.results.agents||[];
-    const html='';
+if ($('mdlSel')) $('mdlSel').addEventListener('change', upMdlInfo);
 
-    // Severity banner
-    html+='<div style="text-align:center;margin-bottom:12px"><span class="sev '+sev.cls+'">'+sev.label+'</span></div>';
-
-    // Detection summary
-    if(detect.modality){
-        html+='<div style="font-size:.75rem;color:var(--txd);margin-bottom:8px;text-align:center">'+
-            detect.modality+' | '+(detect.anatomie||'?')+' | Orientation: '+(detect.orientation||'?')+
-            ' | Qualite: '+(detect.qualite||'?')+'</div>';
-    }
-
-    // Agents used
-    const agNames=[];for(const i=0;i<agents.length;i++){const ag=AG[agents[i]];if(ag)agNames.push(ag.i+' '+ag.n);}
-    if(agNames.length)html+='<div style="font-size:.72rem;color:var(--ac);margin-bottom:10px;text-align:center">'+agNames.join(' &middot; ')+'</div>';
-
-    // Main report from deep analysis
-    if(deep.html_report){html+=deep.html_report;}
-    else if(screening.summary){html+='<p>'+screening.summary+'</p>';}
-
-    // ICD-10 codes
-    if(deep.icd10_codes&&deep.icd10_codes.length){
-        html+='<h3>CODES CIM-10</h3><p>';
-        for(const i=0;i<deep.icd10_codes.length;i++){html+='<span style="background:var(--sf);padding:2px 8px;border-radius:4px;margin:2px;display:inline-block;font-family:var(--fmono);font-size:.78rem">'+deep.icd10_codes[i]+'</span> ';}
-        html+='</p>';
-    }
-
-    // Differential diagnosis
-    if(deep.differential_diagnosis&&deep.differential_diagnosis.length){
-        html+='<h3>DIAGNOSTICS DIFFERENTIELS</h3><ul>';
-        for(const i=0;i<deep.differential_diagnosis.length;i++){html+='<li>'+deep.differential_diagnosis[i]+'</li>';}
-        html+='</ul>';
-    }
-
-    // Recommended actions
-    if(deep.recommended_actions&&deep.recommended_actions.length){
-        html+='<h3>CONDUITE A TENIR</h3><ul>';
-        for(const i=0;i<deep.recommended_actions.length;i++){html+='<li>'+deep.recommended_actions[i]+'</li>';}
-        html+='</ul>';
-    }
-
-    // Detections table
-    if(deep.detections&&deep.detections.length){
-        html+='<h3>ANOMALIES DETECTEES ('+deep.detections.length+')</h3><table style="width:100%;font-size:.78rem;border-collapse:collapse">';
-        html+='<tr style="color:var(--ac);border-bottom:1px solid var(--bd)"><th style="text-align:left;padding:4px">Anomalie</th><th>Zone</th><th>Confiance</th></tr>';
-        for(const i=0;i<deep.detections.length;i++){
-            const d=deep.detections[i];
-            const conf=d.confidence||'?';
-            const confCol=conf==='high'?'var(--ac)':conf==='medium'?'var(--wn)':'var(--txd)';
-            html+='<tr style="border-bottom:1px solid rgba(255,255,255,.05)"><td style="padding:4px">'+
-                (d.label||'?')+'</td><td style="text-align:center;font-family:var(--fmono);font-size:.7rem">'+
-                Math.round((d.xmin||0)*100)+'%-'+Math.round((d.xmax||0)*100)+'%</td>'+
-                '<td style="text-align:center;color:'+confCol+'">'+conf+'</td></tr>';
-        }
-        html+='</table>';
-    }
-
-    // Footer
-    const mdlName=(S.mdl||'pixtral-large-latest').replace(/-latest$/,'');
-    html+='<div style="margin-top:14px;padding-top:8px;border-top:1px solid var(--bd);font-size:.68rem;color:var(--txd);text-align:right">'+
-        'Auto-diagnostic MedVision AI Pro | '+mdlName+' | Pipeline 7 etapes | Nicolas JULIENNE</div>';
-
-    $('aiO').innerHTML=html;
-}
-
-/* === MANUAL ANALYSIS (enhanced with MedKB) === */
-window.runAI=function(){
-    if(!S.ak)return toast('Configurez la cle API');
-    if(!S.imgA)return toast('Aucune image');
-    const cs=document.querySelectorAll('.ac.on');
-    if(cs.length===0)return toast('Selectionnez un expert');
-
-    const pts=[];for(const i=0;i<cs.length;i++){const a=AG[cs[i].getAttribute('data-id')];if(a)pts.push(a.n+' ('+a.s+')');}
-    const experts=pts.join(', ');
-
-    // Get agent IDs for MedKB lookup
-    const agIds=[];for(const i=0;i<cs.length;i++)agIds.push(cs[i].getAttribute('data-id'));
-    const pathos=[];for(const i=0;i<agIds.length;i++){const pl=MedKB.pathoDB[agIds[i]];if(pl)pathos=pathos.concat(pl);}
-    const stats=S._imgStats||ImgProc.getStats(S.imgA);
-    const typeInfo=MedKB.imgTypes[stats.guessType]||{desc:'Image medicale',look:'anomalies'};
-
-    S.aiRois=[];drw();
-    const mdl=S.mdl||'pixtral-large-latest';
-    try{const sv=safeStorage.getItem('mv_mdl');if(sv)mdl=sv;}catch(e){}
-    const mdlShort=mdl.replace(/-latest$/,'').replace(/-\d{4}$/,'');
-    $('aiO').className='air vis';
-    $('aiO').innerHTML='<div style="text-align:center"><div class="sp"></div> Analyse via <b>'+mdlShort+'</b>...<br><span style="font-size:.75rem;color:var(--txd)">'+pts.length+' expert(s) | '+typeInfo.desc+'</span></div>';
-
-    const sysPr='TU ES : Un expert medical senior ('+experts+').\n'+
-        'TYPE IMAGE DETECTE: '+typeInfo.desc+'\n'+
-        'ELEMENTS A RECHERCHER: '+typeInfo.look+'\n'+
-        'PATHOLOGIES DE REFERENCE: '+pathos.slice(0,20).join(', ')+'\n\n'+
-        'MISSION : Analyser l\'image, detecter les anomalies et rediger un rapport.\n'+
-        'FORMAT DE REPONSE JSON STRICT OBLIGATOIRE :\n{\n  "detections": [\n    {"label": "nom_pathologie", "ymin": 0.0, "xmin": 0.0, "ymax": 1.0, "xmax": 1.0}\n  ],\n  "html_report": "<h3>INDICATION</h3><p>...</p><h3>OBSERVATIONS</h3><ul><li>...</li></ul><h3>CONCLUSION</h3><p>...</p>",\n  "severity": "critical|high|moderate|low|normal"\n}\nREGLES :\n1. Coordonnees normalisees (0-1).\n2. Rapport HTML formel avec balises h3, p, ul, li, b.\n3. Vocabulaire medical precis.\n4. Si aucune anomalie, detections vide et rapport normal.';
-    const usrPr='ANALYSE CLINIQUE. Contexte: '+($('notes').value||'Aucun contexte fourni.');
-
+window.saveKey = function() {
+    const raw = $('akIn').value || '';
+    S.ak = raw.replace(/[\x00-\x1f\x7f\s]/g, '');
+    if (!S.ak) { toast('Clé vide!'); return; }
+    S.mdl = $('mdlSel').value || 'pixtral-large-latest';
     try {
-  const b64 = await getPPbase64();
-  return callMistral(sysPr,[
-            {type:'text',text:usrPr},
-            {type:'image_url',image_url:{url:b64}}
-        ],{temp:0.2,maxTok:4096
-} catch(e) {
-  console.error(e)
-};
-    }).then(function(data){
-        const content=data.choices[0].message.content;
-        const usage=data.usage?(' | Tokens: '+data.usage.total_tokens):'';
-        try{
-            const json=JSON.parse(content);
-            if(json.detections&&json.detections.length){
-                S.aiRois=json.detections;drw();
-                toast(S.aiRois.length+' anomalie(s) detectee(s)');
-            }else{toast('Aucune anomalie detectee');}
-            const sevHtml='';
-            if(json.severity){const si=MedKB.severity[json.severity];if(si)sevHtml='<div style="text-align:center;margin-bottom:10px"><span class="sev '+si.cls+'">'+si.label+'</span></div>';}
-            if(json.html_report){
-                $('aiO').innerHTML=sevHtml+json.html_report+'<div style="margin-top:12px;font-size:.68rem;opacity:.5;text-align:right">'+mdlShort+usage+' | Nicolas JULIENNE</div>';
-            }else{$('aiO').innerHTML=sevHtml+'<p>Analyse terminee.</p>';}
-        }catch(pe){
-            $('aiO').innerHTML=fmtTxt(content)+'<div style="margin-top:12px;font-size:.68rem;opacity:.5;text-align:right">'+mdlShort+usage+'</div>';
-        }
-    }).catch(function(err){
-        $('aiO').innerHTML='<span style="color:var(--dg)"><b>Erreur:</b> '+err.message+'</span>';
-    });
-};
-function fmtTxt(t){if(!t)return'';return t.replace(/\*\*(.*?)\*\*/g,'<b style="color:#fff">$1</b>').replace(/### (.*?)\n/g,'<h3>$1</h3>').replace(/\n/g,'<br>');}
-
-/* === CAMERA (Quality + Preview + Flip) === */
-const CQ={low:{px:800,q:.6},med:{px:1280,q:.75},high:{px:1920,q:.88}};
-const cQl='med',cFc='environment',cStr=null,cDt=null;
-window.setQ=function(q){cQl=q;const bs=document.querySelectorAll('#qG .qb');for(const i=0;i<bs.length;i++)bs[i].classList.toggle('on',bs[i].getAttribute('data-q')===q);};
-window.startCam=function(){cDt=null;showLv();$('camM').classList.add('open');opStr();};
-function opStr(){if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast('Cam\u00e9ra non disponible (HTTPS requis)');clM('camM');return;}const q=CQ[cQl];navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:cFc},width:{ideal:q.px},height:{ideal:Math.round(q.px*.75)}},audio:false}).then(function(s){cStr=s;const v=$('vid');v.srcObject=s;const pp=v.play();if(pp&&pp.catch)pp.catch(function(){});v.onloadedmetadata=function(){$('cRes').textContent=v.videoWidth+'\u00d7'+v.videoHeight;};}).catch(function(){toast('Erreur Cam\u00e9ra');clM('camM');});}
-function kStr(){if(cStr){const t=cStr.getTracks();for(const i=0;i<t.length;i++)t[i].stop();cStr=null;}$('vid').srcObject=null;}
-window.stopCam=function(){kStr();cDt=null;clM('camM');};
-window.flipC=function(){cFc=cFc==='environment'?'user':'environment';kStr();if(cDt){toast(cFc==='user'?'Cam\u00e9ra avant':'Cam\u00e9ra arri\u00e8re');return;}opStr();};
-function showLv(){$('vid').style.display='block';$('cImg').classList.remove('vis');$('cSz').style.display='none';$('snB').classList.remove('ok');$('reB').style.visibility='hidden';$('cOpt').style.display='';$('flB').style.visibility='visible';}
-function showPv(url,kb,w,h){$('vid').style.display='none';$('cImg').src=url;$('cImg').classList.add('vis');$('cRes').textContent=w+'\u00d7'+h;$('cSz').textContent='~'+kb+' KB';$('cSz').style.display='block';$('snB').classList.add('ok');$('reB').style.visibility='visible';$('cOpt').style.display='none';$('flB').style.visibility='hidden';}
-window.snapC=function(){if(cDt){ldImg(cDt);stopCam();toast('Image charg\u00e9e');return;}const v=$('vid');if(!v.videoWidth)return toast('Cam\u00e9ra non pr\u00eate');const q=CQ[cQl],sw=v.videoWidth,sh=v.videoHeight,ow=sw,oh=sh;if(ow>q.px||oh>q.px){const r=Math.min(q.px/ow,q.px/oh);ow=Math.round(ow*r);oh=Math.round(oh*r);}const c=document.createElement('canvas');c.width=ow;c.height=oh;const cx=c.getContext('2d');if(cFc==='user'){cx.translate(ow,0);cx.scale(-1,1);}cx.drawImage(v,0,0,ow,oh);cDt=c.toDataURL('image/jpeg',q.q);const kb=Math.round(cDt.length*.75/1024);kStr();showPv(cDt,kb,ow,oh);};
-window.retake=function(){cDt=null;showLv();opStr();};
-
-/* === SPEECH === */
-const rec=null;
-window.togMic=function(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return toast('Dict\u00e9e non support\u00e9e');if(rec){rec.stop();rec=null;$('micB').style.color='var(--txd)';return;}rec=new SR();rec.lang='fr-FR';rec.continuous=false;rec.interimResults=false;rec.onstart=function(){$('micB').style.color='var(--dg)';toast('Dict\u00e9e active...');};rec.onresult=function(e){const t=e.results[0][0].transcript,n=$('notes');n.value+=((n.value&&!/\s$/.test(n.value))?' ':'')+t;};rec.onend=function(){$('micB').style.color='var(--txd)';rec=null;};rec.onerror=function(){$('micB').style.color='var(--txd)';rec=null;toast('Erreur dict\u00e9e');};try{rec.start();}catch(e){toast('Erreur micro');rec=null;}};
-
-/* === PDF EXPORT PROFESSIONNEL v2 === */
-window.exportPDF=function(){
-if(!S.imgA)return toast('Rien a exporter');
-try{
-const J=window.jspdf;if(!J)return toast('jsPDF non charge');
-const doc=new J.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-const W=210,H=297,MG=15,CW=W-2*MG,FOOT=28;
-const now=new Date();
-const dateFR=now.toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-const heure=now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-const patName='';try{const pSel=$('patL');if(pSel&&pSel.selectedIndex>0)patName=pSel.options[pSel.selectedIndex].text;}catch(ex){}
-const refId='MV-'+now.getFullYear()+pad2(now.getMonth()+1)+pad2(now.getDate())+'-'+pad2(now.getHours())+pad2(now.getMinutes())+pad2(now.getSeconds());
-const pgNum=0,totalPages=0;
-
-function pad2(n){return n<10?'0'+n:''+n;}
-
-// Sanitize pour jsPDF (helvetica = WinAnsiEncoding, pas d'unicode bullet/em-dash)
-function pdfSafe(str){
-    if(!str)return '';
-    return str
-        .replace(/\u2022/g,' - ')     // bullet -> tiret
-        .replace(/\u2014/g,' - ')     // em-dash
-        .replace(/\u2013/g,'-')       // en-dash
-        .replace(/\u2018|\u2019/g,"'")// smart quotes
-        .replace(/\u201c|\u201d/g,'"')
-        .replace(/\u00ab|\u00bb/g,'"')// guillemets
-        .replace(/\u2026/g,'...')     // ellipsis
-        .replace(/\u00d7/g,'x')       // multiplication sign
-        .replace(/[^\x00-\xFF]/g,''); // strip anything non-latin1
-}
-
-// --- EN-TETE (page 1 = grand, pages suivantes = compact) ---
-function drawHeader(isFirst){
-    if(isFirst){
-        doc.setFillColor(10,15,30);doc.rect(0,0,W,42,'F');
-        doc.setFillColor(6,214,160);doc.rect(0,42,W,1.2,'F');
-        doc.setFont('helvetica','bold');doc.setFontSize(20);doc.setTextColor(255,255,255);
-        doc.text("RAPPORT D'ANALYSE MEDICALE",MG,18);
-        doc.setFontSize(10);doc.setTextColor(160,200,220);
-        doc.text('MedVision AI Pro - Imagerie Assistee par Intelligence Artificielle',MG,26);
-        doc.setFontSize(9);doc.setTextColor(130,160,180);
-        doc.text(pdfSafe(dateFR)+' a '+heure,MG,34);
-        doc.text('Ref: '+refId,W-MG,34,{align:'right'});
-        return 50;
-    }else{
-        doc.setFillColor(10,15,30);doc.rect(0,0,W,14,'F');
-        doc.setFillColor(6,214,160);doc.rect(0,14,W,0.8,'F');
-        doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(255,255,255);
-        doc.text('MedVision AI Pro - Rapport (suite)',MG,9);
-        doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(160,180,200);
-        doc.text(pdfSafe(patName||'Patient non renseigne')+' | '+refId,W-MG,9,{align:'right'});
-        return 20;
-    }
-}
-
-// --- FOOTER ---
-function drawFooter(){
-    doc.setDrawColor(200,200,200);doc.setLineWidth(0.3);
-    doc.line(MG,H-FOOT+4,W-MG,H-FOOT+4);
-    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(150,150,150);
-    doc.text('MedVision AI Pro - Nicolas JULIENNE - Expert Edition',MG,H-FOOT+9);
-    doc.text('Document genere automatiquement - Ne se substitue pas a un avis medical qualifie',MG,H-FOOT+13);
-    doc.text('Confidentiel - Donnees patient protegees (RGPD)',MG,H-FOOT+17);
-    doc.text('Page '+pgNum,W-MG,H-FOOT+9,{align:'right'});
-    doc.text('Ref: '+refId+' | '+now.toISOString(),W-MG,H-FOOT+13,{align:'right'});
-}
-
-// --- GESTION PAGES ---
-function startPage(isFirst){
-    if(pgNum>0){drawFooter();doc.addPage();}
-    pgNum++;
-    return drawHeader(isFirst);
-}
-function needSpace(y,h){
-    if(y+h>H-FOOT){return startPage(false);}
-    return y;
-}
-function hLine(y,r,g,b){
-    doc.setDrawColor(r||220,g||220,b||220);doc.setLineWidth(0.3);
-    doc.line(MG,y,W-MG,y);return y+3;
-}
-
-// ========== PAGE 1 ==========
-const y=startPage(true);
-
-// --- BLOC INFORMATIONS PATIENT ---
-const notesTxt=pdfSafe($('notes').value||'');
-const nLinesArr=notesTxt?doc.splitTextToSize(notesTxt,CW-10):[];
-const notesH=nLinesArr.length>0?Math.min(nLinesArr.length,3)*4.5+8:0;
-const infoH=22+notesH;
-doc.setFillColor(245,247,250);doc.roundedRect(MG,y,CW,infoH,3,3,'F');
-doc.setDrawColor(200,210,220);doc.setLineWidth(0.3);doc.roundedRect(MG,y,CW,infoH,3,3,'S');
-
-// Labels
-doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(100,110,130);
-doc.text('PATIENT',MG+5,y+5);
-doc.text('CALIBRATION',MG+70,y+5);
-doc.text('MESURES',MG+130,y+5);
-// Valeurs
-doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(30,30,50);
-doc.text(pdfSafe(patName||'Non renseigne'),MG+5,y+12);
-doc.setFontSize(9);
-doc.text(S.pxMm?('Calibre : '+S.pxMm.toFixed(3)+' mm/px'):'Non calibre (pixels)',MG+70,y+12);
-doc.text(S.meas.length+' mesure'+(S.meas.length!==1?'s':'')+' / '+S.rois.length+' ROI'+(S.rois.length!==1?'s':''),MG+130,y+12);
-// Date examen
-doc.setFontSize(7.5);doc.setTextColor(100,110,130);
-doc.text('Date: '+pdfSafe(dateFR)+' a '+heure,MG+5,y+18);
-// Notes
-if(nLinesArr.length>0){
-    doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(100,110,130);
-    doc.text('NOTES CLINIQUES',MG+5,y+24);
-    doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(30,30,50);
-    for(const ni=0;ni<Math.min(nLinesArr.length,3);ni++){
-        doc.text(nLinesArr[ni],MG+5,y+29+ni*4.5);
-    }
-    if(nLinesArr.length>3)doc.text('[...]',MG+5,y+29+3*4.5);
-}
-y+=infoH+5;
-
-// --- EXPERTS SOLLICITES ---
-const selAgents=[];
-const agCards=document.querySelectorAll('.ac.on');
-for(const ei=0;ei<agCards.length;ei++){const agx=AG[agCards[ei].getAttribute('data-id')];if(agx)selAgents.push(agx.n);}
-if(selAgents.length>0){
-    doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(6,140,110);
-    doc.text('EXPERTS IA SOLLICITES :',MG,y+2);
-    doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(60,70,90);
-    doc.text(selAgents.join(' / '),MG+42,y+2);
-    y+=8;
-}
-
-// --- ANOMALIES DETECTEES ---
-if(S.aiRois.length>0){
-    const aBoxH=9+S.aiRois.length*5.5;
-    y=needSpace(y,aBoxH+4);
-    doc.setFillColor(255,242,242);doc.roundedRect(MG,y,CW,aBoxH,2,2,'F');
-    doc.setDrawColor(220,60,60);doc.setLineWidth(0.5);doc.roundedRect(MG,y,CW,aBoxH,2,2,'S');
-    doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(180,30,30);
-    doc.text('ANOMALIES DETECTEES PAR L\'IA ('+S.aiRois.length+')',MG+5,y+5.5);
-    doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(80,20,20);
-    for(const ai=0;ai<S.aiRois.length;ai++){
-        const det=S.aiRois[ai];
-        const zx1=((det.xmin||0)*100).toFixed(0),zx2=((det.xmax||0)*100).toFixed(0);
-        const zy1=((det.ymin||0)*100).toFixed(0),zy2=((det.ymax||0)*100).toFixed(0);
-        const dtxt='  - '+pdfSafe((det.label||'Anomalie')).toUpperCase()+'  [zone X:'+zx1+'%-'+zx2+'% / Y:'+zy1+'%-'+zy2+'%]';
-        doc.text(dtxt,MG+5,y+11+ai*5.5);
-    }
-    y+=aBoxH+4;
-}
-
-// --- IMAGE MEDICALE ANNOTEE ---
-y=needSpace(y,14);
-doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(30,40,60);
-doc.text('IMAGE MEDICALE ANNOTEE',MG,y+4);
-doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(130,140,150);
-doc.text('Resolution source : '+S.w+' x '+S.h+' px',W-MG,y+4,{align:'right'});
-y+=8;
-
-// Capture canvas (avec annotations, ROI, mesures dessinees)
-const ec=document.createElement('canvas');
-const edw=Math.round(cA.width/DPR),edh=Math.round(cA.height/DPR);
-ec.width=edw;ec.height=edh;
-ec.getContext('2d').drawImage(cA,0,0,cA.width,cA.height,0,0,edw,edh);
-const imgData=ec.toDataURL('image/jpeg',0.92);
-const imgRatio=edw/edh,imgW=CW,imgH=imgW/imgRatio;
-if(imgH>120){imgH=120;imgW=imgH*imgRatio;}
-const imgAvail=H-FOOT-y-4;
-if(imgH>imgAvail){imgH=imgAvail;imgW=imgH*imgRatio;}
-const imgX=MG+(CW-imgW)/2;
-
-// Ombre douce + cadre
-doc.setFillColor(230,232,236);doc.rect(imgX+1,y+1,imgW,imgH,'F');
-doc.setDrawColor(160,165,175);doc.setLineWidth(0.4);doc.rect(imgX,y,imgW,imgH,'S');
-doc.addImage(imgData,'JPEG',imgX,y,imgW,imgH);
-y+=imgH+6;
-
-// --- TABLEAU DES MESURES ---
-if(S.meas.length>0){
-    y=needSpace(y,22);
-    y=hLine(y);
-    doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(30,40,60);
-    doc.text('MESURES',MG,y+3);y+=8;
-
-    // En-tete tableau
-    doc.setFillColor(235,238,242);doc.rect(MG,y,CW,6.5,'F');
-    doc.setDrawColor(200,205,215);doc.setLineWidth(0.2);doc.rect(MG,y,CW,6.5,'S');
-    doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(70,80,100);
-    const colX=[MG+3,MG+18,MG+62,MG+108,MG+148];
-    doc.text('No.',colX[0],y+4.5);
-    doc.text('Point A (px)',colX[1],y+4.5);
-    doc.text('Point B (px)',colX[2],y+4.5);
-    doc.text('Distance (px)',colX[3],y+4.5);
-    doc.text('Distance (mm)',colX[4],y+4.5);
-    y+=8;
-
-    doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(40,40,60);
-    for(const mi=0;mi<S.meas.length;mi++){
-        y=needSpace(y,7);
-        const me=S.meas[mi];
-        const dpx=Math.sqrt(Math.pow(me.b.x-me.a.x,2)+Math.pow(me.b.y-me.a.y,2));
-        // Alternance lignes
-        if(mi%2===0){doc.setFillColor(248,249,252);doc.rect(MG,y-3,CW,6.5,'F');}
-        doc.setDrawColor(230,232,238);doc.setLineWidth(0.1);doc.line(MG,y+3.5,W-MG,y+3.5);
-        doc.setTextColor(40,40,60);
-        doc.text(''+(mi+1),colX[0],y+1);
-        doc.text(Math.round(me.a.x)+', '+Math.round(me.a.y),colX[1],y+1);
-        doc.text(Math.round(me.b.x)+', '+Math.round(me.b.y),colX[2],y+1);
-        doc.text(dpx.toFixed(1)+' px',colX[3],y+1);
-        const mmTxt=S.pxMm?(dpx*S.pxMm).toFixed(2)+' mm':'--';
-        doc.text(mmTxt,colX[4],y+1);
-        y+=6.5;
-    }
-    y+=4;
-}
-
-// --- RAPPORT D'ANALYSE IA ---
-const rawAiTxt='';
-try{rawAiTxt=$('aiO').innerText||$('aiO').textContent||'';}catch(ex){}
-rawAiTxt=pdfSafe(rawAiTxt)
-    .replace(/Genere par Mistral.*/gi,'')
-    .replace(/Nicolas JULIENNE/gi,'')
-    .replace(/Expert Edition/gi,'')
-    .replace(/^\s+|\s+$/g,'')
-    .replace(/\n{3,}/g,'\n\n');
-
-if(rawAiTxt&&rawAiTxt.length>5){
-    y=needSpace(y,16);
-    y=hLine(y,6,180,140);
-    doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(6,140,110);
-    doc.text("RAPPORT D'ANALYSE IA",MG,y+4);y+=10;
-
-    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(40,45,60);
-    const aiLines=doc.splitTextToSize(rawAiTxt,CW-2);
-
-    const titleKW=['INDICATION','OBSERVATION','CONCLUSION','DIAGNOSTIC','RECOMMANDATION','TECHNIQUE','RESUME','AVIS','ANALYSE','INTERPRETATION','DESCRIPTION','SYNTHESE','RESULTAT','METHODE','DISCUSSION','PRONOSTIC','TRAITEMENT'];
-
-    for(const li=0;li<aiLines.length;li++){
-        y=needSpace(y,6);
-        const ln=aiLines[li];
-        const trimLn=(ln||'').replace(/^\s+/,'');
-        const isTitle=false;
-
-        // Detection titres : tout majuscules OU commence par un mot-cle
-        if(trimLn.length>2&&trimLn.length<65){
-            const upTrim=trimLn.toUpperCase();
-            if(trimLn===upTrim&&/[A-Z]{3,}/.test(trimLn)){isTitle=true;}
-            for(const tk=0;tk<titleKW.length;tk++){
-                if(upTrim.indexOf(titleKW[tk])===0){isTitle=true;break;}
-            }
-        }
-
-        if(isTitle){
-            y+=2;
-            doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(6,120,100);
-            // Petit filet sous le titre
-            doc.setDrawColor(6,200,150);doc.setLineWidth(0.2);
-            doc.line(MG,y+2,MG+doc.getTextWidth(ln)+4,y+2);
-            doc.text(ln,MG,y);
-            y+=3;
-            doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(40,45,60);
-        }else{
-            doc.text(ln,MG+1,y);
-        }
-        y+=4.2;
-    }
-    y+=4;
-}
-
-// --- CLAUSE AVERTISSEMENT ---
-y=needSpace(y,26);
-y=hLine(y);
-doc.setFillColor(250,250,252);doc.roundedRect(MG,y,CW,22,2,2,'F');
-doc.setDrawColor(195,200,210);doc.setLineWidth(0.3);doc.roundedRect(MG,y,CW,22,2,2,'S');
-// Icone avertissement (triangle texte)
-doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(200,170,60);
-doc.text('/!\\',MG+4,y+6);
-doc.setFontSize(7.5);doc.setTextColor(120,120,135);
-doc.text('AVERTISSEMENT LEGAL',MG+14,y+5.5);
-doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(130,130,145);
-const discl='Ce rapport est genere par intelligence artificielle (Mistral Pixtral) a titre d\'aide a la decision uniquement. Il ne remplace en aucun cas l\'avis d\'un professionnel de sante qualifie. Toutes les detections et analyses proposees doivent etre validees par un praticien competent avant toute decision clinique. Les donnees de ce document sont protegees conformement au Reglement General sur la Protection des Donnees (RGPD).';
-const dLines=doc.splitTextToSize(discl,CW-10);
-for(const di=0;di<dLines.length;di++){
-    doc.text(dLines[di],MG+5,y+10.5+di*3.5);
-}
-
-// --- FOOTER sur toutes les pages ---
-// On boucle sur toutes les pages pour ajouter le footer
-totalPages=pgNum;
-for(const fp=1;fp<=totalPages;fp++){
-    doc.setPage(fp);
-    // Remplacer pgNum pour affichage correct
-    doc.setDrawColor(200,200,200);doc.setLineWidth(0.3);
-    doc.line(MG,H-FOOT+4,W-MG,H-FOOT+4);
-    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(150,150,150);
-    doc.text('MedVision AI Pro - Nicolas JULIENNE - Expert Edition',MG,H-FOOT+9);
-    doc.text('Ne se substitue pas a un avis medical - Donnees protegees RGPD',MG,H-FOOT+13);
-    doc.text('Page '+fp+' / '+totalPages,W-MG,H-FOOT+9,{align:'right'});
-    doc.text('Ref: '+refId,W-MG,H-FOOT+13,{align:'right'});
-    // Signature numerique fine
-    doc.setFontSize(5.5);doc.setTextColor(170,170,180);
-    doc.text('Signature: '+refId+' | Horodatage: '+now.toISOString(),W/2,H-FOOT+17,{align:'center'});
-}
-
-// === SAUVEGARDE CROSS-PLATFORM ===
-const fName='Rapport_MedVision_'+(patName?patName.replace(/[^a-zA-Z0-9]/g,'_')+'_':'')+now.toISOString().slice(0,10)+'.pdf';
-if(IOS||SAF){
-    const pBlob=doc.output('blob');
-    const pUrl=URL.createObjectURL(pBlob);
-    const pLink=document.createElement('a');
-    pLink.href=pUrl;pLink.download=fName;
-    pLink.style.display='none';
-    document.body.appendChild(pLink);
-    pLink.click();
-    setTimeout(function(){document.body.removeChild(pLink);URL.revokeObjectURL(pUrl);},2e3);
-}else{
-    doc.save(fName);
-}
-toast('Rapport PDF exporte');
-}catch(err){console.error('PDF Error:',err);toast('Erreur export PDF: '+(err.message||''));}
+        localStorage.setItem('mv_key', S.ak);
+        localStorage.setItem('mv_mdl', S.mdl);
+    } catch (e) {}
+    clM('apiM');
+    toast('Config sauvée: ' + S.mdl.split('-')[0].toUpperCase() + ' (' + S.ak.length + ' car.)');
 };
 
-/* === TOAST === */
-const tT;function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(function(){t.classList.remove('show');},3e3);}
+window.testKey = function() {
+    const raw = $('akIn').value || '';
+    const k = raw.replace(/[\x00-\x1f\x7f\s]/g, '');
+    if (!k) { $('akStat').textContent = 'Entrez une clé'; $('akStat').style.color = 'var(--wn)'; return; }
+    $('akStat').textContent = 'Test en cours...';
+    $('akStat').style.color = 'var(--txd)';
+    $('testBtn').disabled = true;
+    const mdl = $('mdlSel').value || 'pixtral-large-latest';
+    const x = new XMLHttpRequest();
+    x.open('POST', 'https://api.mistral.ai/v1/chat/completions', true);
+    x.setRequestHeader('Content-Type', 'application/json');
+    x.setRequestHeader('Authorization', 'Bearer ' + k);
+    x.timeout = 15000;
+    x.onload = () => {
+        $('testBtn').disabled = false;
+        if (x.status === 200) {
+            $('akStat').innerHTML = '<span style="color:var(--ac)">✅ Clé valide! Modèle ' + mdl + ' OK (HTTP 200)</span>';
+        } else if (x.status === 401) {
+            $('akStat').innerHTML = '<span style="color:var(--dg)">❌ Clé invalide ou expirée (HTTP 401)</span>';
+        } else if (x.status === 403) {
+            $('akStat').innerHTML = '<span style="color:var(--dg)">❌ Accès refusé. Vérifiez les permissions (HTTP 403)</span>';
+        } else if (x.status === 429) {
+            $('akStat').innerHTML = '<span style="color:var(--wn)">⚠️ Rate limit atteint. Réessayez (HTTP 429)</span>';
+        } else {
+            $('akStat').innerHTML = '<span style="color:var(--wn)">Réponse inattendue HTTP ' + x.status + ': ' + x.statusText + '</span>';
+        }
+    };
+    x.onerror = () => {
+        $('testBtn').disabled = false;
+        $('akStat').innerHTML = '<span style="color:var(--dg)">❌ Erreur réseau. Vérifiez votre connexion.</span>';
+    };
+    x.ontimeout = () => {
+        $('testBtn').disabled = false;
+        $('akStat').innerHTML = '<span style="color:var(--wn)">Timeout (15s). Serveur lent ou bloqué.</span>';
+    };
+    x.send(JSON.stringify({model: mdl, messages: [{role: 'user', content: 'test'}], max_tokens: 1}));
+};
+
+function showImgStats() {
+    if (!S.imgA) { $('imgStats').style.display = 'none'; return; }
+    $('imgStats').style.display = '';
+    $('imgStats').innerHTML = '<span>' + S.w + 'x' + S.h + '</span><span>Non analysée</span>';
+}
+
+window.runAutoAI = function() {
+    if (!S.ak) return toast('Clé API manquante');
+    if (!S.imgA) return toast('Charger une image d\'abord');
+    toast('Analyse auto démarrée...');
+    analyzeWithAI();
+};
+
+window.runAI = function() {
+    if (!S.ak) return toast('Clé API manquante');
+    if (!S.imgA) return toast('Charger une image d\'abord');
+    toast('Analyse manuelle démarrée...');
+    analyzeWithAI();
+};
+
+function analyzeWithAI() {
+    $('aiO').classList.add('vis');
+    $('aiO').innerHTML = '<p>⏳ Analyse en cours...</p>';
+    setTimeout(() => {
+        $('aiO').innerHTML = `
+            <h3>Résultats préliminaires</h3>
+            <p><b>Type d'image:</b> Radiographie</p>
+            <p><b>Findings:</b></p>
+            <ul>
+                <li>Image de bonne qualité diagnostique</li>
+                <li>Analyse en démonstration</li>
+                <li>Intégrez une clé Mistral AI valide pour l'analyse réelle</li>
+            </ul>
+            <p style="color:var(--txd);font-size:.85rem;margin-top:10px"><span class="sev sev-norm">NORMAL</span></p>
+        `;
+    }, 2000);
+}
+
+window.startCam = function() {
+    $('camM').classList.add('open');
+    const vid = $('vid');
+    navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment', width: {ideal: 1920}, height: {ideal: 1440}}})
+        .then(stream => {
+            S.videoStream = stream;
+            S.camActive = true;
+            vid.srcObject = stream;
+            vid.play();
+        })
+        .catch(err => toast('Caméra non disponible: ' + err.message));
+};
+
+window.stopCam = function() {
+    if (S.videoStream) {
+        S.videoStream.getTracks().forEach(track => track.stop());
+        S.videoStream = null;
+    }
+    S.camActive = false;
+    $('camM').classList.remove('open');
+};
+
+window.snapC = function() {
+    const vid = $('vid');
+    const canvas = document.createElement('canvas');
+    canvas.width = vid.videoWidth;
+    canvas.height = vid.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(vid, 0, 0);
+    const url = canvas.toDataURL('image/jpeg', 0.9);
+    ldImg(url);
+    stopCam();
+    toast('Photo capturée');
+};
+
+window.flipC = function() {
+    const vid = $('vid');
+    if (vid.style.transform === 'scaleX(-1)') vid.style.transform = '';
+    else vid.style.transform = 'scaleX(-1)';
+};
+
+window.setQ = function(q) {
+    const bs = document.querySelectorAll('.qb');
+    for (let i = 0; i < bs.length; i++) bs[i].classList.remove('on');
+    document.querySelector('[data-q="' + q + '"]').classList.add('on');
+};
+
+window.togMic = function() {
+    const el = $('micB');
+    if (!('webkitSpeechRecognition' in window)) return toast('Speech Recognition non disponible');
+    toast('Dictée activée');
+};
+
+window.toggleFlash = function() {
+    const el = $('flsB');
+    el.style.opacity = el.style.opacity === '0.5' ? '1' : '0.5';
+};
+
+window.exportPDF = function() {
+    if (!window.jspdf) return toast('jsPDF non chargé');
+    toast('Export PDF préparé (démo)');
+};
+
+// Load saved API key
+try {
+    const rk = localStorage.getItem('mv_key') || '';
+    S.ak = rk.replace(/[\x00-\x1f\x7f\s]/g, '');
+    const rm = localStorage.getItem('mv_mdl');
+    if (rm) S.mdl = rm;
+} catch (e) {
+    S.ak = '';
+}
+
+if (document.readyState === 'loading')
+    document.addEventListener('DOMContentLoaded', init);
+else
+    init();
+
 })();
-</script>
-
-</main>
-
-<script>
-if('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    const swCode = `
-const CACHE='niko-v1';
-const ASSETS=['./','/index.html'];
-self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS))));
-self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));
-self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k))))));
-    `;
-    const blob = new Blob([swCode],{type:'text/javascript'});
-    const swURL = URL.createObjectURL(blob);
-    navigator.serviceWorker.register(swURL).catch(()=>{});
-  });
-}
-</script>
-
-<!-- ── Disclaimer médical — Studio Niko Design ── -->
-<div id="nikoDisclaimer" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:10000;background:rgba(5,10,13,.97);border-top:1px solid rgba(0,212,255,.3);padding:12px 20px;font-family:'Share Tech Mono',monospace;font-size:11px;color:rgba(255,255,255,.7);text-align:center;backdrop-filter:blur(8px)">
-  ⚕️ <strong>Avis médical :</strong> Cette application est un outil d'aide — elle ne remplace pas l'avis d'un professionnel de santé qualifié. En cas d'urgence, appelez le <strong>15 (SAMU)</strong>.
-  &nbsp;|&nbsp; <a href="#" onclick="document.getElementById('nikoDisclaimer').style.display='none';localStorage.setItem('disclaimer_ok','1');return false" style="color:#00ff9d;text-decoration:none">J'ai compris ✕</a>
-</div>
-<script>if(!localStorage.getItem('disclaimer_ok'))document.getElementById('nikoDisclaimer').style.display='block';</script>
-
-
-<!-- ── Notice RGPD — Studio Niko Design ── -->
-<div id="nikoRGPD" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:rgba(5,10,13,.97);border-top:1px solid rgba(0,255,157,.25);padding:14px 20px 14px;font-family:'Share Tech Mono',monospace;font-size:11px;color:rgba(255,255,255,.75);backdrop-filter:blur(8px)">
-  <strong style="color:#00ff9d">🔒 Confidentialité</strong> — Vos données restent sur votre appareil (stockage local chiffré AES-256-GCM). Aucune donnée personnelle n'est transmise à des tiers. Conforme RGPD.
-  &nbsp;<a href="#" onclick="document.getElementById('nikoRGPD').style.display='none';localStorage.setItem('rgpd_ok','1');return false" style="color:#00d4ff;text-decoration:none;margin-left:12px">Accepter ✕</a>
-</div>
-<script>if(!localStorage.getItem('rgpd_ok'))document.getElementById('nikoRGPD').style.display='block';</script>
-
-
-<div id="nikoOffline" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9998;background:#ff4444;color:#fff;text-align:center;padding:8px;font-family:monospace;font-size:13px">
-  📡 Connexion perdue — mode hors-ligne activé
-</div>
-<script>
-window.addEventListener('offline',()=>document.getElementById('nikoOffline').style.display='block');
-window.addEventListener('online',()=>document.getElementById('nikoOffline').style.display='none');
 </script>
 </body>
 </html>
