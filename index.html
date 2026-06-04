@@ -11,6 +11,9 @@
 <meta name="format-detection" content="telephone=no">
 <meta name="author" content="Nicolas JULIENNE">
 <title>MedVision AI Pro — Expert Edition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{
@@ -28,13 +31,14 @@
 html{height:100%;overflow:hidden;background:var(--bg);}
 body{background:var(--bg);color:var(--tx);font-family:var(--fm);height:100vh;overflow:hidden;display:flex;flex-direction:column;padding-top:var(--sat);}
 @supports(height:100dvh){body{height:100dvh;}}
+#appRoot{flex:1;min-height:0;display:flex;flex-direction:column;width:100%;}
 
 input,select,textarea{font-size:16px!important;background:var(--sf2);border:1px solid var(--bd);color:var(--tx);padding:10px 12px;border-radius:8px;outline:none;width:100%;-webkit-appearance:none;}
 select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%239ca3af' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:30px;}
 input:focus,textarea:focus,select:focus{border-color:var(--pr);}
 textarea{resize:vertical;}
 
-.app{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:12px;padding-bottom:calc(30px + var(--sab));max-width:1000px;margin:0 auto;width:100%;display:none;}
+.app{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:12px;padding-bottom:calc(30px + var(--sab));max-width:1000px;margin:0 auto;width:100%;display:none;}
 .app.on{display:block;animation:fadeIn .4s ease;}
 
 header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--bd);}
@@ -195,7 +199,7 @@ canvas{display:block;touch-action:none;}
 <meta name="twitter:description" content="Analyse médicale par intelligence artificielle — 13 agents spécialisés, EU MDR 2017/745 IIa">
 </head>
 <body role="application" aria-label="MedVision AI Pro — Analyse médicale IA">
-<main id="app" tabindex="-1">
+<main id="appRoot" tabindex="-1">
 <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap">MedVision AI Pro</h1>
 
 <!-- AUTH -->
@@ -212,8 +216,8 @@ canvas{display:block;touch-action:none;}
     <header>
         <div><div class="logo">MedVision AI</div><div class="sub">v10.1 • Nicolas JULIENNE</div></div>
         <div class="fr fnw">
-            <button class="bt bi" onclick="openApiM()" title="Configuration API">🔑</button>
-            <button class="bt bi" onclick="exportPDF()" title="Exporter PDF">📄</button>
+            <button class="bt bi" onclick="openApiM()" title="Configuration API" aria-label="Configuration API Mistral">🔑</button>
+            <button class="bt bi" onclick="exportPDF()" title="Exporter PDF" aria-label="Exporter le rapport en PDF">📄</button>
         </div>
     </header>
 
@@ -336,6 +340,17 @@ const $ = id => document.getElementById(id);
 const DPR = Math.min(window.devicePixelRatio || 1, 3);
 const IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
+// safeStorage : localStorage avec repli mémoire (Android null-origin / mode privé)
+const store = (() => {
+    const mem = {};
+    let ok = true;
+    try { localStorage.setItem('__mv_t', '1'); localStorage.removeItem('__mv_t'); } catch (e) { ok = false; }
+    return {
+        get: k => { try { return ok ? localStorage.getItem(k) : (k in mem ? mem[k] : null); } catch (e) { return (k in mem ? mem[k] : null); } },
+        set: (k, v) => { try { if (ok) localStorage.setItem(k, v); else mem[k] = v; } catch (e) { mem[k] = v; } }
+    };
+})();
+
 const AG = {
     radio: {n:"Radiologue", i:"🧠", s:"Analyse osseuse, fractures, densités, tissus mous."},
     pulmo: {n:"Pneumologue", i:"🫁", s:"Poumons, plèvre, épanchements, nodules pulmonaires."},
@@ -353,12 +368,13 @@ const AG = {
 };
 
 const S = {
-    pin: "", key: null, db: null, imgA: null, imgB: null, srcA: null, srcB: null,
+    pin: "", db: null, imgA: null, imgB: null, srcA: null, srcB: null,
     w: 0, h: 0, ox: 0, oy: 0, sc: 1, tool: 'pan',
     drw: [], rois: [], meas: [], aiRois: [],
     pxMm: null, comp: false, ak: '', mdl: 'pixtral-large-latest',
     pd: 0, ps: 1, ip: false, dn: false, lP: null, sP: null, tM: null,
-    videoStream: null, camActive: false
+    videoStream: null, camActive: false,
+    facing: 'environment', torch: false, q: 'high', recog: null, recActive: false, lastReport: null
 };
 
 const cA = $('cA'), xA = cA.getContext('2d');
@@ -493,16 +509,14 @@ window.saveExam = function() {
     const pid = $('patL').value;
     if (!pid || !S.imgA) return toast('Patient ou image manquant');
     if (!S.db) return toast('DB N/A');
-    cA.toBlob(blob => {
-        if (!blob) return toast('Erreur capture');
-        S.db.transaction('e', 'readwrite').objectStore('e').add({
-            pid: parseInt(pid),
-            date: Date.now(),
-            img: blob,
-            notes: $('notes').value,
-            meta: {drw: S.drw, meas: S.meas, rois: S.rois}
-        }).onsuccess = () => toast('Examen sauvegardé');
-    });
+    S.db.transaction('e', 'readwrite').objectStore('e').add({
+        pid: parseInt(pid),
+        date: Date.now(),
+        img: S.srcA,
+        notes: $('notes').value,
+        report: S.lastReport || null,
+        meta: {drw: S.drw, meas: S.meas, rois: S.rois}
+    }).onsuccess = () => toast('Examen sauvegardé');
 };
 
 window.loadPat = function() {
@@ -512,9 +526,10 @@ window.loadPat = function() {
         const r = e.target.result;
         if (r.length > 0) {
             const rec = r[r.length - 1];
-            const url = URL.createObjectURL(rec.img);
-            ldImg(url);
+            const src = typeof rec.img === 'string' ? rec.img : URL.createObjectURL(rec.img);
+            ldImg(src);
             $('notes').value = rec.notes || '';
+            if (rec.report) { S.lastReport = rec.report; setTimeout(() => { renderReport(rec.report, ['gen']); }, 300); }
             toast('Examen chargé');
         }
     };
@@ -903,10 +918,8 @@ window.saveKey = function() {
     S.ak = raw.replace(/[\x00-\x1f\x7f\s]/g, '');
     if (!S.ak) { toast('Clé vide!'); return; }
     S.mdl = $('mdlSel').value || 'pixtral-large-latest';
-    try {
-        localStorage.setItem('mv_key', S.ak);
-        localStorage.setItem('mv_mdl', S.mdl);
-    } catch (e) {}
+    store.set('mv_key', S.ak);
+    store.set('mv_mdl', S.mdl);
     clM('apiM');
     toast('Config sauvée: ' + S.mdl.split('-')[0].toUpperCase() + ' (' + S.ak.length + ' car.)');
 };
@@ -949,116 +962,312 @@ window.testKey = function() {
     x.send(JSON.stringify({model: mdl, messages: [{role: 'user', content: 'test'}], max_tokens: 1}));
 };
 
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
 function showImgStats() {
     if (!S.imgA) { $('imgStats').style.display = 'none'; return; }
     $('imgStats').style.display = '';
-    $('imgStats').innerHTML = '<span>' + S.w + 'x' + S.h + '</span><span>Non analysée</span>';
+    const mp = (S.w * S.h / 1e6).toFixed(1);
+    $('imgStats').innerHTML =
+        '<span>Dimensions <span class="sv">' + S.w + '×' + S.h + '</span></span>' +
+        '<span>Résolution <span class="sv">' + mp + ' MP</span></span>' +
+        '<span>Statut <span class="sv">' + (S.lastReport ? 'Analysée' : 'Non analysée') + '</span></span>';
+}
+
+// ---------- Pipeline d'analyse ----------
+function setPipe(steps) {
+    $('pipeWrap').style.display = 'block';
+    let h = '';
+    for (let i = 0; i < steps.length; i++) {
+        h += '<div class="pipe-step" data-step="' + i + '"><span class="pi">' + (i + 1) +
+             '</span><span class="pt">' + steps[i] + '</span><span class="pv"></span></div>';
+    }
+    $('pipeDisp').innerHTML = h;
+}
+function updPipe(i, status, val) {
+    const el = $('pipeDisp').querySelector('[data-step="' + i + '"]');
+    if (!el) return;
+    el.className = 'pipe-step' + (status ? ' ' + status : '');
+    if (val != null) el.querySelector('.pv').textContent = val;
+}
+
+function selectedAgents() {
+    const out = [];
+    const els = document.querySelectorAll('.ac.on');
+    for (let i = 0; i < els.length; i++) out.push(els[i].getAttribute('data-ag'));
+    return out;
+}
+
+function buildPrompt(agents) {
+    const roles = agents.map(k => '• ' + AG[k].n + ' : ' + AG[k].s).join('\n');
+    return [
+        "Tu es un panel d'experts en imagerie médicale fournissant une AIDE À LA DÉCISION (non diagnostique).",
+        "Experts mobilisés :", roles, "",
+        "Analyse l'image médicale et réponds STRICTEMENT en JSON valide, sans aucun texte hors JSON ni balise Markdown. Schéma exact :",
+        '{',
+        '  "type_image": "modalité (radiographie/scanner/IRM/échographie/dermatoscopie/fond d_oeil/ECG/autre)",',
+        '  "qualite": "qualité diagnostique de l_image",',
+        '  "findings": [{"texte":"observation","severite":"crit|high|mod|low|norm"}],',
+        '  "differentiel": ["hypothèse"],',
+        '  "recommandations": ["action ou examen complémentaire"],',
+        '  "rois": [{"label":"zone","severite":"crit|high|mod|low|norm","xmin":0.0,"ymin":0.0,"xmax":1.0,"ymax":1.0}],',
+        '  "severite_globale": "crit|high|mod|low|norm"',
+        '}',
+        "Coordonnées rois normalisées 0..1 (origine coin supérieur gauche). Concision, précision, langue française."
+    ].join('\n');
+}
+
+function analyzeWithAI(auto) {
+    if (selectedAgents().length === 0 && auto) { ['gen','radio'].forEach(k => togAg(k)); }
+    const agents = selectedAgents();
+    if (agents.length === 0) return toast('Sélectionnez au moins un expert');
+    const notes = ($('notes').value || '').trim();
+
+    const steps = ['Pré-traitement', 'Envoi ' + S.mdl.split('-')[0].toUpperCase(), 'Analyse multi-experts', 'Parsing', 'Annotations'];
+    setPipe(steps);
+    updPipe(0, 'active');
+    $('aiO').classList.add('vis');
+    $('aiO').innerHTML = '<p><span class="sp"></span>&nbsp; Analyse en cours…</p>';
+
+    const userContent = [
+        { type: 'text', text: 'Analyse cette image médicale.' + (notes ? '\n\nNotes cliniques : ' + notes : '') },
+        { type: 'image_url', image_url: S.srcA }
+    ];
+    updPipe(0, 'done', '✓');
+    updPipe(1, 'active');
+
+    const body = {
+        model: S.mdl,
+        messages: [
+            { role: 'system', content: buildPrompt(agents) },
+            { role: 'user', content: userContent }
+        ],
+        temperature: 0.2,
+        max_tokens: 1800,
+        response_format: { type: 'json_object' }
+    };
+
+    const x = new XMLHttpRequest();
+    x.open('POST', 'https://api.mistral.ai/v1/chat/completions', true);
+    x.setRequestHeader('Content-Type', 'application/json');
+    x.setRequestHeader('Authorization', 'Bearer ' + S.ak);
+    x.timeout = 60000;
+    x.onload = () => {
+        updPipe(1, 'done', 'HTTP ' + x.status);
+        if (x.status !== 200) {
+            updPipe(2, 'err', x.status);
+            $('aiO').innerHTML = '<h3>Erreur API</h3><p>HTTP ' + x.status + ' — ' + escapeHtml(x.statusText || '') + '</p><p style="color:var(--txd)">Vérifiez la clé Mistral, le quota ou le modèle.</p>';
+            return;
+        }
+        updPipe(2, 'done', '✓');
+        updPipe(3, 'active');
+        let report = null, rawText = '';
+        try {
+            const data = JSON.parse(x.responseText);
+            rawText = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
+            report = JSON.parse(rawText.replace(/```json/gi, '').replace(/```/g, '').trim());
+        } catch (e) {
+            updPipe(3, 'err', 'JSON');
+            $('aiO').innerHTML = '<h3>Réponse brute</h3><p style="white-space:pre-wrap;color:var(--txd)">' + escapeHtml(rawText || x.responseText).slice(0, 4000) + '</p>';
+            return;
+        }
+        updPipe(3, 'done', '✓');
+        updPipe(4, 'active');
+        S.lastReport = report;
+        renderReport(report, agents);
+        S.aiRois = Array.isArray(report.rois) ? report.rois.filter(r => typeof r.xmin === 'number') : [];
+        drw();
+        updPipe(4, 'done', S.aiRois.length + ' zone(s)');
+        showImgStats();
+    };
+    x.onerror = () => { updPipe(1, 'err', 'réseau'); $('aiO').innerHTML = '<h3>Erreur réseau</h3><p>Connexion impossible à l\'API Mistral.</p>'; };
+    x.ontimeout = () => { updPipe(1, 'err', 'timeout'); $('aiO').innerHTML = '<h3>Timeout</h3><p>L\'analyse a dépassé 60 s.</p>'; };
+    x.send(JSON.stringify(body));
+}
+
+function sevBadge(s) {
+    const map = { crit:['sev-crit','Critique'], high:['sev-high','Élevé'], mod:['sev-mod','Modéré'], low:['sev-low','Faible'], norm:['sev-norm','Normal'] };
+    const m = map[s] || map.norm;
+    return '<span class="sev ' + m[0] + '">' + m[1] + '</span>';
+}
+
+function renderReport(r, agents) {
+    let h = '';
+    h += '<div class="fr fsb fnw" style="align-items:center"><h3 style="margin-top:0;border:none">Synthèse</h3>' + sevBadge(r.severite_globale) + '</div>';
+    if (r.type_image) h += '<p><b>Modalité :</b> ' + escapeHtml(r.type_image) + '</p>';
+    if (r.qualite) h += '<p><b>Qualité :</b> ' + escapeHtml(r.qualite) + '</p>';
+    if (Array.isArray(r.findings) && r.findings.length) {
+        h += '<h3>Observations</h3><ul>';
+        r.findings.forEach(f => { h += '<li>' + sevBadge(f.severite) + ' ' + escapeHtml(f.texte || f) + '</li>'; });
+        h += '</ul>';
+    }
+    if (Array.isArray(r.differentiel) && r.differentiel.length) {
+        h += '<h3>Diagnostic différentiel</h3><ul>';
+        r.differentiel.forEach(d => { h += '<li>' + escapeHtml(d) + '</li>'; });
+        h += '</ul>';
+    }
+    if (Array.isArray(r.recommandations) && r.recommandations.length) {
+        h += '<h3>Recommandations</h3><ul>';
+        r.recommandations.forEach(d => { h += '<li>' + escapeHtml(d) + '</li>'; });
+        h += '</ul>';
+    }
+    h += '<p style="margin-top:14px;font-size:.7rem;color:var(--txd);border-top:1px solid var(--bd);padding-top:8px">' +
+         'Experts : ' + agents.map(k => AG[k].n).join(', ') + ' • Modèle : ' + escapeHtml(S.mdl) + '<br>' +
+         '⚠️ Aide à la décision — ne remplace pas un diagnostic posé par un professionnel de santé.</p>';
+    $('aiO').innerHTML = h;
 }
 
 window.runAutoAI = function() {
-    if (!S.ak) return toast('Clé API manquante');
-    if (!S.imgA) return toast('Charger une image d\'abord');
-    toast('Analyse auto démarrée...');
-    analyzeWithAI();
+    if (!S.ak) { openApiM(); return toast('Configurez la clé API'); }
+    if (!S.imgA) return toast('Chargez une image d\'abord');
+    analyzeWithAI(true);
 };
-
 window.runAI = function() {
-    if (!S.ak) return toast('Clé API manquante');
-    if (!S.imgA) return toast('Charger une image d\'abord');
-    toast('Analyse manuelle démarrée...');
-    analyzeWithAI();
+    if (!S.ak) { openApiM(); return toast('Configurez la clé API'); }
+    if (!S.imgA) return toast('Chargez une image d\'abord');
+    analyzeWithAI(false);
 };
 
-function analyzeWithAI() {
-    $('aiO').classList.add('vis');
-    $('aiO').innerHTML = '<p>⏳ Analyse en cours...</p>';
-    setTimeout(() => {
-        $('aiO').innerHTML = `
-            <h3>Résultats préliminaires</h3>
-            <p><b>Type d'image:</b> Radiographie</p>
-            <p><b>Findings:</b></p>
-            <ul>
-                <li>Image de bonne qualité diagnostique</li>
-                <li>Analyse en démonstration</li>
-                <li>Intégrez une clé Mistral AI valide pour l'analyse réelle</li>
-            </ul>
-            <p style="color:var(--txd);font-size:.85rem;margin-top:10px"><span class="sev sev-norm">NORMAL</span></p>
-        `;
-    }, 2000);
-}
-
+// ---------- Caméra ----------
 window.startCam = function() {
     $('camM').classList.add('open');
+    openStream();
+};
+function openStream() {
     const vid = $('vid');
-    navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment', width: {ideal: 1920}, height: {ideal: 1440}}})
+    if (S.videoStream) S.videoStream.getTracks().forEach(t => t.stop());
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: S.facing, width: { ideal: 1920 }, height: { ideal: 1440 } } })
         .then(stream => {
             S.videoStream = stream;
             S.camActive = true;
             vid.srcObject = stream;
             vid.play();
+            const tr = stream.getVideoTracks()[0];
+            const st = tr.getSettings ? tr.getSettings() : {};
+            $('cRes').textContent = (st.width || '?') + '×' + (st.height || '?');
         })
-        .catch(err => toast('Caméra non disponible: ' + err.message));
-};
-
+        .catch(err => toast('Caméra indisponible: ' + err.message));
+}
 window.stopCam = function() {
-    if (S.videoStream) {
-        S.videoStream.getTracks().forEach(track => track.stop());
-        S.videoStream = null;
-    }
-    S.camActive = false;
+    if (S.videoStream) { S.videoStream.getTracks().forEach(t => t.stop()); S.videoStream = null; }
+    S.camActive = false; S.torch = false;
     $('camM').classList.remove('open');
 };
-
 window.snapC = function() {
     const vid = $('vid');
+    if (!vid.videoWidth) return toast('Flux non prêt');
+    const scale = S.q === 'low' ? 0.5 : (S.q === 'mid' ? 0.75 : 1);
     const canvas = document.createElement('canvas');
-    canvas.width = vid.videoWidth;
-    canvas.height = vid.videoHeight;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(vid, 0, 0);
-    const url = canvas.toDataURL('image/jpeg', 0.9);
-    ldImg(url);
+    canvas.width = Math.round(vid.videoWidth * scale);
+    canvas.height = Math.round(vid.videoHeight * scale);
+    canvas.getContext('2d').drawImage(vid, 0, 0, canvas.width, canvas.height);
+    ldImg(canvas.toDataURL('image/jpeg', 0.92));
     stopCam();
     toast('Photo capturée');
 };
-
 window.flipC = function() {
-    const vid = $('vid');
-    if (vid.style.transform === 'scaleX(-1)') vid.style.transform = '';
-    else vid.style.transform = 'scaleX(-1)';
+    S.facing = S.facing === 'environment' ? 'user' : 'environment';
+    openStream();
+    toast(S.facing === 'user' ? 'Caméra frontale' : 'Caméra arrière');
 };
-
 window.setQ = function(q) {
+    S.q = q;
     const bs = document.querySelectorAll('.qb');
     for (let i = 0; i < bs.length; i++) bs[i].classList.remove('on');
-    document.querySelector('[data-q="' + q + '"]').classList.add('on');
+    const b = document.querySelector('[data-q="' + q + '"]');
+    if (b) b.classList.add('on');
 };
-
-window.togMic = function() {
-    const el = $('micB');
-    if (!('webkitSpeechRecognition' in window)) return toast('Speech Recognition non disponible');
-    toast('Dictée activée');
-};
-
 window.toggleFlash = function() {
-    const el = $('flsB');
-    el.style.opacity = el.style.opacity === '0.5' ? '1' : '0.5';
+    if (!S.videoStream) return toast('Caméra inactive');
+    const tr = S.videoStream.getVideoTracks()[0];
+    const cap = tr.getCapabilities ? tr.getCapabilities() : {};
+    if (!cap.torch) return toast('Torche non supportée');
+    S.torch = !S.torch;
+    tr.applyConstraints({ advanced: [{ torch: S.torch }] })
+        .then(() => { $('flsB').style.opacity = S.torch ? '1' : '0.5'; })
+        .catch(() => toast('Torche indisponible'));
 };
 
+// ---------- Dictée vocale ----------
+window.togMic = function() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return toast('Dictée non supportée par ce navigateur');
+    if (S.recog && S.recActive) { S.recog.stop(); return; }
+    const rec = new SR();
+    rec.lang = 'fr-FR'; rec.continuous = true; rec.interimResults = true;
+    let base = $('notes').value;
+    rec.onstart = () => { S.recActive = true; $('micB').classList.add('bp'); toast('Dictée activée'); };
+    rec.onresult = e => {
+        let txt = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) txt += e.results[i][0].transcript;
+        $('notes').value = (base ? base + ' ' : '') + txt;
+    };
+    rec.onerror = ev => toast('Dictée: ' + ev.error);
+    rec.onend = () => { S.recActive = false; $('micB').classList.remove('bp'); base = $('notes').value; };
+    S.recog = rec;
+    rec.start();
+};
+
+// ---------- Export PDF ----------
 window.exportPDF = function() {
-    if (!window.jspdf) return toast('jsPDF non chargé');
-    toast('Export PDF préparé (démo)');
+    const ns = window.jspdf;
+    if (!ns || !ns.jsPDF) return toast('jsPDF non chargé');
+    if (!S.imgA) return toast('Aucune image à exporter');
+    const doc = new ns.jsPDF({ unit: 'mm', format: 'a4' });
+    const pw = 210, m = 14; let y = 18;
+    doc.setFontSize(16); doc.setTextColor(20, 20, 30);
+    doc.text('MedVision AI Pro — Rapport', m, y); y += 7;
+    doc.setFontSize(9); doc.setTextColor(120);
+    const opt = $('patL').options[$('patL').selectedIndex];
+    doc.text('Patient : ' + (opt && opt.value ? opt.text : 'N/A') + '   |   ' + new Date().toLocaleString('fr-FR'), m, y); y += 7;
+    try {
+        const iw = pw - 2 * m;
+        const ih = Math.min(iw * (S.h / S.w), 110);
+        const fmt = S.srcA.indexOf('image/png') > -1 ? 'PNG' : 'JPEG';
+        doc.addImage(S.srcA, fmt, m, y, iw, ih);
+        y += ih + 7;
+    } catch (e) {}
+    const notes = $('notes').value.trim();
+    if (notes) {
+        doc.setTextColor(30); doc.setFontSize(11); doc.text('Notes cliniques', m, y); y += 5;
+        doc.setFontSize(9); doc.setTextColor(80);
+        const w = doc.splitTextToSize(notes, pw - 2 * m); doc.text(w, m, y); y += w.length * 4 + 4;
+    }
+    const r = S.lastReport;
+    if (r) {
+        if (y > 250) { doc.addPage(); y = 18; }
+        doc.setTextColor(30); doc.setFontSize(11); doc.text('Analyse IA (' + S.mdl + ')', m, y); y += 5;
+        doc.setFontSize(9); doc.setTextColor(80);
+        const lines = [];
+        if (r.type_image) lines.push('Modalité : ' + r.type_image);
+        if (r.severite_globale) lines.push('Sévérité globale : ' + r.severite_globale);
+        (r.findings || []).forEach(f => lines.push('• [' + (f.severite || '') + '] ' + (f.texte || f)));
+        (r.differentiel || []).forEach(d => lines.push('DD : ' + d));
+        (r.recommandations || []).forEach(d => lines.push('→ ' + d));
+        lines.forEach(l => { const w = doc.splitTextToSize(l, pw - 2 * m); doc.text(w, m, y); y += w.length * 4 + 1; if (y > 275) { doc.addPage(); y = 18; } });
+    }
+    if (S.meas.length) {
+        if (y > 255) { doc.addPage(); y = 18; }
+        doc.setTextColor(30); doc.setFontSize(11); doc.text('Mesures', m, y); y += 5;
+        doc.setFontSize(9); doc.setTextColor(80);
+        S.meas.forEach((mm, i) => {
+            const d = Math.sqrt(Math.pow(mm.b.x - mm.a.x, 2) + Math.pow(mm.b.y - mm.a.y, 2));
+            const v = S.pxMm ? (d * S.pxMm).toFixed(1) + ' mm' : Math.round(d) + ' px';
+            doc.text('Mesure ' + (i + 1) + ' : ' + v, m, y); y += 5;
+        });
+    }
+    doc.setFontSize(7); doc.setTextColor(150);
+    doc.text('Aide à la décision — ne remplace pas un diagnostic médical. © Studio Niko Design', m, 290);
+    doc.save('MedVision_' + Date.now() + '.pdf');
+    toast('PDF exporté');
 };
 
 // Load saved API key
-try {
-    const rk = localStorage.getItem('mv_key') || '';
-    S.ak = rk.replace(/[\x00-\x1f\x7f\s]/g, '');
-    const rm = localStorage.getItem('mv_mdl');
-    if (rm) S.mdl = rm;
-} catch (e) {
-    S.ak = '';
-}
+const rk = store.get('mv_key') || '';
+S.ak = rk.replace(/[\x00-\x1f\x7f\s]/g, '');
+const rm = store.get('mv_mdl');
+if (rm) { S.mdl = rm; const sel = $('mdlSel'); if (sel) sel.value = rm; }
+upMdlInfo();
 
 if (document.readyState === 'loading')
     document.addEventListener('DOMContentLoaded', init);
