@@ -14,6 +14,17 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>/* Studio Niko · helpers vague C */
+window.safeStorage = window.safeStorage || (function(){var mem=new Map(),ls=null;try{ls=window.localStorage;var t='__niko__';ls.setItem(t,'1');ls.removeItem(t);}catch(e){ls=null;}
+return{getItem:function(k){try{return ls?ls.getItem(k):(mem.has(k)?mem.get(k):null);}catch(e){return mem.has(k)?mem.get(k):null;}},
+setItem:function(k,v){try{if(ls){ls.setItem(k,String(v));return;}}catch(e){}mem.set(k,String(v));},
+removeItem:function(k){try{if(ls)ls.removeItem(k);}catch(e){}mem.delete(k);},
+clear:function(){try{if(ls)ls.clear();}catch(e){}mem.clear();},
+key:function(i){try{if(ls)return ls.key(i);}catch(e){}var a=Array.from(mem.keys());return i<a.length?a[i]:null;},
+get length(){try{if(ls)return ls.length;}catch(e){}return mem.size;}};})();
+window.nikoFetch = window.nikoFetch || function(url,opts){function xhr(){opts=opts||{};return new Promise(function(res,rej){var x=new XMLHttpRequest();x.open((opts.method||'GET'),url,true);if(opts.headers){Object.keys(opts.headers).forEach(function(h){try{x.setRequestHeader(h,opts.headers[h]);}catch(e){}});}x.onload=function(){res({ok:x.status>=200&&x.status<300,status:x.status,statusText:x.statusText,url:url,text:function(){return Promise.resolve(x.responseText);},json:function(){return Promise.resolve(JSON.parse(x.responseText));},headers:{get:function(n){return x.getResponseHeader(n);}}});};x.onerror=function(){rej(new TypeError('Network request failed'));};x.send(opts.body||null);});}
+if(window.fetch){return window.fetch(url,opts).catch(function(){return xhr();});}return xhr();};
+</script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{
@@ -342,14 +353,14 @@ const $ = id => document.getElementById(id);
 const DPR = Math.min(window.devicePixelRatio || 1, 3);
 const IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-// safeStorage : localStorage avec repli mémoire (Android null-origin / mode privé)
+// safeStorage : safeStorage avec repli mémoire (Android null-origin / mode privé)
 const store = (() => {
     const mem = {};
     let ok = true;
-    try { localStorage.setItem('__mv_t', '1'); localStorage.removeItem('__mv_t'); } catch (e) { ok = false; }
+    try { safeStorage.setItem('__mv_t', '1'); safeStorage.removeItem('__mv_t'); } catch (e) { ok = false; }
     return {
-        get: k => { try { return ok ? localStorage.getItem(k) : (k in mem ? mem[k] : null); } catch (e) { return (k in mem ? mem[k] : null); } },
-        set: (k, v) => { try { if (ok) localStorage.setItem(k, v); else mem[k] = v; } catch (e) { mem[k] = v; } }
+        get: k => { try { return ok ? safeStorage.getItem(k) : (k in mem ? mem[k] : null); } catch (e) { return (k in mem ? mem[k] : null); } },
+        set: (k, v) => { try { if (ok) safeStorage.setItem(k, v); else mem[k] = v; } catch (e) { mem[k] = v; } }
     };
 })();
 
