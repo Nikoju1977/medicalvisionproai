@@ -1,26 +1,34 @@
-# 🏥 MedVision AI Pro
-**Studio Niko Design** — Plateforme d'analyse médicale IA · 13 agents spécialisés
+![MedVision AI Pro](banner.svg)
 
-> PWA de vision médicale utilisant Pixtral Large 124B pour l'analyse d'images (radiologies, ECG, dermatologie...).
+# MedVision AI Pro
 
-## ✨ Fonctionnalités
-- 13 agents IA spécialisés (radiologie, dermatologie, cardiologie...)
-- Analyse DICOM / images médicales
-- Rapport PDF multi-pages (jsPDF)
-- PWA offline-capable
-- Auth AES-256-GCM vault
-- Annotation canvas
+[![Démo](https://img.shields.io/badge/Démo-en_ligne-00ff9d?style=flat-square&labelColor=050a0d)](https://medvisionproai.vercel.app) [![PWA](https://img.shields.io/badge/PWA-installable-00d4ff?style=flat-square&labelColor=050a0d)](#) [![Licence](https://img.shields.io/badge/Licence-MIT-9fb4ba?style=flat-square&labelColor=050a0d)](LICENSE)
 
-## 🏛 Réglementation & Financement
-- Classification EU MDR 2017/745 IIa
-- Candidature BPI France — Aide Faisabilité 30k€ · i-Nov 600k€ · France 2030
+Plateforme web d'**imagerie médicale assistée par intelligence artificielle** — application single-file, installable en PWA, données traitées localement.
 
-## ⚠️ Disclaimer
-Outil d'aide au diagnostic — ne remplace pas un professionnel de santé.
+**Démo** : [medvisionproai.vercel.app](https://medvisionproai.vercel.app) · [Pages](https://nikoju1977.github.io/medicalvisionproai/)
 
-## 🛠 Stack
-`HTML` · `Pixtral Large 124B` · `Mistral AI` · `jsPDF` · `AES-256-GCM` · `IndexedDB` · `PWA`
+## Fonctionnalités
 
-## 👤 Auteur
-**Nicolas Julienne** — [Studio Niko Design](https://github.com/Nikoju1977) · Candidat BPI France
-📧 nicolasjulienne.nj@gmail.com
+- 🧠 Système **multi-agents IA** spécialisés par domaine d'analyse
+- 🩻 **Lecteur DICOM** intégré au navigateur
+- 🔐 Authentification par PIN, stockage local chiffré (IndexedDB)
+- 📊 Export de rapports (PPTX)
+- 📱 PWA mobile-first, fonctionne hors ligne après installation
+- 🛡️ Aucune donnée patient envoyée à un serveur tiers sans action explicite
+
+## Stack
+
+`HTML/CSS/JS single-file` · `IndexedDB` · `Mistral AI / Pixtral (vision)` · `PWA` · `Vercel`
+
+## Lancer en local
+
+Ouvrir `index.html` dans un navigateur moderne. Aucun build, aucune dépendance.
+
+## ⚠️ Avertissement médical
+
+Cette application est un **outil d'information et de suivi personnel**. Elle ne constitue pas un dispositif médical certifié, ne fournit ni diagnostic ni prescription, et ne remplace en aucun cas l'avis d'un professionnel de santé. En cas d'urgence : **15 (SAMU)** ou **112**.
+
+## Licence
+
+[MIT](LICENSE) © 2026 Nicolas Julienne — Studio Niko Design
