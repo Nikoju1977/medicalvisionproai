@@ -1,0 +1,16 @@
+{
+ "name": "medicalvisionproai",
+ "short_name": "medicalvisio",
+ "start_url": ".",
+ "display": "standalone",
+ "background_color": "#050a0d",
+ "theme_color": "#050a0d",
+ "icons": [
+  {
+   "src": "icon.svg",
+   "sizes": "any",
+   "type": "image/svg+xml",
+   "purpose": "any"
+  }
+ ]
+}
