@@ -238,6 +238,19 @@ canvas{display:block;touch-action:none;}
 .dg-info{border-left-color:var(--cy);}
 .dg-info b{color:var(--cy);}
 
+/* ===== Compte rendu : couverture, conclusion, limites ===== */
+.cov{font-family:var(--fmono);font-size:.7rem;padding:6px 9px;border-radius:6px;margin:8px 0;}
+.cov-ok{background:rgba(6,214,160,.09);color:var(--ac);border-left:2px solid var(--ac);}
+.cov-part{background:rgba(245,158,11,.11);color:var(--wn);border-left:2px solid var(--wn);}
+.ccl{background:var(--sf2);border-left:3px solid var(--cy);border-radius:0 8px 8px 0;padding:10px 13px;margin:12px 0;}
+.ccl b{display:block;color:var(--cy);font-size:.72rem;text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;}
+.ccl p{margin:0;font-size:.88rem;line-height:1.55;}
+.lim{background:rgba(245,158,11,.08);border:1px solid var(--wn);border-radius:8px;padding:10px 12px;margin:12px 0;}
+.lim b{display:block;color:var(--wn);font-size:.78rem;margin-bottom:5px;}
+.lim ul{margin:0 0 0 16px;}
+.lim li{font-size:.78rem;color:var(--txd);margin-bottom:3px;}
+.imn{font-size:.66rem;color:var(--pr);font-family:var(--fmono);background:rgba(59,130,246,.13);padding:1px 5px;border-radius:3px;}
+
 /* ===== PWA ===== */
 .instb{background:var(--sf2);border:1px solid var(--ac);color:var(--ac);border-radius:20px;padding:6px 13px;font-size:.7rem;font-weight:600;font-family:var(--fmono);cursor:pointer;white-space:nowrap;}
 .instb:active{transform:scale(.96);}
@@ -547,7 +560,7 @@ const S = {
     // --- moteur d'analyse v11 ---
     pp: null, ppSel: 'clahe', busy: false, triage: null, lastMeta: null,
     mdlPool: null, mdlVision: null, mdlFast: null, mdlSynth: null, mdlForce: '',
-    only: null, onDone: null, batch: null, vFrames: 6,
+    only: null, onDone: null, batch: null, vFrames: 6, chunks: null,
     swReg: null, instEvt: null,
     // --- série multi-images / vidéo v12 ---
     series: [], active: 0, mode: 'serie', imgSet: null
@@ -1423,11 +1436,44 @@ function renderStrip() {
     });
 }
 
-// ---------- Sélection des images envoyées à l'API ----------
+// ---------- Découpage de la série en lots d'images ----------
+// Contrainte : 8 images maximum par requête Mistral. Au-delà, on ne
+// SÉLECTIONNE plus (ce qui perdait jusqu'à 67 % de la série) : on découpe
+// en lots successifs, chaque lot faisant l'objet de ses propres lectures.
+// Les numéros d'image renvoyés par le modèle sont locaux au lot et remappés
+// ensuite sur les indices globaux de la série.
+function buildImageChunks() {
+    const N = S.series.length;
+    if (S.only != null || N <= 1) return [buildImageSet()];
+
+    const hasPP = S.series.some(it => it.pp);
+    const dual = hasPP && N * 2 <= MAX_API_IMG;
+    const per = dual ? Math.floor(MAX_API_IMG / 2) : MAX_API_IMG;
+    if (N <= per) return [buildImageSet()];
+
+    const chunks = [];
+    for (let a = 0; a < N; a += per) chunks.push(buildImageSet(a, Math.min(a + per, N)));
+    return chunks;
+}
+
+// Remappe les numéros d'image LOCAUX d'une lecture vers les indices GLOBAUX.
+function remapImages(r, set) {
+    const g = n => {
+        const i = set.map[(n | 0) - 1];
+        return (i == null ? n : i + 1);
+    };
+    (r.findings || []).forEach(f => { if (f.image != null) f.image = g(f.image); });
+    (r.rois || []).forEach(x => { if (x.image != null) x.image = g(x.image); });
+    return r;
+}
+
 // Contrainte : 8 images maximum par requête Mistral.
-function buildImageSet() {
+function buildImageSet(from, to) {
     // Mode Lot : on restreint le jeu d'images à l'élément en cours de traitement.
-    const SRC = (S.only != null && S.series[S.only]) ? [S.series[S.only]] : S.series;
+    let SRC, OFF;
+    if (S.only != null && S.series[S.only]) { SRC = [S.series[S.only]]; OFF = S.only; }
+    else if (from != null) { SRC = S.series.slice(from, to); OFF = from; }
+    else { SRC = S.series; OFF = 0; }
     const N = SRC.length;
     const parts = [], legend = [], map = [];
     const variant = it => {
@@ -1447,7 +1493,7 @@ function buildImageSet() {
             parts.push({ type: 'image_url', image_url: variant(it) }); map.push(0);
             legend.push('Image 2 : la MÊME image après rehaussement de contraste local (CLAHE). Aucun contenu ajouté — sert à détecter les anomalies de faible contraste. Exprime les ROI dans le repère de l\'image 1.');
         }
-        return { parts: parts, legend: legend.join('\n'), map: map, sent: [S.only != null ? S.only : 0] };
+        return { parts: parts, legend: legend.join('\n'), map: map.map(() => OFF), sent: [OFF], from: OFF, count: 1 };
     }
 
     // Sélection quand la série dépasse le budget : couverture temporelle/positionnelle
@@ -1455,35 +1501,30 @@ function buildImageSet() {
     let idx = SRC.map((it, i) => i);
     const dual = N * 2 <= MAX_API_IMG;
     const budget = dual ? Math.floor(MAX_API_IMG / 2) : MAX_API_IMG;
+    // Garde-fou : une fenêtre dépasse rarement le budget, mais si cela arrive
+    // on conserve les plus nettes plutôt que d'échouer.
     if (N > budget) {
-        const sel = [];
-        for (let s = 0; s < budget; s++) {
-            const lo = Math.floor(s * N / budget), hi = Math.max(lo + 1, Math.floor((s + 1) * N / budget));
-            let best = -1;
-            for (let k = lo; k < hi && k < N; k++)
-                if (best < 0 || (SRC[k].sharp || 0) > (SRC[best].sharp || 0)) best = k;
-            if (best >= 0 && sel.indexOf(best) < 0) sel.push(best);
-        }
-        idx = sel;
+        idx = idx.slice().sort((a, b) => (SRC[b].sharp || 0) - (SRC[a].sharp || 0))
+                 .slice(0, budget).sort((a, b) => a - b);
     }
 
     const modeTxt = S.mode === 'evolution'
         ? 'Ces images sont le MÊME examen à des dates/temps différents, dans l\'ordre chronologique. Analyse l\'ÉVOLUTION.'
         : 'Ces images sont des vues/coupes/trames du MÊME examen. Recoupe-les : une anomalie visible sur plusieurs vues est plus fiable qu\'une anomalie isolée.';
     legend.push(modeTxt);
-    if (idx.length < N) legend.push('(' + idx.length + ' vues retenues sur ' + N + ', réparties uniformément et choisies pour leur netteté.)');
+    if (idx.length < N) legend.push('(' + idx.length + ' vues sur ' + N + ' dans ce lot.)');
 
     idx.forEach(i => {
         const it = SRC[i];
         parts.push({ type: 'image_url', image_url: orig(it) }); map.push(i);
-        legend.push('Image ' + parts.length + ' : ' + it.name + (it.t != null ? ' — t = ' + fmtT(it.t) : '') + ' (original)');
+        legend.push('Image ' + parts.length + ' : ' + it.name + ' [élément ' + (i + OFF + 1) + '/' + S.series.length + ']' + (it.t != null ? ' — t = ' + fmtT(it.t) : '') + ' (original)');
         if (dual && it.pp) {
             parts.push({ type: 'image_url', image_url: variant(it) }); map.push(i);
             legend.push('Image ' + parts.length + ' : ' + it.name + ' après rehaussement CLAHE — même cadrage que l\'image ' + (parts.length - 1) + '.');
         }
     });
     legend.push('IMPORTANT : dans chaque observation et chaque ROI, renseigne le champ `image` avec le NUMÉRO de l\'image concernée (1 à ' + parts.length + ').');
-    return { parts: parts, legend: legend.join('\n'), map: map, sent: idx };
+    return { parts: parts, legend: legend.join('\n'), map: map.map(i => i + OFF), sent: idx.map(i => i + OFF), from: OFF, count: N };
 }
 
 // ============================================================
@@ -1682,8 +1723,6 @@ window.runBatch = function() {
     };
     step();
 };
-
-const SEVRANK = { crit: 0, high: 1, mod: 2, low: 3, norm: 4 };
 
 function renderBatch(res, agents) {
     const sorted = res.slice().sort((a, b) => {
@@ -2051,6 +2090,7 @@ function grilleFor(mod) {
 //  SCHÉMAS STRUCTURÉS (Custom Structured Outputs)
 // ============================================================
 const SEV = ['crit', 'high', 'mod', 'low', 'norm'];
+const SEVRANK = { crit: 0, high: 1, mod: 2, low: 3, norm: 4 };
 
 const SCH_TRIAGE = {
     name: 'triage_imagerie',
@@ -2129,9 +2169,11 @@ const SCH_CONSENSUS = {
     name: 'consensus_panel',
     def: {
         type: 'object', additionalProperties: false,
-        required: ['synthese', 'accord', 'coherence_vues', 'findings', 'divergences', 'differentiel', 'recommandations', 'drapeaux_rouges', 'rois', 'severite_globale'],
+        required: ['synthese', 'conclusion', 'limites', 'accord', 'coherence_vues', 'findings', 'divergences', 'differentiel', 'recommandations', 'drapeaux_rouges', 'rois', 'severite_globale'],
         properties: {
             synthese: { type: 'string' },
+            conclusion: { type: 'string' },
+            limites: { type: 'array', items: { type: 'string' } },
             accord: { type: 'number' },
             coherence_vues: { type: 'string' },
             findings: {
@@ -2241,9 +2283,13 @@ function analyzeWithAI(auto) {
     const N = S.series.length;
     const panel = agents.length > 1 && !($('panelOff') && $('panelOff').checked);
     const ppLbl = 'Pré-traitement' + (N > 1 ? ' ×' + N : '');
+    const nCh = Math.max(1, Math.ceil(N / (MAX_API_IMG || 8)));
+    const lecLbl = panel
+        ? 'Lectures ×' + agents.length + (nCh > 1 ? '×' + nCh + ' lots' : '')
+        : 'Lecture experte' + (nCh > 1 ? ' ×' + nCh + ' lots' : '');
     const steps = panel
-        ? [ppLbl, 'Modèles', 'Triage modalité', 'Lectures ×' + agents.length, 'Consensus', 'Annotations']
-        : [ppLbl, 'Modèles', 'Triage modalité', 'Lecture experte', 'Annotations'];
+        ? [ppLbl, 'Modèles', 'Triage modalité', lecLbl, 'Consensus', 'Annotations']
+        : [ppLbl, 'Modèles', 'Triage modalité', lecLbl, 'Annotations'];
     setPipe(steps);
     $('aiO').classList.add('vis');
     $('aiO').innerHTML = '<p><span class="sp"></span>&nbsp; Analyse en cours…</p>';
@@ -2275,8 +2321,12 @@ function analyzeWithAI(auto) {
         const cur = S.series[S.active];
         S.pp = cur ? cur.pp : null;
         if (S.pp) renderPP(S.pp);
-        S.imgSet = buildImageSet();
-        updPipe(0, 'done', S.imgSet.parts.length + ' img · ' + (S.pp ? S.pp.w + '×' + S.pp.h : ''));
+        S.chunks = buildImageChunks();
+        S.imgSet = S.chunks[0];
+        const nImg = S.chunks.reduce((a, c) => a + c.parts.length, 0);
+        const nEl = S.chunks.reduce((a, c) => a + c.sent.length, 0);
+        updPipe(0, 'done', nEl + '/' + S.series.length + ' élém · ' + nImg + ' img' +
+                (S.chunks.length > 1 ? ' · ' + S.chunks.length + ' lots' : ''));
 
         // --- Étape 1 : découverte des modèles ---
         updPipe(1, 'active');
@@ -2306,21 +2356,41 @@ function analyzeWithAI(auto) {
                     }
                     const grille = grilleFor(tri.modalite + ' ' + tri.region);
 
-                    // --- Étape 3 : lecture(s) ---
+                    // --- Étape 3 : lecture de CHAQUE lot d'images ---
+                    // Aucun élément n'est écarté : chaque lot reçoit ses propres
+                    // lectures, fusionnées ensuite par expert.
                     updPipe(3, 'active');
-                    if (!panel) {
-                        return mchat(S.mdlVision, lectureMsg(agents, tri, grille), SCH_LECTURE,
-                            { effort: 'high', max_tokens: 3500, timeout: 120000 })
-                            .then(r => ({ single: r, tri: tri }));
-                    }
+                    const CH = S.chunks;
+                    const roster = panel ? agents.map(k => [k]) : [agents];
+                    const total = roster.length * CH.length;
                     let done = 0;
-                    const jobs = agents.map(k =>
-                        mchat(S.mdlVision, lectureMsg([k], tri, grille), SCH_LECTURE,
-                              { effort: 'high', max_tokens: 2500, timeout: 120000 })
-                            .then(r => { updPipe(3, 'active', (++done) + '/' + agents.length); return { k: k, r: r }; })
-                            .catch(e => { updPipe(3, 'active', (++done) + '/' + agents.length); return { k: k, err: e }; })
-                    );
-                    return Promise.all(jobs).then(res => ({ lectures: res, tri: tri }));
+
+                    const jobs = [];
+                    roster.forEach(grp => CH.forEach((set, ci) => {
+                        jobs.push(
+                            mchat(S.mdlVision, lectureMsg(grp, tri, grille, set), SCH_LECTURE,
+                                  { effort: 'high', max_tokens: panel ? 2500 : 3500, timeout: 150000 })
+                                .then(r => { updPipe(3, 'active', (++done) + '/' + total); return { k: grp[0], grp: grp, ci: ci, r: remapImages(r, set) }; })
+                                .catch(e => { updPipe(3, 'active', (++done) + '/' + total); return { k: grp[0], grp: grp, ci: ci, err: e }; })
+                        );
+                    }));
+
+                    return Promise.all(jobs).then(res => {
+                        // Fusion des lots : un expert = une lecture consolidée.
+                        const byExp = {};
+                        res.filter(x => !x.err).forEach(x => {
+                            const e = byExp[x.k] || (byExp[x.k] = { k: x.k, grp: x.grp, r: {
+                                findings: [], signes_negatifs: [], differentiel: [],
+                                recommandations: [], rois: [], severite: 'norm' } });
+                            const r = x.r;
+                            ['findings', 'signes_negatifs', 'differentiel', 'recommandations', 'rois']
+                                .forEach(f => { if (Array.isArray(r[f])) e.r[f] = e.r[f].concat(r[f]); });
+                            if (SEVRANK[r.severite] < SEVRANK[e.r.severite]) e.r.severite = r.severite;
+                        });
+                        const lectures = Object.keys(byExp).map(k => byExp[k]);
+                        return { lectures: lectures, tri: tri, single: (!panel && lectures[0]) ? lectures[0].r : null,
+                                 chunks: CH.length, failed: res.filter(x => x.err).length };
+                    });
                 })
                 .then(out => {
                     if (!out) return;
@@ -2349,13 +2419,17 @@ function analyzeWithAI(auto) {
                         "- Fusionne les ROI qui désignent la même zone SUR LA MÊME image ; conserve le numéro d'image.",
                         "- `findings[].images` = liste des numéros d'images où l'anomalie est visible. Une anomalie confirmée sur plusieurs vues est plus fiable.",
                         "- `coherence_vues` = une phrase sur la concordance entre les vues (concordantes, partiellement, discordantes) et ce qu'elle implique.",
+                        "- `conclusion` = une conclusion structurée de 2 à 4 phrases, dans le style d'un compte rendu d'imagerie : ce qui est observé, l'hypothèse la plus probable, le degré de certitude.",
+                        "- `limites` = ce que cet examen NE PERMET PAS d'écarter : régions non couvertes, incidences manquantes, qualité insuffisante, pathologies nécessitant une autre modalité. Ce champ est OBLIGATOIRE et ne doit jamais être vide : un compte rendu sans limites explicites induit une fausse réassurance.",
                         "- Aide à la décision : jamais de diagnostic affirmatif, pas de prescription."
                     ].join('\n');
                     return mchat(S.mdlSynth, [
                         { role: 'system', content: synSys },
                         { role: 'user', content: 'Examen : ' + tri.modalite + ' — ' + tri.region + ' (' + tri.incidence + ')\n' +
                             'Mode : ' + (MODES[S.mode] || MODES.serie).n + ' — ' + (MODES[S.mode] || MODES.serie).d + '\n' +
-                            'Images analysées : ' + (S.imgSet ? S.imgSet.parts.length : 1) + '\n\n' +
+                            'Couverture : ' + S.series.length + ' élément(s) de la série, analysés en ' +
+                            (S.chunks ? S.chunks.length : 1) + ' lot(s). Les numéros d\'image cités par les experts ' +
+                            'sont les indices GLOBAUX de la série (1 à ' + S.series.length + ').\n\n' +
                             'Contexte clinique :\n' + clinCtx() + '\n\nLectures des experts :\n\n' + dossier }
                     ], SCH_CONSENSUS, { effort: 'high', max_tokens: 4500, timeout: 150000 })
                         .then(rep => {
@@ -2375,7 +2449,8 @@ function analyzeWithAI(auto) {
     }).catch(e => fail(0, 'erreur', e.message || String(e)));
 }
 
-function lectureMsg(agents, tri, grille) {
+function lectureMsg(agents, tri, grille, set) {
+    set = set || S.imgSet;
     const roles = agents.map(k => '• ' + AG[k].n + ' — ' + AG[k].s).join('\n');
     const sys = [
         agents.length === 1
@@ -2406,14 +2481,14 @@ function lectureMsg(agents, tri, grille) {
 
     return [
         { role: 'system', content: sys },
-        { role: 'user', content: [{ type: 'text', text: S.imgSet.legend + '\n\nCONTEXTE CLINIQUE :\n' + clinCtx() }].concat(S.imgSet.parts) }
+        { role: 'user', content: [{ type: 'text', text: set.legend + '\n\nCONTEXTE CLINIQUE :\n' + clinCtx() }].concat(set.parts) }
     ];
 }
 
 // Normalise une lecture simple au format consensus
 function toConsensus(r, agents, tri) {
     return {
-        synthese: '', accord: 1,
+        synthese: '', conclusion: '', limites: r.limites || [], accord: 1,
         findings: (r.findings || []).map(f => Object.assign({}, f, { experts: agents.map(k => AG[k].n), images: f.image ? [f.image] : [1] })),
         divergences: [], differentiel: r.differentiel || [], recommandations: r.recommandations || [],
         drapeaux_rouges: (r.findings || []).filter(f => f.severite === 'crit').map(f => f.texte),
@@ -2430,7 +2505,10 @@ function finish(rep, agents, tri, t0, annStep) {
         experts: agents.map(k => AG[k].n), triage: tri,
         mode: S.mode, elements: S.series.length,
         images_envoyees: S.imgSet ? S.imgSet.parts.length : 1,
-        variante: S.ppSel || 'clahe', duree_ms: Date.now() - t0, horodatage: new Date().toISOString()
+        variante: S.ppSel || 'clahe',
+        elements_total: S.series.length,
+        elements_analyses: S.chunks ? S.chunks.reduce((a, c) => a + c.sent.length, 0) : 1,
+        lots: S.chunks ? S.chunks.length : 1, duree_ms: Date.now() - t0, horodatage: new Date().toISOString()
     };
     // Les ROI portent un numéro d'image de la REQUÊTE ; on le remappe vers la série.
     const map = (S.imgSet && S.imgSet.map) || [0];
@@ -2490,6 +2568,15 @@ function renderReport(r, agents, tri) {
     let h = '';
     h += '<div class="fr fsb fnw" style="align-items:center"><h3 style="margin-top:0;border:none">Synthèse</h3>' + sevBadge(r.severite_globale) + '</div>';
 
+    const M0 = S.lastMeta || {};
+    if (M0.elements_total) {
+        const tot = M0.elements_total, an = M0.elements_analyses || 0;
+        const full = an >= tot;
+        h += '<p class="cov ' + (full ? 'cov-ok' : 'cov-part') + '">' +
+             (full ? '✓ ' : '⚠️ ') + an + ' / ' + tot + ' élément(s) de la série analysés' +
+             (M0.lots > 1 ? ' — ' + M0.lots + ' lots successifs' : '') +
+             (full ? '' : ' — couverture partielle, le compte rendu ne couvre pas toute la série') + '</p>';
+    }
     if (tri) h += '<p class="trg"><b>' + escapeHtml(tri.modalite) + '</b> · ' + escapeHtml(tri.region) +
         ' · ' + escapeHtml(tri.incidence) + ' · qualité ' + escapeHtml(tri.qualite) +
         (tri.artefacts && tri.artefacts.length ? ' · artefacts : ' + escapeHtml(tri.artefacts.join(', ')) : '') + '</p>';
@@ -2501,6 +2588,7 @@ function renderReport(r, agents, tri) {
     }
 
     if (r.synthese) h += '<p>' + escapeHtml(r.synthese) + '</p>';
+    if (r.conclusion) h += '<div class="ccl"><b>Conclusion</b><p>' + escapeHtml(r.conclusion) + '</p></div>';
 
     if (typeof r.accord === 'number' && r.divergences) {
         h += '<p class="acc">Accord inter-experts : <b>' + Math.round(r.accord * 100) + '%</b>';
@@ -2517,6 +2605,8 @@ function renderReport(r, agents, tri) {
             h += '<li>' + (ims.length ? '<span class="imgtag" title="Vue(s) concernée(s)">IMG ' + ims.join('+') + '</span>' : '') +
                 sevBadge(f.severite) + ' ' + escapeHtml(f.texte || '') +
                 (f.localisation ? ' <span class="loc">' + escapeHtml(f.localisation) + '</span>' : '') +
+                (f.image != null ? ' <span class="imn">img ' + escapeHtml(String(f.image)) + '</span>' : '') +
+                (Array.isArray(f.images) && f.images.length ? ' <span class="imn">img ' + escapeHtml(f.images.join(', ')) + '</span>' : '') +
                 (f.mesure ? ' <span class="mes">' + escapeHtml(f.mesure) + '</span>' : '') +
                 '<div class="fmeta">' + confBar(f.confiance) +
                 (f.experts && f.experts.length ? '<span class="exp">' + escapeHtml(f.experts.join(' · ')) + '</span>' : '') +
@@ -2563,11 +2653,19 @@ function renderReport(r, agents, tri) {
         h += '</ul>';
     }
 
+    if (Array.isArray(r.limites) && r.limites.length) {
+        h += '<div class="lim"><b>Limites de cet examen — ne permet pas d\'écarter</b><ul>';
+        r.limites.forEach(x => { h += '<li>' + escapeHtml(x) + '</li>'; });
+        h += '</ul></div>';
+    }
+
     const M = S.lastMeta || {};
     h += '<p class="trace">Experts : ' + agents.map(k => AG[k].n).join(', ') +
         '<br>Modèles : lecture <code>' + escapeHtml(M.modele_vision || '') + '</code> · triage <code>' + escapeHtml(M.modele_triage || '') + '</code>' +
         '<br>Mode : ' + escapeHtml((MODES[M.mode] || MODES.serie).n) + ' · ' + (M.elements || 1) + ' élément(s) · ' + (M.images_envoyees || 1) + ' image(s) transmise(s)' +
-        '<br>Variante envoyée : ' + escapeHtml(M.variante || '') + ' · durée ' + Math.round((M.duree_ms || 0) / 100) / 10 + ' s' +
+        '<br>Variante envoyée : ' + escapeHtml(M.variante || '') +
+        (M.elements_total ? ' · ' + M.elements_analyses + '/' + M.elements_total + ' élément(s) · ' + M.lots + ' lot(s)' : '') +
+        ' · durée ' + Math.round((M.duree_ms || 0) / 100) / 10 + ' s' +
         '<br>' + escapeHtml(M.horodatage || '') +
         '<br><br>⚠️ Aide à la décision — ne remplace pas un diagnostic posé par un professionnel de santé.</p>';
 
