@@ -197,6 +197,107 @@ canvas{display:block;touch-action:none;}
 @media (prefers-reduced-motion: reduce) {
   *,*::before,*::after { animation-duration:.01ms !important; transition-duration:.01ms !important; }
 }
+
+.coh{font-size:.75rem;color:var(--txd);background:rgba(0,229,255,.06);border-left:2px solid var(--cy);padding:7px 10px;border-radius:0 6px 6px 0;}
+.coh b{color:var(--cy);}
+
+/* ===== Série multi-images / vidéo ===== */
+.serlbl{font-size:.7rem;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;}
+#modeSel{width:auto;font-size:.68rem;padding:5px 8px;margin:0;}
+.sstrip{display:flex;overflow-x:auto;padding:4px 2px 8px;gap:8px;-webkit-overflow-scrolling:touch;}
+.sitem{position:relative;flex:0 0 auto;border:2px solid var(--bd);border-radius:8px;overflow:hidden;cursor:pointer;background:#000;transition:border-color .15s,transform .15s;}
+.sitem:hover{transform:translateY(-2px);}
+.sitem.on{border-color:var(--ac);box-shadow:0 0 0 1px var(--ac);}
+.sitem canvas{display:block;width:78px;height:auto;}
+.sitag{position:absolute;left:0;bottom:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));color:#fff;font-family:var(--fmono);font-size:.58rem;padding:8px 4px 2px;text-align:center;}
+.sidel{position:absolute;top:2px;right:2px;width:17px;height:17px;min-width:17px;border-radius:50%;border:none;background:rgba(0,0,0,.65);color:#fff;font-size:.6rem;line-height:1;padding:0;cursor:pointer;}
+.sidel:hover{background:var(--dg);}
+.serhint{font-size:.66rem;color:var(--txd);line-height:1.45;}
+.vprog{margin-top:10px;}
+.vpbar{height:5px;background:var(--sf2);border-radius:3px;overflow:hidden;}
+.vpbar span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cy),var(--ac));transition:width .2s;}
+.vptxt{font-size:.66rem;color:var(--txd);font-family:var(--fmono);margin-top:5px;}
+.imgtag{display:inline-block;font-family:var(--fmono);font-size:.6rem;font-weight:700;background:var(--sf2);color:var(--cy);border-radius:4px;padding:2px 5px;margin-right:6px;}
+
+/* ===== Avertissement d'origine ===== */
+.orgwarn{background:rgba(239,68,68,.12);border:1px solid var(--dg);border-radius:8px;padding:10px 12px;margin-bottom:12px;}
+.orgwarn b{display:block;color:var(--dg);font-size:.82rem;margin-bottom:4px;}
+.orgwarn span{display:block;color:var(--txd);font-size:.74rem;line-height:1.5;}
+
+/* ===== Sonde de diagnostic ===== */
+.diag{background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:8px;margin-bottom:12px;max-height:210px;overflow-y:auto;font-family:var(--fmono);font-size:.66rem;}
+.dg-l{padding:5px 7px;border-left:2px solid var(--bd);margin-bottom:4px;line-height:1.45;}
+.dg-l b{display:block;color:var(--tx);font-weight:600;}
+.dg-l span{color:var(--txd);word-break:break-word;}
+.dg-ok{border-left-color:var(--ac);}
+.dg-ok b{color:var(--ac);}
+.dg-warn{border-left-color:var(--wn);}
+.dg-warn b{color:var(--wn);}
+.dg-err{border-left-color:var(--dg);}
+.dg-err b{color:var(--dg);}
+.dg-info{border-left-color:var(--cy);}
+.dg-info b{color:var(--cy);}
+
+/* ===== PWA ===== */
+.instb{background:var(--sf2);border:1px solid var(--ac);color:var(--ac);border-radius:20px;padding:6px 13px;font-size:.7rem;font-weight:600;font-family:var(--fmono);cursor:pointer;white-space:nowrap;}
+.instb:active{transform:scale(.96);}
+.swupd{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:9000;background:var(--sf);border:1px solid var(--ac);border-radius:12px;padding:11px 13px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;box-shadow:0 8px 28px rgba(0,0,0,.55);animation:fadeIn .25s ease;}
+.swupd span{flex:1;font-size:.78rem;color:var(--tx);min-width:120px;}
+
+/* ===== Mode Lot ===== */
+#vfSel{width:auto;font-size:.68rem;padding:5px 8px;margin:0;}
+.bbar{margin-top:8px;padding:8px 10px;background:rgba(0,229,255,.07);border-left:2px solid var(--cy);border-radius:0 6px 6px 0;font-family:var(--fmono);font-size:.7rem;color:var(--cy);display:flex;align-items:center;gap:8px;}
+.bpct{margin-left:auto;color:var(--txd);}
+.air ul.btl{list-style:none;margin-left:0;}
+.air ul.btl>li{border:1px solid var(--bd);border-radius:8px;padding:9px 11px;margin-bottom:8px;background:var(--sf);}
+.btl-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.btl-h b{font-size:.83rem;}
+.bmini{margin-left:auto;padding:3px 10px;font-size:.66rem;}
+.btl-f{margin:6px 0 0 16px;}
+.btl-f li{font-size:.78rem;color:var(--txd);margin-bottom:2px;}
+.btl-n{font-size:.72rem;color:var(--txd);margin-top:5px;}
+.btl-e{font-size:.74rem;color:var(--dg);margin-top:5px;}
+
+/* ===== Moteur d'analyse v11 ===== */
+.ctxr{display:grid;grid-template-columns:70px 1fr 2fr;margin-bottom:8px;gap:6px;}
+@media(max-width:420px){.ctxr{grid-template-columns:1fr 1fr;}.ctxr>:last-child{grid-column:1/-1;}}
+.pnl{display:flex;align-items:center;font-size:.7rem;color:var(--txd);margin-bottom:10px;gap:7px;cursor:pointer;}
+.pnl input{width:auto;flex:0 0 auto;}
+.trg{font-family:var(--fmono);font-size:.72rem;color:var(--cy);background:rgba(0,229,255,.07);border-left:2px solid var(--cy);padding:6px 9px;border-radius:0 6px 6px 0;margin:8px 0;}
+.redflag{background:rgba(239,68,68,.1);border:1px solid var(--dg);border-radius:8px;padding:10px 12px;margin:10px 0;}
+.redflag b{color:var(--dg);font-size:.82rem;}
+.redflag ul{margin:6px 0 0 16px;}
+.redflag li{font-size:.82rem;margin-bottom:3px;}
+.acc{font-size:.75rem;color:var(--txd);font-family:var(--fmono);}
+.air ul.fl{list-style:none;margin-left:0;}
+.air ul.fl>li{border-left:2px solid var(--bd);padding:7px 0 7px 10px;margin-bottom:8px;}
+.loc{font-size:.72rem;color:var(--cy);font-family:var(--fmono);}
+.mes{font-size:.72rem;color:var(--ac);font-family:var(--fmono);}
+.fmeta{display:flex;align-items:center;margin-top:5px;gap:8px;flex-wrap:wrap;}
+.cfw{display:inline-block;width:56px;height:5px;background:var(--sf2);border-radius:3px;overflow:hidden;}
+.cfb{display:block;height:100%;border-radius:3px;}
+.cft{font-size:.65rem;color:var(--txd);font-family:var(--fmono);}
+.exp{font-size:.65rem;color:var(--txd);}
+.air ul.dv>li{margin-bottom:8px;}
+.air ul.dv ul{margin-left:16px;font-size:.8rem;color:var(--txd);}
+.air ul.neg>li{font-size:.8rem;color:var(--txd);}
+.air ul.dd{list-style:none;margin-left:0;}
+.air ul.dd>li{margin-bottom:9px;}
+.prob{display:inline-block;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:2px 6px;border-radius:4px;margin-right:6px;}
+.p-elevee{background:rgba(239,68,68,.18);color:var(--dg);}
+.p-moyenne{background:rgba(245,158,11,.18);color:var(--wn);}
+.p-faible{background:rgba(156,163,175,.15);color:var(--txd);}
+.arg{font-size:.73rem;color:var(--ac);margin:3px 0 0 4px;}
+.arg.argc{color:var(--txd);}
+.air ul.rc{list-style:none;margin-left:0;}
+.air ul.rc>li{margin-bottom:7px;}
+.urg{display:inline-block;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:2px 6px;border-radius:4px;margin-right:6px;}
+.u-imm{background:var(--dg);color:#fff;}
+.u-fast{background:rgba(245,158,11,.2);color:var(--wn);}
+.u-prog{background:rgba(59,130,246,.2);color:var(--pr);}
+.u-none{background:var(--sf2);color:var(--txd);}
+.trace{margin-top:14px;font-size:.66rem;color:var(--txd);font-family:var(--fmono);border-top:1px solid var(--bd);padding-top:8px;line-height:1.6;}
+.trace code{color:var(--ac);}
 </style>
 <meta name="description" content="MedVision AI Pro — Plateforme d'analyse médicale IA avec 13 agents spécialisés. Radiologie, ECG, dermatologie.">
 <meta name="author" content="Nicolas Julienne — Studio Niko Design">
@@ -210,6 +311,10 @@ canvas{display:block;touch-action:none;}
 <meta name="twitter:description" content="Analyse médicale par intelligence artificielle — 13 agents spécialisés, EU MDR 2017/745 IIa">
 
 <link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="apple-touch-icon.png" sizes="180x180">
+<meta name="application-name" content="MedVision AI Pro">
+<meta name="apple-mobile-web-app-title" content="MedVision">
 </head>
 <body role="application" aria-label="MedVision AI Pro — Analyse médicale IA">
 <main id="appRoot" tabindex="-1">
@@ -227,7 +332,8 @@ canvas{display:block;touch-action:none;}
 <!-- APP -->
 <div id="app" class="app">
     <header>
-        <div><div class="logo">MedVision AI</div><div class="sub">v10.1 • Nicolas JULIENNE</div></div>
+        <div><div class="logo">MedVision AI</div><div class="sub">v12 • Nicolas JULIENNE</div></div>
+        <button id="instB" class="instb" style="display:none" onclick="doInstall()">⤓ Installer</button>
         <div class="fr fnw">
             <button class="bt bi" onclick="openApiM()" title="Configuration API" aria-label="Configuration API Mistral">🔑</button>
             <button class="bt bi" onclick="exportPDF()" title="Exporter PDF" aria-label="Exporter le rapport en PDF">📄</button>
@@ -249,7 +355,7 @@ canvas{display:block;touch-action:none;}
     <!-- VIEWER -->
     <div class="vbox" id="vBox">
         <div class="cpn" id="pA"><canvas id="cA"></canvas><div class="olbl" id="lA">IMAGE A</div></div>
-        <div class="cpn" id="pB" style="display:none"><canvas id="cB"></canvas><div class="olbl">IMAGE B (Ref)</div></div>
+        <div class="cpn" id="pB" style="display:none"><canvas id="cB"></canvas><div class="olbl" id="lB">IMAGE B (Réf)</div></div>
         <div class="tbar" id="tbar">
             <button class="tb" onclick="togCmp()" id="bCmp" title="Comparaison">🌓</button>
             <div class="tsep"></div>
@@ -268,11 +374,43 @@ canvas{display:block;touch-action:none;}
     <div class="cd" style="margin-top:8px">
         <div class="fr fsb fnw">
             <div class="fr fw">
-                <button class="bt" onclick="pickF()">📂 Image</button>
-                <input type="file" id="fIn" hidden accept="image/*">
+                <button class="bt" onclick="pickF()">📂 Images</button>
+                <input type="file" id="fIn" hidden accept="image/*" multiple>
+                <button class="bt" onclick="pickV()">🎬 Vidéo</button>
+                <input type="file" id="vIn" hidden accept="video/*">
                 <button class="bt" onclick="startCam()">📷 Caméra</button>
             </div>
         </div>
+
+        <div id="serArea" style="display:none;margin-top:10px">
+            <div class="fr fsb fnw" style="align-items:center;margin-bottom:6px">
+                <span class="serlbl">Série · <span id="serCount">0</span></span>
+                <div class="fr fnw" style="gap:6px">
+                    <select id="modeSel" onchange="setMode()" aria-label="Mode d'analyse">
+                        <option value="serie">Série — vues du même examen</option>
+                        <option value="evolution">Évolution — dates différentes</option>
+                        <option value="batch">Lot — examens indépendants</option>
+                    </select>
+                    <select id="vfSel" onchange="setVFrames()" title="Trames extraites par vidéo" aria-label="Trames extraites par vidéo">
+                        <option value="4">4 trames</option>
+                        <option value="6" selected>6 trames</option>
+                        <option value="8">8 trames</option>
+                        <option value="12">12 trames</option>
+                        <option value="16">16 trames</option>
+                        <option value="24">24 trames</option>
+                    </select>
+                    <button class="sbt" onclick="clrSeries()" title="Vider la série">🗑</button>
+                </div>
+            </div>
+            <div class="sstrip" id="serStrip"></div>
+            <div id="batchBar" class="bbar" style="display:none"></div>
+            <div class="serhint" id="modeHint"></div>
+        </div>
+    </div>
+
+    <div id="vidProg" class="vprog" style="display:none">
+        <div class="vpbar"><span id="vpFill"></span></div>
+        <div class="vptxt" id="vpTxt">Analyse de la vidéo…</div>
     </div>
 
     <!-- AGENTS & AI -->
@@ -289,10 +427,21 @@ canvas{display:block;touch-action:none;}
             <div class="ppstrip" id="ppStrip"></div>
         </div>
 
+        <!-- Contexte clinique -->
+        <div class="ctxr">
+            <input id="ctxAge" inputmode="numeric" placeholder="Âge" aria-label="Âge du patient">
+            <select id="ctxSex" aria-label="Sexe">
+                <option value="">Sexe</option><option>Femme</option><option>Homme</option>
+            </select>
+            <input id="ctxInd" placeholder="Indication clinique (motif de l'examen)" aria-label="Indication clinique">
+        </div>
+
         <div class="nwr">
             <textarea id="notes" rows="2" placeholder="Notes cliniques (ou dictez)..."></textarea>
             <button class="bt bi mcb" onclick="togMic()" id="micB">🎤</button>
         </div>
+
+        <label class="pnl"><input type="checkbox" id="panelOff"><span>Lecture unique (désactive les lectures indépendantes + consensus)</span></label>
 
         <!-- Analysis Buttons -->
         <div class="fr fw" style="margin-bottom:8px">
@@ -319,18 +468,25 @@ canvas{display:block;touch-action:none;}
         
         <div style="font-size:.72rem;font-weight:700;color:var(--txd);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Modèle IA pour l'analyse</div>
         <select id="mdlSel" style="margin-bottom:6px">
-            <optgroup label="🚀 Frontier (meilleure qualité)">
-                <option value="mistral-large-latest">Mistral Large 3 — Flagship multimodal</option>
-                <option value="pixtral-large-latest" selected>Pixtral Large — 124B expert imagerie</option>
+            <optgroup label="🤖 Automatique (recommandé)">
+                <option value="" selected>Auto — interroge /v1/models et prend le meilleur modèle vision</option>
             </optgroup>
-            <optgroup label="⚡ Rapide &amp; Économique">
-                <option value="mistral-small-latest">Mistral Small 3.2 — Rapide + vision</option>
-                <option value="pixtral-12b-2409">Pixtral 12B — Compact vision</option>
+            <optgroup label="🚀 Frontier">
+                <option value="mistral-medium-3-5">Mistral Medium 3.5 — frontier multimodal, 256k</option>
+                <option value="mistral-large-2512">Mistral Large 3 — 675B multimodal</option>
+            </optgroup>
+            <optgroup label="⚡ Rapide &amp; économique">
+                <option value="mistral-small-2603">Mistral Small 4 — hybride 119B/6,5B actifs</option>
+                <option value="ministral-3-14b-2512">Ministral 3 14B — edge vision</option>
+            </optgroup>
+            <optgroup label="🗄️ Legacy">
+                <option value="pixtral-large-2411">Pixtral Large — déprécié</option>
             </optgroup>
         </select>
         <div id="mdlInfo" style="font-size:.7rem;color:var(--ac);margin-bottom:12px;min-height:16px"></div>
         
-        <div class="fr fsb fnw"><button class="bt" onclick="clM('apiM')">Fermer</button><button class="bt" onclick="testKey()" id="testBtn">🔍 Tester</button><button class="bt bp" onclick="saveKey()">✓ Enregistrer</button></div>
+        <div id="diagOut" class="diag" style="display:none"></div>
+        <div class="fr fsb fnw"><button class="bt" onclick="clM('apiM')">Fermer</button><button class="bt" onclick="diagAPI()" id="diagBtn">🩺 Diagnostic</button><button class="bt bp" onclick="saveKey()">✓ Enregistrer</button></div>
     </div>
 </div>
 
@@ -387,7 +543,14 @@ const S = {
     pxMm: null, comp: false, ak: '', mdl: 'pixtral-large-latest',
     pd: 0, ps: 1, ip: false, dn: false, lP: null, sP: null, tM: null,
     videoStream: null, camActive: false,
-    facing: 'environment', torch: false, q: 'high', recog: null, recActive: false, lastReport: null
+    facing: 'environment', torch: false, q: 'high', recog: null, recActive: false, lastReport: null,
+    // --- moteur d'analyse v11 ---
+    pp: null, ppSel: 'clahe', busy: false, triage: null, lastMeta: null,
+    mdlPool: null, mdlVision: null, mdlFast: null, mdlSynth: null, mdlForce: '',
+    only: null, onDone: null, batch: null, vFrames: 6,
+    swReg: null, instEvt: null,
+    // --- série multi-images / vidéo v12 ---
+    series: [], active: 0, mode: 'serie', imgSet: null
 };
 
 const cA = $('cA'), xA = cA.getContext('2d');
@@ -406,6 +569,8 @@ function init() {
     initDB();
     rsz();
     $('fIn').addEventListener('change', function() { hFile(this); });
+    $('vIn').addEventListener('change', function() { hVideo(this); });
+    setMode();
     window.addEventListener('resize', () => setTimeout(rsz, 120));
     window.addEventListener('orientationchange', () => setTimeout(rsz, 350));
     
@@ -528,6 +693,13 @@ window.saveExam = function() {
         img: S.srcA,
         notes: $('notes').value,
         report: S.lastReport || null,
+        audit: S.lastMeta || null,
+        contexte: {
+            age: ($('ctxAge') && $('ctxAge').value) || '',
+            sexe: ($('ctxSex') && $('ctxSex').value) || '',
+            indication: ($('ctxInd') && $('ctxInd').value) || '',
+            pxMm: S.pxMm || null
+        },
         meta: {drw: S.drw, meas: S.meas, rois: S.rois}
     }).onsuccess = () => toast('Examen sauvegardé');
 };
@@ -565,36 +737,84 @@ function rsz() {
 }
 
 window.pickF = () => $('fIn').click();
+window.pickV = () => $('vIn').click();
+
+window.setVFrames = function() {
+    S.vFrames = parseInt($('vfSel').value, 10) || 6;
+    toast(S.vFrames + ' trames extraites par vidéo');
+};
+
+window.setMode = function() {
+    S.mode = $('modeSel').value || 'serie';
+    $('modeHint').textContent = (MODES[S.mode] || MODES.serie).d;
+};
+
+window.clrSeries = function() {
+    if (!S.series.length) return;
+    S.series = []; S.active = 0;
+    S.imgA = null; S.srcA = null; S.pp = null;
+    S.pxMm = null; S.meas = []; S.rois = []; S.drw = []; S.aiRois = [];
+    S.lastReport = null; S.imgSet = null;
+    $('lA').textContent = 'Aucune image';
+    $('ppArea').style.display = 'none';
+    $('aiO').classList.remove('vis');
+    upCal(); drw(); showImgStats(); renderStrip();
+    toast('Série vidée');
+};
+
+function readAsURL(f) {
+    return new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = e => res(e.target.result);
+        r.onerror = () => rej(new Error('lecture impossible : ' + f.name));
+        r.readAsDataURL(f);
+    });
+}
 
 function hFile(inp) {
-    const f = inp.files[0];
-    if (!f) return;
-    const r = new FileReader();
-    r.onload = e => ldImg(e.target.result);
-    r.readAsDataURL(f);
+    const files = Array.prototype.slice.call(inp.files || []);
     inp.value = '';
+    if (!files.length) return;
+    Promise.all(files.map(f => readAsURL(f).then(u => mkItem(u, f.name, 'image', null))))
+        .then(items => {
+            items.forEach(it => { try { it.sharp = PP.metrics(PP.lum(PP.draw(it.img, 320).x.getImageData(0, 0, Math.min(320, it.w), Math.min(320, it.h)).data), Math.min(320, it.w), Math.min(320, it.h)).sharp; } catch (e) {} });
+            addItems(items);
+        })
+        .catch(e => toast(e.message));
 }
 
-function ldImg(src) {
-    S.pxMm = null;
-    S.meas = [];
-    S.rois = [];
-    S.drw = [];
-    S.aiRois = [];
-    upCal();
-    const im = new Image();
-    im.onload = () => {
-        S.imgA = im;
-        S.srcA = src;
-        S.w = im.width;
-        S.h = im.height;
-        $('lA').textContent = 'IMG A (' + S.w + 'x' + S.h + ')';
-        resetV();
-        drw();
-        showImgStats();
-    };
-    im.src = src;
+function hVideo(inp) {
+    const f = (inp.files || [])[0];
+    inp.value = '';
+    if (!f) return;
+    const box = $('vidProg'), fill = $('vpFill'), txt = $('vpTxt');
+    box.style.display = ''; fill.style.width = '0%';
+    txt.textContent = 'Sondage de la vidéo…';
+    const target = S.vFrames || 6;
+    VID.extract(f, target, pr => {
+        fill.style.width = Math.round(pr * 100) + '%';
+        txt.textContent = 'Sondage — ' + Math.round(pr * 100) + '%';
+    }).then(r => {
+        txt.textContent = 'Extraction de ' + r.frames.length + ' trames…';
+        return Promise.all(r.frames.map((fr, i) =>
+            mkItem(fr.src, 'Trame ' + (i + 1), 'frame', fr.t).then(it => { it.sharp = fr.sharp; return it; })
+        )).then(items => {
+            box.style.display = 'none';
+            S.mode = 'serie'; $('modeSel').value = 'serie'; setMode();
+            addItems(items);
+            toast(items.length + ' trames sur ' + r.probes + ' sondées · ' + fmtT(r.duration));
+        });
+    }).catch(e => {
+        box.style.display = 'none';
+        toast('Vidéo : ' + e.message);
+    });
 }
+
+function ldImgSingle(src, name) {
+    mkItem(src, name || 'Capture', 'image', null).then(it => addItems([it])).catch(e => toast(e.message));
+}
+
+function ldImg(src, name) { ldImgSingle(src, name); }
 
 function upCal() {
     const el = $('calS');
@@ -608,7 +828,13 @@ function upCal() {
 }
 
 window.togCmp = function() {
-    if (!S.imgB && !S.comp) toast('Chargez un patient avec historique');
+    // La comparaison affiche l'élément PRÉCÉDENT de la série (ou l'historique patient).
+    if (!S.comp && S.series.length > 1) {
+        const j = S.active > 0 ? S.active - 1 : 1;
+        const ref = S.series[j];
+        if (ref) { S.imgB = ref.img; S.srcB = ref.src; $('lB').textContent = ref.name; }
+    }
+    if (!S.imgB && !S.comp) toast('Chargez une série de 2 images ou un patient avec historique');
     S.comp = !S.comp;
     $('pB').style.display = S.comp ? 'block' : 'none';
     $('bCmp').className = 'tb' + (S.comp ? ' on' : '');
@@ -858,11 +1084,8 @@ window.undo = function() {
     drw();
 };
 
-window.resetV = function() {
-    S.drw = [];
-    S.meas = [];
-    S.rois = [];
-    S.aiRois = [];
+// Recadre la vue (zoom/centrage) SANS toucher aux annotations.
+function fitView() {
     if (S.imgA) {
         const dw = cA.width / DPR;
         const dh = cA.height / DPR;
@@ -876,6 +1099,16 @@ window.resetV = function() {
         S.oy = 0;
     }
     drw();
+}
+
+// Bouton ✕ : efface les annotations de l'image courante ET recadre.
+window.resetV = function() {
+    S.drw = [];
+    S.meas = [];
+    S.rois = [];
+    S.aiRois = [];
+    stashAnn();
+    fitView();
 };
 
 function renderAg() {
@@ -913,10 +1146,12 @@ function clM(id) {
 window.clM = clM;
 
 const MDL_INFO = {
-    'mistral-large-latest': 'Flagship 2025. Top qualité texte+vision. ~2$/M tokens.',
-    'pixtral-large-latest': '124B params. Expert imagerie médicale, documents, graphiques.',
-    'mistral-small-latest': '24B rapide avec vision. Très bon coût/performance.',
-    'pixtral-12b-2409': '12B multimodal open-source. Léger et rapide.'
+    '': 'Interroge /v1/models à chaque session et sélectionne le meilleur modèle vision disponible. Ne se périme jamais.',
+    'mistral-medium-3-5': 'Frontier multimodal (v26.04). 256k contexte. 1,5 $ / 7,5 $ par M tokens.',
+    'mistral-large-2512': 'Mistral Large 3 (v25.12). 675B MoE open-weight, multimodal. Débit plus lent.',
+    'mistral-small-2603': 'Mistral Small 4 (v26.03). 119B MoE, 6,5B actifs. 0,15 $ / 0,60 $ par M. reasoning_effort réglable.',
+    'ministral-3-14b-2512': 'Ministral 3 14B (v25.12). Vision compacte, latence minimale.',
+    'pixtral-large-2411': 'Déprécié par Mistral. Conservé pour compatibilité uniquement.'
 };
 
 function upMdlInfo() {
@@ -930,64 +1165,18 @@ window.saveKey = function() {
     const raw = $('akIn').value || '';
     S.ak = raw.replace(/[\x00-\x1f\x7f\s]/g, '');
     if (!S.ak) { toast('Clé vide!'); return; }
-    S.mdl = $('mdlSel').value || 'pixtral-large-latest';
+    S.mdlForce = $('mdlSel').value || '';
+    S.mdl = S.mdlForce || 'auto';
+    S.mdlPool = null;
     store.set('mv_key', S.ak);
-    store.set('mv_mdl', S.mdl);
+    store.set('mv_mdl', S.mdlForce);
     clM('apiM');
-    toast('Config sauvée: ' + S.mdl.split('-')[0].toUpperCase() + ' (' + S.ak.length + ' car.)');
+    toast('Config sauvée : ' + (S.mdlForce || 'sélection automatique') + ' (' + S.ak.length + ' car.)');
 };
 
-window.testKey = function() {
-    const raw = $('akIn').value || '';
-    const k = raw.replace(/[\x00-\x1f\x7f\s]/g, '');
-    if (!k) { $('akStat').textContent = 'Entrez une clé'; $('akStat').style.color = 'var(--wn)'; return; }
-    $('akStat').textContent = 'Test en cours...';
-    $('akStat').style.color = 'var(--txd)';
-    $('testBtn').disabled = true;
-    const mdl = $('mdlSel').value || 'pixtral-large-latest';
-    const x = new XMLHttpRequest();
-    x.open('POST', 'https://api.mistral.ai/v1/chat/completions', true);
-    x.setRequestHeader('Content-Type', 'application/json');
-    x.setRequestHeader('Authorization', 'Bearer ' + k);
-    x.timeout = 15000;
-    x.onload = () => {
-        $('testBtn').disabled = false;
-        if (x.status === 200) {
-            $('akStat').innerHTML = '<span style="color:var(--ac)">✅ Clé valide! Modèle ' + mdl + ' OK (HTTP 200)</span>';
-        } else if (x.status === 401) {
-            $('akStat').innerHTML = '<span style="color:var(--dg)">❌ Clé invalide ou expirée (HTTP 401)</span>';
-        } else if (x.status === 403) {
-            $('akStat').innerHTML = '<span style="color:var(--dg)">❌ Accès refusé. Vérifiez les permissions (HTTP 403)</span>';
-        } else if (x.status === 429) {
-            $('akStat').innerHTML = '<span style="color:var(--wn)">⚠️ Rate limit atteint. Réessayez (HTTP 429)</span>';
-        } else {
-            $('akStat').innerHTML = '<span style="color:var(--wn)">Réponse inattendue HTTP ' + x.status + ': ' + x.statusText + '</span>';
-        }
-    };
-    x.onerror = () => {
-        $('testBtn').disabled = false;
-        $('akStat').innerHTML = '<span style="color:var(--dg)">❌ Erreur réseau. Vérifiez votre connexion.</span>';
-    };
-    x.ontimeout = () => {
-        $('testBtn').disabled = false;
-        $('akStat').innerHTML = '<span style="color:var(--wn)">Timeout (15s). Serveur lent ou bloqué.</span>';
-    };
-    x.send(JSON.stringify({model: mdl, messages: [{role: 'user', content: 'test'}], max_tokens: 1}));
-};
-
+// ---------- Socle : pipeline visuel, agents, échappement ----------
 function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-function showImgStats() {
-    if (!S.imgA) { $('imgStats').style.display = 'none'; return; }
-    $('imgStats').style.display = '';
-    const mp = (S.w * S.h / 1e6).toFixed(1);
-    $('imgStats').innerHTML =
-        '<span>Dimensions <span class="sv">' + S.w + '×' + S.h + '</span></span>' +
-        '<span>Résolution <span class="sv">' + mp + ' MP</span></span>' +
-        '<span>Statut <span class="sv">' + (S.lastReport ? 'Analysée' : 'Non analysée') + '</span></span>';
-}
-
-// ---------- Pipeline d'analyse ----------
 function setPipe(steps) {
     $('pipeWrap').style.display = 'block';
     let h = '';
@@ -997,6 +1186,7 @@ function setPipe(steps) {
     }
     $('pipeDisp').innerHTML = h;
 }
+
 function updPipe(i, status, val) {
     const el = $('pipeDisp').querySelector('[data-step="' + i + '"]');
     if (!el) return;
@@ -1011,126 +1201,1403 @@ function selectedAgents() {
     return out;
 }
 
-function buildPrompt(agents) {
-    const roles = agents.map(k => '• ' + AG[k].n + ' : ' + AG[k].s).join('\n');
-    return [
-        "Tu es un panel d'experts en imagerie médicale fournissant une AIDE À LA DÉCISION (non diagnostique).",
-        "Experts mobilisés :", roles, "",
-        "Analyse l'image médicale et réponds STRICTEMENT en JSON valide, sans aucun texte hors JSON ni balise Markdown. Schéma exact :",
-        '{',
-        '  "type_image": "modalité (radiographie/scanner/IRM/échographie/dermatoscopie/fond d_oeil/ECG/autre)",',
-        '  "qualite": "qualité diagnostique de l_image",',
-        '  "findings": [{"texte":"observation","severite":"crit|high|mod|low|norm"}],',
-        '  "differentiel": ["hypothèse"],',
-        '  "recommandations": ["action ou examen complémentaire"],',
-        '  "rois": [{"label":"zone","severite":"crit|high|mod|low|norm","xmin":0.0,"ymin":0.0,"xmax":1.0,"ymax":1.0}],',
-        '  "severite_globale": "crit|high|mod|low|norm"',
-        '}',
-        "Coordonnées rois normalisées 0..1 (origine coin supérieur gauche). Concision, précision, langue française."
-    ].join('\n');
+// ============================================================
+//  SÉRIE MULTI-IMAGES & VIDÉO — v12
+// ============================================================
+const MAX_API_IMG = 8;   // limite dure de l'API Mistral par requête
+const SERIES_MAX = 24;   // garde-fou interface
+
+const MODES = {
+    serie: { n: 'Série', d: 'Plusieurs incidences ou coupes du MÊME examen — lecture croisée, une seule conclusion.' },
+    evolution: { n: 'Évolution', d: 'Même région à des dates différentes — analyse comparative de la progression.' },
+    batch: { n: 'Lot', d: 'Examens indépendants — une analyse complète par image.' }
+};
+
+function newAnn() { return { pxMm: null, meas: [], rois: [], drw: [], aiRois: [] }; }
+
+let ITEM_SEQ = 0;
+function mkItem(src, name, kind, t) {
+    return new Promise((res, rej) => {
+        const im = new Image();
+        im.onload = () => {
+            const it = {
+                id: 'it' + (++ITEM_SEQ), name: name || ('Image ' + ITEM_SEQ), kind: kind || 'image',
+                src: src, img: im, w: im.width, h: im.height, t: (t == null ? null : t),
+                pp: null, sharp: 0, ann: newAnn(), report: null
+            };
+            res(it);
+        };
+        im.onerror = () => rej(new Error('image illisible : ' + (name || '')));
+        im.src = src;
+    });
 }
 
+// Sauvegarde les annotations courantes dans l'élément actif
+function stashAnn() {
+    const it = S.series[S.active];
+    if (!it) return;
+    it.ann = { pxMm: S.pxMm, meas: S.meas, rois: S.rois, drw: S.drw, aiRois: S.aiRois };
+}
+
+// Bascule l'élément actif : chaque image conserve SES annotations
+function setActive(i) {
+    if (i < 0 || i >= S.series.length) return;
+    stashAnn();
+    S.active = i;
+    const it = S.series[i];
+    S.imgA = it.img; S.srcA = it.src; S.w = it.w; S.h = it.h;
+    S.pp = it.pp;
+    const a = it.ann || newAnn();
+    S.pxMm = a.pxMm; S.meas = a.meas; S.rois = a.rois; S.drw = a.drw; S.aiRois = a.aiRois;
+    $('lA').textContent = it.name + ' (' + it.w + '×' + it.h + ')';
+    upCal(); fitView(); drw(); showImgStats(); renderStrip();
+    if (it.pp) renderPP(it.pp);
+}
+
+function delItem(i) {
+    if (!S.series[i]) return;
+    S.series.splice(i, 1);
+    if (!S.series.length) {
+        S.imgA = null; S.srcA = null; S.pp = null; S.active = 0;
+        S.pxMm = null; S.meas = []; S.rois = []; S.drw = []; S.aiRois = [];
+        $('lA').textContent = 'Aucune image';
+        upCal(); drw(); showImgStats(); renderStrip();
+        return;
+    }
+    S.active = Math.min(S.active, S.series.length - 1);
+    setActive(S.active);
+}
+
+function addItems(items) {
+    if (!items.length) return;
+    const room = SERIES_MAX - S.series.length;
+    if (room <= 0) return toast('Série pleine (' + SERIES_MAX + ' max)');
+    const keep = items.slice(0, room);
+    const first = S.series.length === 0;
+    S.series = S.series.concat(keep);
+    if (keep.length < items.length) toast('Série limitée à ' + SERIES_MAX + ' éléments');
+    setActive(first ? 0 : S.active);
+    renderStrip();
+    toast(keep.length + ' élément(s) ajouté(s) — ' + S.series.length + ' au total');
+}
+
+// ---------- Extraction de trames vidéo ----------
+const VID = {
+    seek(v, t) {
+        return new Promise((res, rej) => {
+            let done = false;
+            const to = setTimeout(() => { if (!done) { done = true; v.removeEventListener('seeked', on); rej(new Error('seek timeout')); } }, 10000);
+            function on() { if (done) return; done = true; clearTimeout(to); v.removeEventListener('seeked', on); setTimeout(res, 12); }
+            v.addEventListener('seeked', on);
+            try { v.currentTime = Math.max(0, Math.min(t, (v.duration || 0) - 0.04)); }
+            catch (e) { done = true; clearTimeout(to); rej(e); }
+        });
+    },
+
+    // Sonde la vidéo, mesure netteté + changement de plan, retient les meilleures trames
+    extract(file, target, onprog) {
+        target = target || 6;
+        const v = document.createElement('video');
+        v.preload = 'auto'; v.muted = true; v.playsInline = true;
+        v.setAttribute('playsinline', ''); v.setAttribute('muted', '');
+        const url = URL.createObjectURL(file);
+
+        return new Promise((res, rej) => {
+            let settled = false;
+            const bail = e => { if (!settled) { settled = true; URL.revokeObjectURL(url); rej(e); } };
+            const guard = setTimeout(() => bail(new Error('vidéo illisible ou trop longue à charger')), 30000);
+
+            v.onerror = () => bail(new Error('format vidéo non pris en charge par le navigateur'));
+            v.onloadedmetadata = () => {
+                clearTimeout(guard);
+                const dur = v.duration;
+                if (!isFinite(dur) || dur <= 0) return bail(new Error('durée vidéo inconnue'));
+
+                const probes = Math.min(72, Math.max(target * 4, 20));
+                const cap = document.createElement('canvas');
+                const vw = v.videoWidth || 640, vh = v.videoHeight || 480;
+                const sc = Math.min(1, 640 / Math.max(vw, vh));   // sonde en basse résolution : rapide
+                cap.width = Math.max(1, Math.round(vw * sc));
+                cap.height = Math.max(1, Math.round(vh * sc));
+                const cx = cap.getContext('2d', { willReadFrequently: true });
+
+                const shots = [];
+                let i = 0;
+                const step = () => {
+                    if (i >= probes) return finish();
+                    const t = dur * (i + 0.5) / probes;
+                    this.seek(v, t).then(() => {
+                        cx.drawImage(v, 0, 0, cap.width, cap.height);
+                        const g = PP.lum(cx.getImageData(0, 0, cap.width, cap.height).data);
+                        const m = PP.metrics(g, cap.width, cap.height);
+                        shots.push({ t: t, sharp: m.sharp, hist: PP.hist(g), entropy: m.entropy });
+                        i++;
+                        if (onprog) onprog(i / probes);
+                        setTimeout(step, 0);
+                    }).catch(() => { i++; setTimeout(step, 0); });
+                };
+
+                const finish = () => {
+                    if (!shots.length) return bail(new Error('aucune trame exploitable'));
+                    // changement de plan = distance L1 entre histogrammes consécutifs
+                    for (let k = 0; k < shots.length; k++) {
+                        if (!k) { shots[k].chg = 0; continue; }
+                        const a = shots[k].hist, b = shots[k - 1].hist;
+                        let d = 0, n = 0;
+                        for (let j = 0; j < 256; j++) { d += Math.abs(a[j] - b[j]); n += a[j]; }
+                        shots[k].chg = n ? d / (2 * n) : 0;
+                    }
+                    // découpage temporel puis, dans chaque segment, la trame la plus NETTE
+                    // (évite systématiquement le flou de bougé, critique en écho/endoscopie)
+                    const K = Math.min(target, shots.length);
+                    const picks = [];
+                    for (let s = 0; s < K; s++) {
+                        const lo = Math.floor(s * shots.length / K), hi = Math.max(lo + 1, Math.floor((s + 1) * shots.length / K));
+                        let best = null;
+                        for (let k = lo; k < hi && k < shots.length; k++)
+                            if (!best || shots[k].sharp > best.sharp) best = shots[k];
+                        if (best) picks.push(best);
+                    }
+                    // rendu haute résolution des trames retenues
+                    const out = document.createElement('canvas');
+                    const s2 = Math.min(1, PP.MAXSIDE / Math.max(vw, vh));
+                    out.width = Math.max(1, Math.round(vw * s2));
+                    out.height = Math.max(1, Math.round(vh * s2));
+                    const ox = out.getContext('2d');
+                    const frames = [];
+                    let j = 0;
+                    const render = () => {
+                        if (j >= picks.length) {
+                            settled = true; URL.revokeObjectURL(url);
+                            return res({ frames: frames, duration: dur, probes: shots.length, w: vw, h: vh });
+                        }
+                        const p = picks[j];
+                        this.seek(v, p.t).then(() => {
+                            ox.drawImage(v, 0, 0, out.width, out.height);
+                            frames.push({ src: out.toDataURL('image/jpeg', 0.92), t: p.t, sharp: p.sharp, chg: p.chg });
+                            j++; setTimeout(render, 0);
+                        }).catch(() => { j++; setTimeout(render, 0); });
+                    };
+                    render();
+                };
+                step();
+            };
+            v.src = url;
+        });
+    }
+};
+
+function fmtT(s) {
+    if (s == null) return '';
+    const m = Math.floor(s / 60), r = s - m * 60;
+    return m + ':' + (r < 10 ? '0' : '') + r.toFixed(1);
+}
+
+// ---------- Bandeau de série ----------
+function renderStrip() {
+    const el = $('serStrip');
+    const wrap = $('serArea');
+    if (!S.series.length) { wrap.style.display = 'none'; return; }
+    wrap.style.display = '';
+    $('serCount').textContent = S.series.length + ' élément' + (S.series.length > 1 ? 's' : '');
+    el.innerHTML = '';
+    S.series.forEach((it, i) => {
+        const d = document.createElement('div');
+        d.className = 'sitem' + (i === S.active ? ' on' : '');
+        const c = document.createElement('canvas');
+        const th = 78;
+        c.width = th; c.height = Math.max(1, Math.round(th * it.h / it.w));
+        try { c.getContext('2d').drawImage(it.img, 0, 0, c.width, c.height); } catch (e) {}
+        d.appendChild(c);
+        const tag = document.createElement('div');
+        tag.className = 'sitag';
+        tag.textContent = (i + 1) + (it.kind === 'frame' ? ' · ' + fmtT(it.t) : '');
+        d.appendChild(tag);
+        const x = document.createElement('button');
+        x.className = 'sidel'; x.textContent = '✕'; x.title = 'Retirer';
+        x.onclick = ev => { ev.stopPropagation(); delItem(i); };
+        d.appendChild(x);
+        d.title = it.name + ' — ' + it.w + '×' + it.h + (it.kind === 'frame' ? ' — t=' + fmtT(it.t) : '');
+        d.onclick = () => setActive(i);
+        el.appendChild(d);
+    });
+}
+
+// ---------- Sélection des images envoyées à l'API ----------
+// Contrainte : 8 images maximum par requête Mistral.
+function buildImageSet() {
+    // Mode Lot : on restreint le jeu d'images à l'élément en cours de traitement.
+    const SRC = (S.only != null && S.series[S.only]) ? [S.series[S.only]] : S.series;
+    const N = SRC.length;
+    const parts = [], legend = [], map = [];
+    const variant = it => {
+        if (!it.pp) return it.src;
+        const v = it.pp.variants.find(x => x.k === (S.ppSel || 'clahe')) || it.pp.variants[2];
+        return v.url;
+    };
+    const orig = it => (it.pp ? it.pp.variants[0].url : it.src);
+
+    if (N === 0) return { parts: parts, legend: '', map: map };
+
+    if (N === 1) {
+        const it = SRC[0];
+        parts.push({ type: 'image_url', image_url: orig(it) }); map.push(0);
+        legend.push('Image 1 : acquisition originale — repère de référence pour toutes les coordonnées ROI.');
+        if (it.pp) {
+            parts.push({ type: 'image_url', image_url: variant(it) }); map.push(0);
+            legend.push('Image 2 : la MÊME image après rehaussement de contraste local (CLAHE). Aucun contenu ajouté — sert à détecter les anomalies de faible contraste. Exprime les ROI dans le repère de l\'image 1.');
+        }
+        return { parts: parts, legend: legend.join('\n'), map: map, sent: [S.only != null ? S.only : 0] };
+    }
+
+    // Sélection quand la série dépasse le budget : couverture temporelle/positionnelle
+    // uniforme, et dans chaque segment la trame la plus nette.
+    let idx = SRC.map((it, i) => i);
+    const dual = N * 2 <= MAX_API_IMG;
+    const budget = dual ? Math.floor(MAX_API_IMG / 2) : MAX_API_IMG;
+    if (N > budget) {
+        const sel = [];
+        for (let s = 0; s < budget; s++) {
+            const lo = Math.floor(s * N / budget), hi = Math.max(lo + 1, Math.floor((s + 1) * N / budget));
+            let best = -1;
+            for (let k = lo; k < hi && k < N; k++)
+                if (best < 0 || (SRC[k].sharp || 0) > (SRC[best].sharp || 0)) best = k;
+            if (best >= 0 && sel.indexOf(best) < 0) sel.push(best);
+        }
+        idx = sel;
+    }
+
+    const modeTxt = S.mode === 'evolution'
+        ? 'Ces images sont le MÊME examen à des dates/temps différents, dans l\'ordre chronologique. Analyse l\'ÉVOLUTION.'
+        : 'Ces images sont des vues/coupes/trames du MÊME examen. Recoupe-les : une anomalie visible sur plusieurs vues est plus fiable qu\'une anomalie isolée.';
+    legend.push(modeTxt);
+    if (idx.length < N) legend.push('(' + idx.length + ' vues retenues sur ' + N + ', réparties uniformément et choisies pour leur netteté.)');
+
+    idx.forEach(i => {
+        const it = SRC[i];
+        parts.push({ type: 'image_url', image_url: orig(it) }); map.push(i);
+        legend.push('Image ' + parts.length + ' : ' + it.name + (it.t != null ? ' — t = ' + fmtT(it.t) : '') + ' (original)');
+        if (dual && it.pp) {
+            parts.push({ type: 'image_url', image_url: variant(it) }); map.push(i);
+            legend.push('Image ' + parts.length + ' : ' + it.name + ' après rehaussement CLAHE — même cadrage que l\'image ' + (parts.length - 1) + '.');
+        }
+    });
+    legend.push('IMPORTANT : dans chaque observation et chaque ROI, renseigne le champ `image` avec le NUMÉRO de l\'image concernée (1 à ' + parts.length + ').');
+    return { parts: parts, legend: legend.join('\n'), map: map, sent: idx };
+}
+
+// ============================================================
+//  MOTEUR D'ANALYSE IMAGERIE v11 — Studio Niko Design
+//  Mistral Studio API : /v1/models · Structured Outputs · reasoning_effort
+// ============================================================
+const API_BASE = 'https://api.mistral.ai/v1';
+
+// Catalogue de repli si /v1/models est indisponible (juillet 2026)
+const MDL_FALLBACK = [
+    { id: 'mistral-medium-3-5', vision: true, rank: 100, lbl: 'Mistral Medium 3.5 — frontier multimodal' },
+    { id: 'mistral-large-2512', vision: true, rank: 92, lbl: 'Mistral Large 3 — 675B multimodal' },
+    { id: 'mistral-small-2603', vision: true, rank: 78, lbl: 'Mistral Small 4 — hybride rapide' },
+    { id: 'ministral-3-14b-2512', vision: true, rank: 60, lbl: 'Ministral 3 14B — edge vision' },
+    { id: 'pixtral-large-2411', vision: true, rank: 40, lbl: 'Pixtral Large — legacy' }
+];
+const REASONING_OK = /small-260|medium-3-5|magistral|large-251/;
+
+function rankModel(id) {
+    const f = MDL_FALLBACK.find(m => m.id === id);
+    if (f) return f.rank;
+    if (/medium-3-5|medium-26/.test(id)) return 100;
+    if (/large-3|large-251/.test(id)) return 92;
+    if (/small-260|small-26/.test(id)) return 78;
+    if (/ministral-3/.test(id)) return 60;
+    if (/pixtral/.test(id)) return 40;
+    return 20;
+}
+
+// ---------- Transport (XHR only — règle Studio Niko) ----------
+function mcall(o) {
+    return new Promise((res, rej) => {
+        const x = new XMLHttpRequest();
+        x.open(o.method || 'POST', API_BASE + (o.path || '/chat/completions'), true);
+        x.setRequestHeader('Authorization', 'Bearer ' + S.ak);
+        if (o.body) x.setRequestHeader('Content-Type', 'application/json');
+        x.timeout = o.timeout || 90000;
+        x.onload = () => {
+            let d = null;
+            try { d = JSON.parse(x.responseText); } catch (e) {}
+            if (x.status >= 200 && x.status < 300) return res(d);
+            rej({ status: x.status, body: d, raw: x.responseText });
+        };
+        x.onerror = () => rej({ status: 0, msg: 'réseau' });
+        x.ontimeout = () => rej({ status: -1, msg: 'timeout' });
+        x.send(o.body ? JSON.stringify(o.body) : null);
+    });
+}
+
+// Extraction du message d'erreur réel renvoyé par l'API
+function apiErr(e) {
+    if (!e) return 'erreur inconnue';
+    if (e.status === -1) return 'délai dépassé';
+    if (e.status === 0) return 'connexion impossible';
+    const b = e.body;
+    let m = '';
+    if (b) {
+        if (typeof b.message === 'string') m = b.message;
+        else if (b.message && b.message.detail) m = JSON.stringify(b.message.detail);
+        else if (Array.isArray(b.detail)) m = b.detail.map(d => (d.loc ? d.loc.join('.') + ': ' : '') + (d.msg || '')).join(' | ');
+        else if (typeof b.detail === 'string') m = b.detail;
+        else if (b.error && b.error.message) m = b.error.message;
+    }
+    if (!m && e.raw) m = String(e.raw).slice(0, 300);
+    return 'HTTP ' + e.status + (m ? ' — ' + m : '');
+}
+
+// Appel chat avec dégradation progressive :
+//  0. json_schema { schema }             (contrat REST officiel)
+//  1. json_schema { schema_definition }  (variante SDK récente)
+//  2. json_object + schéma injecté dans le prompt
+//  3. idem sans reasoning_effort         (modèles non hybrides)
+// Le palier qui passe est mémorisé par modèle dans S.caps.
+function mchat(model, messages, schema, opts) {
+    opts = opts || {};
+    S.caps = S.caps || {};
+    const wantEffort = !!(opts.effort && REASONING_OK.test(model));
+
+    function build(level) {
+        const b = {
+            model: model, messages: messages,
+            temperature: opts.temperature != null ? opts.temperature : 0.15,
+            max_tokens: opts.max_tokens || 3000
+        };
+        if (wantEffort && level < 3) b.reasoning_effort = opts.effort;
+        if (level === 0) b.response_format = { type: 'json_schema', json_schema: { name: schema.name, schema: schema.def, strict: true } };
+        else if (level === 1) b.response_format = { type: 'json_schema', json_schema: { name: schema.name, schema_definition: schema.def, strict: true } };
+        else {
+            b.response_format = { type: 'json_object' };
+            b.messages = messages.slice();
+            b.messages[0] = {
+                role: 'system',
+                content: messages[0].content +
+                    '\n\nRéponds STRICTEMENT en JSON valide, sans texte hors JSON ni balise Markdown, conforme à ce schéma :\n' +
+                    JSON.stringify(schema.def)
+            };
+        }
+        return b;
+    }
+
+    const MAXL = 3;
+    function attempt(level, lastErr) {
+        if (level > MAXL) throw lastErr || { status: 0 };
+        return mcall({ body: build(level), timeout: opts.timeout })
+            .then(d => {
+                const txt = (d && d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content) || '';
+                if (!txt) throw { status: 200, body: { message: 'réponse vide du modèle' } };
+                const parsed = JSON.parse(String(txt).replace(/```json/gi, '').replace(/```/g, '').trim());
+                S.caps[model] = level;
+                return parsed;
+            })
+            .catch(e => {
+                if (e && (e.status === 401 || e.status === 403 || e.status === 429)) throw e;
+                if (e instanceof SyntaxError) {
+                    if (level >= MAXL) throw { status: 200, body: { message: 'JSON illisible renvoyé par le modèle' } };
+                    return attempt(level + 1, e);
+                }
+                if (e && (e.status === 400 || e.status === 422 || e.status === 404)) return attempt(level + 1, e);
+                throw e;
+            });
+    }
+    const start = S.caps[model] != null ? S.caps[model] : 0;
+    return Promise.resolve().then(() => attempt(start, null));
+}
+
+// ---------- Découverte dynamique des modèles ----------
+function discoverModels() {
+    return mcall({ method: 'GET', path: '/models', timeout: 15000 })
+        .then(d => {
+            const list = (d && d.data) || [];
+            let vis = list.filter(m => {
+                const c = m.capabilities || {};
+                return c.vision === true && c.completion_chat !== false && !m.deprecation;
+            });
+            // Certaines réponses n'exposent pas `capabilities.vision` : repli par famille.
+            if (!vis.length) vis = list.filter(m => /medium|large-25|large-26|small-26|ministral-3|pixtral|magistral/.test(m.id) && !m.deprecation);
+            vis = vis.map(m => ({ id: m.id, rank: rankModel(m.id), lbl: m.description || m.name || m.id }));
+            if (!vis.length) throw new Error('aucun modèle vision');
+            vis.sort((a, b) => b.rank - a.rank);
+            return vis;
+        })
+        .catch(() => MDL_FALLBACK.slice());
+}
+
+function assignRoles(models) {
+    S.mdlPool = models;
+    S.mdlVision = (models[0] || {}).id || 'mistral-medium-3-5';
+    const fast = models.filter(m => /small|ministral/.test(m.id));
+    S.mdlFast = (fast[0] || models[models.length - 1] || {}).id || S.mdlVision;
+    S.mdlSynth = S.mdlVision;
+}
+
+// Un modèle imposé par l'utilisateur s'applique à TOUS les rôles, triage compris.
+function applyForce() {
+    if (!S.mdlForce) return;
+    S.mdlVision = S.mdlSynth = S.mdlFast = S.mdlForce;
+}
+
+
+// ============================================================
+//  MODE LOT — une analyse complète et indépendante par élément
+// ============================================================
+window.runBatch = function() {
+    const agents = selectedAgents();
+    if (!agents.length) return toast('Sélectionnez au moins un expert');
+    if (S.series.length < 2) return toast('Le mode Lot demande au moins 2 éléments');
+    if (S.busy) return toast('Analyse déjà en cours');
+
+    const results = [];
+    const total = S.series.length;
+    let i = 0;
+
+    const bar = $('batchBar');
+    bar.style.display = '';
+    const tick = () => {
+        bar.innerHTML = '<span class="sp"></span> Lot : élément ' + Math.min(i + 1, total) + ' / ' + total +
+            ' <span class="bpct">' + Math.round(i / total * 100) + '%</span>';
+    };
+    tick();
+
+    const step = () => {
+        if (i >= total) {
+            S.only = null; S.onDone = null; S.batch = results;
+            bar.style.display = 'none';
+            renderBatch(results, agents);
+            return;
+        }
+        S.only = i;
+        S.onDone = (rep, err) => {
+            results.push({ i: i, name: S.series[i].name, t: S.series[i].t, rep: rep, err: err });
+            if (rep) S.series[i].report = rep;
+            i++; tick();
+            setTimeout(step, 200);   // respiration entre deux éléments
+        };
+        analyzeWithAI(false);
+    };
+    step();
+};
+
+const SEVRANK = { crit: 0, high: 1, mod: 2, low: 3, norm: 4 };
+
+function renderBatch(res, agents) {
+    const sorted = res.slice().sort((a, b) => {
+        const sa = a.rep ? (SEVRANK[a.rep.severite_globale] != null ? SEVRANK[a.rep.severite_globale] : 5) : 6;
+        const sb = b.rep ? (SEVRANK[b.rep.severite_globale] != null ? SEVRANK[b.rep.severite_globale] : 5) : 6;
+        return sa - sb;
+    });
+    const nOk = res.filter(r => r.rep).length;
+    const nCrit = res.filter(r => r.rep && (r.rep.severite_globale === 'crit' || r.rep.severite_globale === 'high')).length;
+
+    let h = '<h3 style="margin-top:0;border:none">Analyse par lot</h3>';
+    h += '<p class="trg">' + nOk + ' / ' + res.length + ' élément(s) analysés · ' +
+         nCrit + ' à sévérité élevée ou critique · triés du plus grave au plus bénin</p>';
+    if (nCrit) h += '<div class="redflag"><b>⚠️ ' + nCrit + ' élément(s) nécessitent une revue prioritaire</b></div>';
+
+    h += '<ul class="btl">';
+    sorted.forEach(r => {
+        h += '<li><div class="btl-h">' + sevBadge(r.rep ? r.rep.severite_globale : 'norm') +
+             '<b>' + escapeHtml(r.name) + '</b>' +
+             (r.t != null ? '<span class="loc">t = ' + fmtT(r.t) + '</span>' : '') +
+             '<button class="bt bmini" onclick="showBatchItem(' + r.i + ')">Voir</button></div>';
+        if (r.err) h += '<div class="btl-e">Échec : ' + escapeHtml(r.err) + '</div>';
+        else {
+            const f = (r.rep.findings || []).slice(0, 3);
+            if (!f.length) h += '<div class="btl-n">Aucune anomalie retenue</div>';
+            else { h += '<ul class="btl-f">'; f.forEach(x => { h += '<li>' + escapeHtml(x.texte) + '</li>'; }); h += '</ul>'; }
+            const nr = (r.rep.findings || []).length - f.length;
+            if (nr > 0) h += '<div class="btl-n">+ ' + nr + ' autre(s) observation(s)</div>';
+        }
+        h += '</li>';
+    });
+    h += '</ul>';
+    h += '<p class="trace">Experts : ' + agents.map(k => AG[k].n).join(', ') +
+         '<br>Chaque élément a reçu une analyse complète et indépendante.' +
+         '<br><br>⚠️ Aide à la décision — ne remplace pas un diagnostic posé par un professionnel de santé.</p>';
+    $('aiO').innerHTML = h;
+    $('aiO').classList.add('vis');
+}
+
+window.showBatchItem = function(i) {
+    const it = S.series[i];
+    if (!it || !it.report) return toast('Aucun rapport pour cet élément');
+    setActive(i);
+    S.lastReport = it.report;
+    renderReport(it.report, selectedAgents(), S.triage);
+};
+
+// ============================================================
+//  SONDE DE DIAGNOSTIC API
+// ============================================================
+
+// Une page ouverte en file:// ou content:// a une origine opaque :
+// le navigateur bloque toute requête cross-origin AVANT l'envoi (status 0).
+function originIssue() {
+    const p = (location.protocol || '').replace(':', '');
+    if (p === 'https' || p === 'http') return null;
+    return p ? p + '://' : 'origine inconnue';
+}
+function pxImg() {
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const x = c.getContext('2d');
+    x.fillStyle = '#222'; x.fillRect(0, 0, 64, 64);
+    x.fillStyle = '#eee'; x.fillRect(20, 20, 24, 24);
+    return c.toDataURL('image/jpeg', 0.9);
+}
+
+window.diagAPI = function() {
+    const raw = ($('akIn').value || S.ak || '');
+    const k = raw.replace(/[\x00-\x1f\x7f\s]/g, '');
+    if (!k) { toast('Entrez une clé API'); return; }
+    const prev = S.ak; S.ak = k;
+    const box = $('diagOut');
+    box.style.display = 'block';
+    box.innerHTML = '<div class="dg-l"><span class="sp"></span> Diagnostic en cours…</div>';
+    const L = [];
+    const put = (st, t, d) => {
+        L.push('<div class="dg-l dg-' + st + '"><b>' + t + '</b>' + (d ? '<span>' + escapeHtml(String(d)) + '</span>' : '') + '</div>');
+        box.innerHTML = L.join('');
+    };
+
+    let fast = 'mistral-small-2603', vis = 'mistral-medium-3-5';
+
+    // 0 — origine de la page : cause n°1 des « connexion impossible » en série
+    const oi = originIssue();
+    if (oi) {
+        put('err', '0. Origine de la page : ' + oi,
+            "Le navigateur bloque toutes les requêtes réseau depuis une page à origine opaque. " +
+            "Aucun appel Mistral ne peut aboutir, quelle que soit la clé. " +
+            "Servez l'application depuis une origine https:// (GitHub Pages, Vercel, ou un serveur local) puis relancez ce diagnostic.");
+        put('info', 'Diagnostic interrompu', 'les étapes 1 à 7 échoueraient toutes pour la même raison');
+        return;
+    }
+    put('ok', '0. Origine de la page', location.origin);
+
+    // 1 — authentification + catalogue
+    mcall({ method: 'GET', path: '/models', timeout: 20000 })
+        .then(d => {
+            const list = (d && d.data) || [];
+            put('ok', '1. Authentification + /v1/models', list.length + ' modèles accessibles');
+            const vm = list.filter(m => (m.capabilities || {}).vision === true);
+            const guess = list.filter(m => /medium|large-25|large-26|small-26|ministral-3|pixtral|magistral/.test(m.id));
+            if (vm.length) { put('ok', '2. Modèles vision déclarés', vm.slice(0, 6).map(m => m.id).join(', ')); }
+            else if (guess.length) { put('warn', '2. capabilities.vision absent', 'repli par famille : ' + guess.slice(0, 6).map(m => m.id).join(', ')); }
+            else { put('err', '2. Aucun modèle vision', 'ta clé n\'a peut-être pas accès aux modèles multimodaux'); }
+            const pool = (vm.length ? vm : guess).map(m => ({ id: m.id, rank: rankModel(m.id) })).sort((a, b) => b.rank - a.rank);
+            if (pool.length) {
+                vis = pool[0].id;
+                const f = pool.filter(m => /small|ministral/.test(m.id));
+                fast = (f[0] || pool[pool.length - 1]).id;
+            }
+            put('info', '3. Rôles retenus', 'lecture ' + vis + ' · triage ' + fast);
+        })
+        .catch(e => { put('err', '1. /v1/models', apiErr(e)); })
+
+        // 4 — appel texte simple
+        .then(() => mcall({ body: { model: fast, messages: [{ role: 'user', content: 'Réponds exactement: OK' }], max_tokens: 10 }, timeout: 30000 })
+            .then(() => put('ok', '4. Chat texte (' + fast + ')', 'réponse reçue'))
+            .catch(e => put('err', '4. Chat texte (' + fast + ')', apiErr(e))))
+
+        // 5 — appel vision
+        .then(() => mcall({
+            body: {
+                model: fast, max_tokens: 30,
+                messages: [{ role: 'user', content: [{ type: 'text', text: 'Quelle forme vois-tu ?' }, { type: 'image_url', image_url: pxImg() }] }]
+            }, timeout: 45000
+        })
+            .then(() => put('ok', '5. Vision (' + fast + ')', 'image acceptée'))
+            .catch(e => put('err', '5. Vision (' + fast + ')', apiErr(e) + ' — ce modèle ne prend probablement pas les images')))
+
+        // 6 — niveau de structured output supporté
+        .then(() => {
+            S.caps = {};
+            const sch = { name: 'sonde', def: { type: 'object', additionalProperties: false, required: ['ok'], properties: { ok: { type: 'boolean' } } } };
+            return mchat(fast, [{ role: 'system', content: 'Réponds ok=true.' }, { role: 'user', content: 'ok ?' }], sch, { max_tokens: 60, timeout: 40000 })
+                .then(() => {
+                    const lv = S.caps[fast];
+                    const names = ['json_schema.schema (optimal)', 'json_schema.schema_definition', 'json_object + schéma injecté', 'json_object sans reasoning_effort'];
+                    put(lv === 0 ? 'ok' : 'warn', '6. Sortie structurée', 'niveau ' + lv + ' — ' + names[lv]);
+                })
+                .catch(e => put('err', '6. Sortie structurée', apiErr(e)));
+        })
+
+        // 7 — reasoning_effort
+        .then(() => mcall({ body: { model: fast, messages: [{ role: 'user', content: 'ok' }], max_tokens: 10, reasoning_effort: 'low' }, timeout: 30000 })
+            .then(() => put('ok', '7. reasoning_effort', 'accepté par ' + fast))
+            .catch(e => put('warn', '7. reasoning_effort', 'refusé — ' + apiErr(e) + ' (dégradation automatique active)')))
+
+        .then(() => { put('info', 'Diagnostic terminé', new Date().toLocaleTimeString('fr-FR')); S.ak = prev || k; });
+};
+
+// ============================================================
+//  PRÉ-TRAITEMENT IMAGE (canvas, 100 % local)
+// ============================================================
+const PP = {
+    MAXSIDE: 1540, // résolution max des encodeurs vision Mistral (au-delà : downscale serveur)
+
+    draw(img, maxSide) {
+        let w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+        const s = Math.min(1, maxSide / Math.max(w, h));
+        w = Math.max(1, Math.round(w * s)); h = Math.max(1, Math.round(h * s));
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        const x = c.getContext('2d', { willReadFrequently: true });
+        x.imageSmoothingQuality = 'high';
+        x.drawImage(img, 0, 0, w, h);
+        return { c: c, x: x, w: w, h: h };
+    },
+
+    lum(d) {
+        const n = d.length / 4, g = new Uint8ClampedArray(n);
+        for (let i = 0, j = 0; i < n; i++, j += 4)
+            g[i] = (d[j] * 0.299 + d[j + 1] * 0.587 + d[j + 2] * 0.114) | 0;
+        return g;
+    },
+
+    hist(g) { const h = new Uint32Array(256); for (let i = 0; i < g.length; i++) h[g[i]]++; return h; },
+
+    // Étirement par percentiles (élimine les valeurs aberrantes de bord)
+    stretch(g, loP, hiP) {
+        const h = this.hist(g), n = g.length;
+        let acc = 0, lo = 0, hi = 255;
+        const lt = n * loP, ht = n * hiP;
+        for (let i = 0; i < 256; i++) { acc += h[i]; if (acc >= lt) { lo = i; break; } }
+        acc = 0;
+        for (let i = 0; i < 256; i++) { acc += h[i]; if (acc >= ht) { hi = i; break; } }
+        if (hi <= lo) { lo = 0; hi = 255; }
+        const lut = new Uint8ClampedArray(256), sc = 255 / (hi - lo);
+        for (let i = 0; i < 256; i++) lut[i] = Math.max(0, Math.min(255, (i - lo) * sc));
+        return lut;
+    },
+
+    // CLAHE : égalisation adaptative par tuiles + interpolation bilinéaire
+    clahe(g, w, h, nx, ny, clip) {
+        nx = nx || 8; ny = ny || 8; clip = clip || 3.0;
+        const tw = Math.ceil(w / nx), th = Math.ceil(h / ny);
+        const luts = new Array(nx * ny);
+        for (let ty = 0; ty < ny; ty++) {
+            for (let tx = 0; tx < nx; tx++) {
+                const x0 = tx * tw, y0 = ty * th;
+                const x1 = Math.min(w, x0 + tw), y1 = Math.min(h, y0 + th);
+                const hist = new Uint32Array(256);
+                let cnt = 0;
+                for (let y = y0; y < y1; y++) {
+                    const row = y * w;
+                    for (let x = x0; x < x1; x++) { hist[g[row + x]]++; cnt++; }
+                }
+                if (!cnt) { luts[ty * nx + tx] = null; continue; }
+                // écrêtage du contraste + redistribution
+                const limit = Math.max(1, (clip * cnt / 256) | 0);
+                let excess = 0;
+                for (let i = 0; i < 256; i++) if (hist[i] > limit) { excess += hist[i] - limit; hist[i] = limit; }
+                const inc = (excess / 256) | 0;
+                for (let i = 0; i < 256; i++) hist[i] += inc;
+                const lut = new Uint8ClampedArray(256);
+                let c = 0;
+                for (let i = 0; i < 256; i++) { c += hist[i]; lut[i] = (255 * c / cnt) | 0; }
+                luts[ty * nx + tx] = lut;
+            }
+        }
+        const out = new Uint8ClampedArray(g.length);
+        for (let y = 0; y < h; y++) {
+            const fy = Math.min(ny - 1, Math.max(0, y / th - 0.5));
+            const y0 = Math.floor(fy), y1 = Math.min(ny - 1, y0 + 1), wy = fy - y0;
+            for (let x = 0; x < w; x++) {
+                const fx = Math.min(nx - 1, Math.max(0, x / tw - 0.5));
+                const x0 = Math.floor(fx), x1 = Math.min(nx - 1, x0 + 1), wx = fx - x0;
+                const v = g[y * w + x];
+                const a = luts[y0 * nx + x0], b = luts[y0 * nx + x1],
+                      cc = luts[y1 * nx + x0], dd = luts[y1 * nx + x1];
+                if (!a) { out[y * w + x] = v; continue; }
+                const top = a[v] * (1 - wx) + (b || a)[v] * wx;
+                const bot = (cc || a)[v] * (1 - wx) + (dd || cc || a)[v] * wx;
+                out[y * w + x] = top * (1 - wy) + bot * wy;
+            }
+        }
+        return out;
+    },
+
+    // Masque flou (accentuation des contours — fractures fines, septa).
+    // Noyau 3x3 conservé : la variante séparable a été mesurée à parité
+    // (99 ms contre 105 ms sur 1540x1155) pour un résultat divergent d'un
+    // niveau sur ~0,02 % des pixels. Optimisation écartée.
+    unsharp(g, w, h, amount) {
+        const b = new Uint8ClampedArray(g.length);
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+                let s = 0, n = 0;
+                for (let dy = -1; dy <= 1; dy++) {
+                    const yy = y + dy; if (yy < 0 || yy >= h) continue;
+                    for (let dx = -1; dx <= 1; dx++) {
+                        const xx = x + dx; if (xx < 0 || xx >= w) continue;
+                        s += g[yy * w + xx]; n++;
+                    }
+                }
+                b[y * w + x] = s / n;
+            }
+        }
+        const o = new Uint8ClampedArray(g.length);
+        for (let i = 0; i < g.length; i++) o[i] = g[i] + amount * (g[i] - b[i]);
+        return o;
+    },
+
+    // Métriques objectives de qualité
+    metrics(g, w, h) {
+        const hist = this.hist(g), n = g.length;
+        let mean = 0, ent = 0;
+        for (let i = 0; i < 256; i++) { mean += i * hist[i]; if (hist[i]) { const p = hist[i] / n; ent -= p * Math.log2(p); } }
+        mean /= n;
+        let varr = 0;
+        for (let i = 0; i < 256; i++) varr += hist[i] * (i - mean) * (i - mean);
+        varr /= n;
+        // netteté = variance du laplacien
+        let ls = 0, lss = 0, lc = 0;
+        for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+            const i = y * w + x;
+            const l = 4 * g[i] - g[i - 1] - g[i + 1] - g[i - w] - g[i + w];
+            ls += l; lss += l * l; lc++;
+        }
+        const lm = lc ? ls / lc : 0;
+        return {
+            mean: mean, std: Math.sqrt(varr), entropy: ent,
+            sharp: lc ? (lss / lc - lm * lm) : 0,
+            clipLow: (hist[0] + hist[1]) / n, clipHigh: (hist[254] + hist[255]) / n
+        };
+    },
+
+    toCanvas(g, w, h) {
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        const x = c.getContext('2d'), im = x.createImageData(w, h), d = im.data;
+        for (let i = 0, j = 0; i < g.length; i++, j += 4) { d[j] = d[j + 1] = d[j + 2] = g[i]; d[j + 3] = 255; }
+        x.putImageData(im, 0, 0);
+        return c;
+    },
+
+    // Chaîne complète → variantes + métriques
+    run(img) {
+        const base = this.draw(img, this.MAXSIDE);
+        const raw = base.x.getImageData(0, 0, base.w, base.h).data;
+        const g0 = this.lum(raw);
+        const m0 = this.metrics(g0, base.w, base.h);
+
+        const lut = this.stretch(g0, 0.005, 0.995);
+        const gN = new Uint8ClampedArray(g0.length);
+        for (let i = 0; i < g0.length; i++) gN[i] = lut[g0[i]];
+
+        const gC = this.clahe(gN, base.w, base.h, 8, 8, 2.5);
+        const gU = this.unsharp(gC, base.w, base.h, 0.6);
+
+        const V = [
+            { k: 'orig', n: 'Original', c: base.c, m: m0 },
+            { k: 'norm', n: 'Normalisé', c: this.toCanvas(gN, base.w, base.h), m: this.metrics(gN, base.w, base.h) },
+            { k: 'clahe', n: 'CLAHE', c: this.toCanvas(gC, base.w, base.h), m: this.metrics(gC, base.w, base.h) },
+            { k: 'edge', n: 'Contours', c: this.toCanvas(gU, base.w, base.h), m: this.metrics(gU, base.w, base.h) }
+        ];
+        // L'encodage JPEG est le poste le plus coûteux sur mobile. Seules
+        // l'originale et la variante réellement envoyée en ont besoin :
+        // on l'effectue à la demande, une seule fois par variante.
+        V.forEach(v => {
+            v._url = null;
+            Object.defineProperty(v, 'url', {
+                get: function () {
+                    if (this._url === null) this._url = this.c.toDataURL('image/jpeg', 0.92);
+                    return this._url;
+                },
+                enumerable: true, configurable: true
+            });
+        });
+        return { w: base.w, h: base.h, variants: V, base: m0 };
+    }
+};
+
+// ============================================================
+//  GRILLES DE LECTURE SYSTÉMATIQUES PAR MODALITÉ
+// ============================================================
+const GRILLES = {
+    'radiographie thoracique': 'ABCDE : Airways (trachée médiane, bronches) · Breathing (parenchyme des 4 quadrants, plèvre, pneumothorax, épanchement, culs-de-sac) · Circulation (silhouette cardiaque, index cardio-thoracique, hiles, médiastin) · Disability (rachis, côtes, clavicules, scapulas) · Everything else (tissus mous, emphysème sous-cutané, matériel, coupoles diaphragmatiques, angles costo-diaphragmatiques).',
+    'radiographie osseuse': 'Systématique : alignement · corticales sur tout leur trajet · densité osseuse · espaces articulaires · tissus mous péri-lésionnels · liseré graisseux · recherche de trait de fracture non déplacé, appositions périostées, lésions lytiques/condensantes.',
+    'radiographie abdominale': 'Gaz (niveaux hydro-aériques, pneumopéritoine, distension) · Masses et organes (contours hépatiques, spléniques, rénaux, psoas) · Os (rachis, bassin) · Calcifications (lithiases, calcifications vasculaires) · Corps étrangers et matériel.',
+    'scanner': 'Fenêtrage adapté · analyse plan par plan · comparaison bilatérale symétrique · densités spontanées · effet de masse, déviation de la ligne médiane · recherche systématique par compartiment anatomique.',
+    'irm': 'Analyse par séquence (T1/T2/FLAIR/diffusion) · signal comparé à la substance de référence · prise de contraste · œdème péri-lésionnel · effet de masse.',
+    'échographie': 'Échostructure · échogénicité comparée · contours et limites · vascularisation · cône d\'ombre / renforcement postérieur · mesures dans les 3 plans.',
+    'dermatoscopie': 'ABCDE : Asymétrie · Bordures irrégulières · Couleurs multiples (≥3) · Diamètre > 6 mm · Évolution. Puis critères dermoscopiques : réseau pigmentaire atypique, points/globules irréguliers, stries radiaires, voile bleu-blanc, structures de régression, patron vasculaire.',
+    'fond d\'œil': 'Papille (couleur, contours, excavation, rapport cup/disc) · Macula (reflet fovéolaire, drusen, œdème) · Vaisseaux (calibre, croisements A/V, tortuosité) · Rétine périphérique (hémorragies, exsudats, nodules cotonneux, néovaisseaux).',
+    'ecg': 'Rythme · Fréquence · Axe · Intervalles PR/QRS/QT corrigé · Onde P · Segment ST par territoire · Ondes T · Ondes Q pathologiques · Comparaison territoire par territoire.',
+    'histologie': 'Architecture tissulaire · cellularité · atypies cytonucléaires · mitoses · nécrose · invasion · marges · grade.',
+    'photographie clinique': 'Localisation anatomique · dimensions · couleur · relief · limites · état de la peau péri-lésionnelle · signes inflammatoires · signes de surinfection.',
+    'autre': 'Analyse systématique et exhaustive région par région, sans se limiter à l\'anomalie la plus évidente.'
+};
+
+function grilleFor(mod) {
+    const m = String(mod || '').toLowerCase();
+    const keys = Object.keys(GRILLES);
+    for (let i = 0; i < keys.length; i++) if (m.indexOf(keys[i]) >= 0) return GRILLES[keys[i]];
+    if (/thorax|pulmonaire|poumon|chest/.test(m)) return GRILLES['radiographie thoracique'];
+    if (/radio|rx|dxr/.test(m) && /os|membre|genou|épaule|main|pied|rachis/.test(m)) return GRILLES['radiographie osseuse'];
+    if (/radio/.test(m)) return GRILLES['radiographie thoracique'];
+    if (/tdm|ct\b|tomo/.test(m)) return GRILLES['scanner'];
+    if (/mri|rmn/.test(m)) return GRILLES['irm'];
+    if (/echo|us\b|ultrason/.test(m)) return GRILLES['échographie'];
+    if (/derm|naevus|mélanome|peau/.test(m)) return GRILLES['dermatoscopie'];
+    if (/rétine|retine|œil|oeil|papille/.test(m)) return GRILLES['fond d\'œil'];
+    return GRILLES['autre'];
+}
+
+// ============================================================
+//  SCHÉMAS STRUCTURÉS (Custom Structured Outputs)
+// ============================================================
+const SEV = ['crit', 'high', 'mod', 'low', 'norm'];
+
+const SCH_TRIAGE = {
+    name: 'triage_imagerie',
+    def: {
+        type: 'object', additionalProperties: false,
+        required: ['modalite', 'region', 'incidence', 'qualite', 'artefacts', 'analysable'],
+        properties: {
+            modalite: { type: 'string' },
+            region: { type: 'string' },
+            incidence: { type: 'string' },
+            qualite: { type: 'string', enum: ['bonne', 'moyenne', 'limitee', 'non_diagnostique'] },
+            artefacts: { type: 'array', items: { type: 'string' } },
+            analysable: { type: 'boolean' }
+        }
+    }
+};
+
+const SCH_LECTURE = {
+    name: 'lecture_expert',
+    def: {
+        type: 'object', additionalProperties: false,
+        required: ['findings', 'signes_negatifs', 'differentiel', 'recommandations', 'rois', 'severite'],
+        properties: {
+            findings: {
+                type: 'array', items: {
+                    type: 'object', additionalProperties: false,
+                    required: ['texte', 'severite', 'confiance', 'localisation', 'mesure', 'image'],
+                    properties: {
+                        texte: { type: 'string' }, severite: { type: 'string', enum: SEV },
+                        confiance: { type: 'number' }, localisation: { type: 'string' },
+                        mesure: { type: 'string' },
+                        image: { type: 'integer' }
+                    }
+                }
+            },
+            signes_negatifs: { type: 'array', items: { type: 'string' } },
+            differentiel: {
+                type: 'array', items: {
+                    type: 'object', additionalProperties: false,
+                    required: ['hypothese', 'probabilite', 'arguments_pour', 'arguments_contre'],
+                    properties: {
+                        hypothese: { type: 'string' },
+                        probabilite: { type: 'string', enum: ['elevee', 'moyenne', 'faible'] },
+                        arguments_pour: { type: 'string' }, arguments_contre: { type: 'string' }
+                    }
+                }
+            },
+            recommandations: {
+                type: 'array', items: {
+                    type: 'object', additionalProperties: false,
+                    required: ['action', 'urgence'],
+                    properties: {
+                        action: { type: 'string' },
+                        urgence: { type: 'string', enum: ['immediate', 'rapide', 'programmee', 'aucune'] }
+                    }
+                }
+            },
+            rois: {
+                type: 'array', items: {
+                    type: 'object', additionalProperties: false,
+                    required: ['label', 'severite', 'image', 'xmin', 'ymin', 'xmax', 'ymax'],
+                    properties: {
+                        label: { type: 'string' }, severite: { type: 'string', enum: SEV },
+                        image: { type: 'integer' },
+                        xmin: { type: 'number' }, ymin: { type: 'number' },
+                        xmax: { type: 'number' }, ymax: { type: 'number' }
+                    }
+                }
+            },
+            severite: { type: 'string', enum: SEV }
+        }
+    }
+};
+
+const SCH_CONSENSUS = {
+    name: 'consensus_panel',
+    def: {
+        type: 'object', additionalProperties: false,
+        required: ['synthese', 'accord', 'coherence_vues', 'findings', 'divergences', 'differentiel', 'recommandations', 'drapeaux_rouges', 'rois', 'severite_globale'],
+        properties: {
+            synthese: { type: 'string' },
+            accord: { type: 'number' },
+            coherence_vues: { type: 'string' },
+            findings: {
+                type: 'array', items: {
+                    type: 'object', additionalProperties: false,
+                    required: ['texte', 'severite', 'confiance', 'localisation', 'mesure', 'images', 'experts'],
+                    properties: {
+                        texte: { type: 'string' }, severite: { type: 'string', enum: SEV },
+                        confiance: { type: 'number' }, localisation: { type: 'string' },
+                        mesure: { type: 'string' },
+                        images: { type: 'array', items: { type: 'integer' } },
+                        experts: { type: 'array', items: { type: 'string' } }
+                    }
+                }
+            },
+            divergences: {
+                type: 'array', items: {
+                    type: 'object', additionalProperties: false,
+                    required: ['point', 'positions'],
+                    properties: {
+                        point: { type: 'string' },
+                        positions: { type: 'array', items: { type: 'string' } }
+                    }
+                }
+            },
+            differentiel: {
+                type: 'array', items: {
+                    type: 'object', additionalProperties: false,
+                    required: ['hypothese', 'probabilite', 'arguments_pour', 'arguments_contre'],
+                    properties: {
+                        hypothese: { type: 'string' },
+                        probabilite: { type: 'string', enum: ['elevee', 'moyenne', 'faible'] },
+                        arguments_pour: { type: 'string' }, arguments_contre: { type: 'string' }
+                    }
+                }
+            },
+            recommandations: {
+                type: 'array', items: {
+                    type: 'object', additionalProperties: false,
+                    required: ['action', 'urgence'],
+                    properties: {
+                        action: { type: 'string' },
+                        urgence: { type: 'string', enum: ['immediate', 'rapide', 'programmee', 'aucune'] }
+                    }
+                }
+            },
+            drapeaux_rouges: { type: 'array', items: { type: 'string' } },
+            rois: {
+                type: 'array', items: {
+                    type: 'object', additionalProperties: false,
+                    required: ['label', 'severite', 'image', 'xmin', 'ymin', 'xmax', 'ymax'],
+                    properties: {
+                        label: { type: 'string' }, severite: { type: 'string', enum: SEV },
+                        image: { type: 'integer' },
+                        xmin: { type: 'number' }, ymin: { type: 'number' },
+                        xmax: { type: 'number' }, ymax: { type: 'number' }
+                    }
+                }
+            },
+            severite_globale: { type: 'string', enum: SEV }
+        }
+    }
+};
+
+// ============================================================
+//  CONTEXTE CLINIQUE INJECTÉ
+// ============================================================
+function clinCtx() {
+    const L = [];
+    const age = ($('ctxAge') && $('ctxAge').value || '').trim();
+    const sx = ($('ctxSex') && $('ctxSex').value) || '';
+    const ind = ($('ctxInd') && $('ctxInd').value || '').trim();
+    const notes = ($('notes').value || '').trim();
+    if (age) L.push('Âge : ' + age);
+    if (sx) L.push('Sexe : ' + sx);
+    if (ind) L.push('Indication / motif : ' + ind);
+    if (notes) L.push('Notes cliniques : ' + notes);
+    if (S.pxMm) L.push('Calibration : 1 px = ' + (1 / S.pxMm).toFixed(4) + ' mm — les mesures en mm sont exploitables.');
+    else L.push('Image NON calibrée : ne donne aucune mesure absolue en mm, uniquement des rapports relatifs.');
+    if (S.meas && S.meas.length) {
+        L.push('Mesures posées par le clinicien : ' + S.meas.map((m, i) => {
+            const d = Math.hypot(m.x2 - m.x1, m.y2 - m.y1);
+            return '#' + (i + 1) + ' = ' + (S.pxMm ? (d / S.pxMm).toFixed(1) + ' mm' : d.toFixed(0) + ' px');
+        }).join(' · '));
+    }
+    if (S.rois && S.rois.length) {
+        L.push('Zones d\'intérêt entourées par le clinicien (coordonnées normalisées) : ' +
+            S.rois.map(r => '[' + (r.x / S.w).toFixed(2) + ',' + (r.y / S.h).toFixed(2) + ' → ' +
+                ((r.x + r.w) / S.w).toFixed(2) + ',' + ((r.y + r.h) / S.h).toFixed(2) + ']').join(' ') +
+            ' — analyse ces zones en priorité, sans t\'y limiter.');
+    }
+    return L.length ? L.join('\n') : 'Aucun contexte clinique fourni.';
+}
+
+// ============================================================
+//  PIPELINE D'ANALYSE
+// ============================================================
 function analyzeWithAI(auto) {
-    if (selectedAgents().length === 0 && auto) { ['gen','radio'].forEach(k => togAg(k)); }
+    if (selectedAgents().length === 0 && auto) { ['gen', 'radio'].forEach(k => togAg(k)); }
     const agents = selectedAgents();
     if (agents.length === 0) return toast('Sélectionnez au moins un expert');
-    const notes = ($('notes').value || '').trim();
+    if (!S.series.length) return toast('Chargez au moins une image');
+    if (S.busy) return toast('Analyse déjà en cours');
+    S.busy = true;
+    stashAnn();
 
-    const steps = ['Pré-traitement', 'Envoi ' + S.mdl.split('-')[0].toUpperCase(), 'Analyse multi-experts', 'Parsing', 'Annotations'];
+    const N = S.series.length;
+    const panel = agents.length > 1 && !($('panelOff') && $('panelOff').checked);
+    const ppLbl = 'Pré-traitement' + (N > 1 ? ' ×' + N : '');
+    const steps = panel
+        ? [ppLbl, 'Modèles', 'Triage modalité', 'Lectures ×' + agents.length, 'Consensus', 'Annotations']
+        : [ppLbl, 'Modèles', 'Triage modalité', 'Lecture experte', 'Annotations'];
     setPipe(steps);
-    updPipe(0, 'active');
     $('aiO').classList.add('vis');
     $('aiO').innerHTML = '<p><span class="sp"></span>&nbsp; Analyse en cours…</p>';
 
-    const userContent = [
-        { type: 'text', text: 'Analyse cette image médicale.' + (notes ? '\n\nNotes cliniques : ' + notes : '') },
-        { type: 'image_url', image_url: S.srcA }
+    const t0 = Date.now();
+    const fail = (i, lbl, msg) => {
+        updPipe(i, 'err', lbl);
+        $('aiO').innerHTML = '<h3>Analyse interrompue</h3><p>' + escapeHtml(msg) + '</p>';
+        S.busy = false;
+        if (S.onDone) S.onDone(null, msg);
+    };
+
+    // --- Étape 0 : pré-traitement local de TOUS les éléments de la série ---
+    updPipe(0, 'active');
+    const preprocAll = (k) => new Promise((res, rej) => {
+        if (k >= S.series.length) return res();
+        const it = S.series[k];
+        updPipe(0, 'active', (k + 1) + '/' + S.series.length);
+        setTimeout(() => {
+            try {
+                if (!it.pp) it.pp = PP.run(it.img);
+                it.sharp = it.pp.base.sharp;
+            } catch (e) { return rej(new Error('Pré-traitement impossible sur ' + it.name + ' : ' + e.message)); }
+            preprocAll(k + 1).then(res, rej);
+        }, 0);
+    });
+
+    preprocAll(0).then(() => {
+        const cur = S.series[S.active];
+        S.pp = cur ? cur.pp : null;
+        if (S.pp) renderPP(S.pp);
+        S.imgSet = buildImageSet();
+        updPipe(0, 'done', S.imgSet.parts.length + ' img · ' + (S.pp ? S.pp.w + '×' + S.pp.h : ''));
+
+        // --- Étape 1 : découverte des modèles ---
+        updPipe(1, 'active');
+        const mdlReady = S.mdlPool ? Promise.resolve(S.mdlPool) : discoverModels();
+        mdlReady.then(models => {
+            assignRoles(models);
+            applyForce();
+            updPipe(1, 'done', S.mdlVision);
+
+            // --- Étape 2 : triage modalité/région ---
+            updPipe(2, 'active');
+            const triSys = "Tu es un technicien en imagerie médicale. Identifie la nature technique de l'image fournie. " +
+                "Ne pose aucun diagnostic. Sois factuel et concis, en français.";
+            const triMsg = [
+                { role: 'system', content: triSys },
+                { role: 'user', content: [{ type: 'text', text: 'Identifie modalité, région anatomique, incidence, qualité diagnostique et artefacts.' }].concat([S.imgSet.parts[0]]) }
+            ];
+            return mchat(S.mdlFast, triMsg, SCH_TRIAGE, { effort: 'low', max_tokens: 600, timeout: 45000 })
+                .then(tri => {
+                    S.triage = tri;
+                    updPipe(2, 'done', tri.modalite);
+                    if (tri.analysable === false) {
+                        $('aiO').innerHTML = '<h3>Image non analysable</h3><p>Qualité : ' + escapeHtml(tri.qualite) +
+                            '</p><p>Artefacts : ' + escapeHtml((tri.artefacts || []).join(', ') || '—') +
+                            '</p><p style="color:var(--txd)">Reprenez l\'acquisition avant analyse.</p>';
+                        S.busy = false; throw 'stop';
+                    }
+                    const grille = grilleFor(tri.modalite + ' ' + tri.region);
+
+                    // --- Étape 3 : lecture(s) ---
+                    updPipe(3, 'active');
+                    if (!panel) {
+                        return mchat(S.mdlVision, lectureMsg(agents, tri, grille), SCH_LECTURE,
+                            { effort: 'high', max_tokens: 3500, timeout: 120000 })
+                            .then(r => ({ single: r, tri: tri }));
+                    }
+                    let done = 0;
+                    const jobs = agents.map(k =>
+                        mchat(S.mdlVision, lectureMsg([k], tri, grille), SCH_LECTURE,
+                              { effort: 'high', max_tokens: 2500, timeout: 120000 })
+                            .then(r => { updPipe(3, 'active', (++done) + '/' + agents.length); return { k: k, r: r }; })
+                            .catch(e => { updPipe(3, 'active', (++done) + '/' + agents.length); return { k: k, err: e }; })
+                    );
+                    return Promise.all(jobs).then(res => ({ lectures: res, tri: tri }));
+                })
+                .then(out => {
+                    if (!out) return;
+                    const tri = out.tri;
+                    if (out.single) {
+                        updPipe(3, 'done', '✓');
+                        const rep = toConsensus(out.single, agents, tri);
+                        return finish(rep, agents, tri, t0, steps.length - 1);
+                    }
+                    const ok = out.lectures.filter(l => !l.err);
+                    if (!ok.length) return fail(3, 'échec', 'Aucune lecture experte n\'a abouti.');
+                    updPipe(3, 'done', ok.length + '/' + agents.length);
+
+                    // --- Étape 4 : consensus ---
+                    updPipe(4, 'active');
+                    const dossier = ok.map(l => '### ' + AG[l.k].n + '\n' + JSON.stringify(l.r)).join('\n\n');
+                    const synSys = [
+                        "Tu présides une réunion de concertation pluridisciplinaire en imagerie médicale.",
+                        "Tu reçois les lectures INDÉPENDANTES de plusieurs spécialistes sur le même examen.",
+                        "Ta mission : produire une synthèse consolidée en français.",
+                        "Règles :",
+                        "- Retiens un finding si au moins un expert le rapporte avec une confiance ≥ 0.5 ; note quels experts le soutiennent.",
+                        "- Quand les experts se contredisent, ne tranche pas arbitrairement : documente la divergence et les positions.",
+                        "- `accord` = proportion (0 à 1) des findings majeurs faisant l'objet d'un accord entre experts.",
+                        "- `drapeaux_rouges` = uniquement les éléments imposant une prise en charge urgente.",
+                        "- Fusionne les ROI qui désignent la même zone SUR LA MÊME image ; conserve le numéro d'image.",
+                        "- `findings[].images` = liste des numéros d'images où l'anomalie est visible. Une anomalie confirmée sur plusieurs vues est plus fiable.",
+                        "- `coherence_vues` = une phrase sur la concordance entre les vues (concordantes, partiellement, discordantes) et ce qu'elle implique.",
+                        "- Aide à la décision : jamais de diagnostic affirmatif, pas de prescription."
+                    ].join('\n');
+                    return mchat(S.mdlSynth, [
+                        { role: 'system', content: synSys },
+                        { role: 'user', content: 'Examen : ' + tri.modalite + ' — ' + tri.region + ' (' + tri.incidence + ')\n' +
+                            'Mode : ' + (MODES[S.mode] || MODES.serie).n + ' — ' + (MODES[S.mode] || MODES.serie).d + '\n' +
+                            'Images analysées : ' + (S.imgSet ? S.imgSet.parts.length : 1) + '\n\n' +
+                            'Contexte clinique :\n' + clinCtx() + '\n\nLectures des experts :\n\n' + dossier }
+                    ], SCH_CONSENSUS, { effort: 'high', max_tokens: 4500, timeout: 150000 })
+                        .then(rep => {
+                            updPipe(4, 'done', 'accord ' + Math.round((rep.accord || 0) * 100) + '%');
+                            rep._lectures = ok;
+                            return finish(rep, agents, tri, t0, 5);
+                        });
+                })
+                .catch(e => {
+                    if (e === 'stop') return;
+                    let m = apiErr(e);
+                    if (e && e.status === 401) m += ' · vérifiez la clé API';
+                    else if (e && e.status === 0 && originIssue()) m += ' — page ouverte en ' + originIssue() + ', origine opaque : servez l\'app en https://';
+                    fail(2, 'erreur', m);
+                });
+        }).catch(e => fail(1, 'erreur', apiErr(e)));
+    }).catch(e => fail(0, 'erreur', e.message || String(e)));
+}
+
+function lectureMsg(agents, tri, grille) {
+    const roles = agents.map(k => '• ' + AG[k].n + ' — ' + AG[k].s).join('\n');
+    const sys = [
+        agents.length === 1
+            ? "Tu es " + AG[agents[0]].n + ", médecin sénior spécialisé en imagerie. " + AG[agents[0]].s
+            : "Tu es un collège d'experts en imagerie médicale :\n" + roles,
+        "",
+        "Tu produis une AIDE À LA DÉCISION destinée à un professionnel de santé. Jamais un diagnostic affirmatif.",
+        "",
+        "EXAMEN : " + tri.modalite + " — " + tri.region + " — incidence " + tri.incidence +
+        " — qualité " + tri.qualite + (tri.artefacts && tri.artefacts.length ? " — artefacts : " + tri.artefacts.join(', ') : ""),
+        "",
+        "GRILLE DE LECTURE OBLIGATOIRE — parcours-la intégralement avant de conclure :",
+        grille,
+        "",
+        "MÉTHODE :",
+        "1. Balaye la grille point par point, y compris les régions qui semblent normales.",
+        "2. Pour CHAQUE anomalie : localisation anatomique précise, sévérité, et confiance de 0 à 1 (0.9+ = certain, 0.5 = possible, <0.4 = ne rapporte pas).",
+        "3. Renseigne `signes_negatifs` : les éléments que tu as explicitement cherchés et NON trouvés. C'est aussi important que les anomalies.",
+        "4. N'invente aucune mesure absolue si l'image n'est pas calibrée.",
+        "5. ROI : coordonnées normalisées 0..1, origine en haut à gauche, dans le repère de l'image ORIGINALE concernée. Une ROI par anomalie localisable.",
+        S.imgSet && S.imgSet.parts.length > 1
+            ? "6. Chaque observation et chaque ROI DOIT porter le numéro d'image (`image`) auquel elle se rapporte. Une anomalie confirmée sur plusieurs vues mérite une confiance plus élevée qu'une anomalie visible sur une seule."
+            : "6. Renseigne `image` à 1 pour toutes les observations et ROI.",
+        "7. Si l'image ne permet pas de conclure sur un point, dis-le plutôt que de spéculer.",
+        "",
+        "Langue : français. Terminologie médicale exacte."
+    ].join('\n');
+
+    return [
+        { role: 'system', content: sys },
+        { role: 'user', content: [{ type: 'text', text: S.imgSet.legend + '\n\nCONTEXTE CLINIQUE :\n' + clinCtx() }].concat(S.imgSet.parts) }
     ];
-    updPipe(0, 'done', '✓');
-    updPipe(1, 'active');
+}
 
-    const body = {
-        model: S.mdl,
-        messages: [
-            { role: 'system', content: buildPrompt(agents) },
-            { role: 'user', content: userContent }
-        ],
-        temperature: 0.2,
-        max_tokens: 1800,
-        response_format: { type: 'json_object' }
+// Normalise une lecture simple au format consensus
+function toConsensus(r, agents, tri) {
+    return {
+        synthese: '', accord: 1,
+        findings: (r.findings || []).map(f => Object.assign({}, f, { experts: agents.map(k => AG[k].n), images: f.image ? [f.image] : [1] })),
+        divergences: [], differentiel: r.differentiel || [], recommandations: r.recommandations || [],
+        drapeaux_rouges: (r.findings || []).filter(f => f.severite === 'crit').map(f => f.texte),
+        rois: r.rois || [], severite_globale: r.severite || 'norm', signes_negatifs: r.signes_negatifs || [],
+        coherence_vues: ''
     };
+}
 
-    const x = new XMLHttpRequest();
-    x.open('POST', 'https://api.mistral.ai/v1/chat/completions', true);
-    x.setRequestHeader('Content-Type', 'application/json');
-    x.setRequestHeader('Authorization', 'Bearer ' + S.ak);
-    x.timeout = 60000;
-    x.onload = () => {
-        updPipe(1, 'done', 'HTTP ' + x.status);
-        if (x.status !== 200) {
-            updPipe(2, 'err', x.status);
-            $('aiO').innerHTML = '<h3>Erreur API</h3><p>HTTP ' + x.status + ' — ' + escapeHtml(x.statusText || '') + '</p><p style="color:var(--txd)">Vérifiez la clé Mistral, le quota ou le modèle.</p>';
-            return;
-        }
-        updPipe(2, 'done', '✓');
-        updPipe(3, 'active');
-        let report = null, rawText = '';
-        try {
-            const data = JSON.parse(x.responseText);
-            rawText = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
-            report = JSON.parse(rawText.replace(/```json/gi, '').replace(/```/g, '').trim());
-        } catch (e) {
-            updPipe(3, 'err', 'JSON');
-            $('aiO').innerHTML = '<h3>Réponse brute</h3><p style="white-space:pre-wrap;color:var(--txd)">' + escapeHtml(rawText || x.responseText).slice(0, 4000) + '</p>';
-            return;
-        }
-        updPipe(3, 'done', '✓');
-        updPipe(4, 'active');
-        S.lastReport = report;
-        renderReport(report, agents);
-        S.aiRois = Array.isArray(report.rois) ? report.rois.filter(r => typeof r.xmin === 'number') : [];
-        drw();
-        updPipe(4, 'done', S.aiRois.length + ' zone(s)');
-        showImgStats();
+function finish(rep, agents, tri, t0, annStep) {
+    updPipe(annStep, 'active');
+    S.lastReport = rep;
+    S.lastMeta = {
+        modele_vision: S.mdlVision, modele_triage: S.mdlFast, modele_synthese: S.mdlSynth,
+        experts: agents.map(k => AG[k].n), triage: tri,
+        mode: S.mode, elements: S.series.length,
+        images_envoyees: S.imgSet ? S.imgSet.parts.length : 1,
+        variante: S.ppSel || 'clahe', duree_ms: Date.now() - t0, horodatage: new Date().toISOString()
     };
-    x.onerror = () => { updPipe(1, 'err', 'réseau'); $('aiO').innerHTML = '<h3>Erreur réseau</h3><p>Connexion impossible à l\'API Mistral.</p>'; };
-    x.ontimeout = () => { updPipe(1, 'err', 'timeout'); $('aiO').innerHTML = '<h3>Timeout</h3><p>L\'analyse a dépassé 60 s.</p>'; };
-    x.send(JSON.stringify(body));
+    // Les ROI portent un numéro d'image de la REQUÊTE ; on le remappe vers la série.
+    const map = (S.imgSet && S.imgSet.map) || [0];
+    S.series.forEach(it => { it.ann = it.ann || newAnn(); it.ann.aiRois = []; });
+    let placed = 0;
+    (rep.rois || []).filter(r => typeof r.xmin === 'number').forEach(r => {
+        const n = Math.max(1, Math.min(map.length, parseInt(r.image, 10) || 1));
+        const si = map[n - 1];
+        const it = S.series[si];
+        if (!it) return;
+        it.ann.aiRois.push(r); placed++;
+    });
+    const curIt = S.series[S.active];
+    S.aiRois = curIt ? curIt.ann.aiRois : [];
+    drw(); renderStrip();
+    updPipe(annStep, 'done', placed + ' zone(s) / ' + S.series.length + ' img');
+    renderReport(rep, agents, tri);
+    showImgStats();
+    S.busy = false;
+    if (S.onDone) S.onDone(rep, null);
+}
+
+// ============================================================
+//  RENDU
+// ============================================================
+function renderPP(pp) {
+    $('ppArea').style.display = '';
+    const strip = $('ppStrip');
+    strip.innerHTML = '';
+    S.ppSel = S.ppSel || 'clahe';
+    pp.variants.forEach(v => {
+        const c = document.createElement('canvas');
+        c.width = 160; c.height = Math.round(160 * pp.h / pp.w);
+        c.getContext('2d').drawImage(v.c, 0, 0, c.width, c.height);
+        c.title = v.n + ' — netteté ' + Math.round(v.m.sharp) + ' · entropie ' + v.m.entropy.toFixed(2);
+        if (v.k === S.ppSel) c.className = 'sel';
+        c.onclick = () => { S.ppSel = v.k; renderPP(pp); toast('Variante envoyée : ' + v.n); };
+        strip.appendChild(c);
+    });
 }
 
 function sevBadge(s) {
-    const map = { crit:['sev-crit','Critique'], high:['sev-high','Élevé'], mod:['sev-mod','Modéré'], low:['sev-low','Faible'], norm:['sev-norm','Normal'] };
+    const map = { crit: ['sev-crit', 'Critique'], high: ['sev-high', 'Élevé'], mod: ['sev-mod', 'Modéré'], low: ['sev-low', 'Faible'], norm: ['sev-norm', 'Normal'] };
     const m = map[s] || map.norm;
     return '<span class="sev ' + m[0] + '">' + m[1] + '</span>';
 }
 
-function renderReport(r, agents) {
+function confBar(c) {
+    const p = Math.round(Math.max(0, Math.min(1, c || 0)) * 100);
+    const col = p >= 75 ? 'var(--ac)' : p >= 50 ? 'var(--wn)' : 'var(--dg)';
+    return '<span class="cfw" title="Confiance ' + p + '%"><span class="cfb" style="width:' + p + '%;background:' + col + '"></span></span><span class="cft">' + p + '%</span>';
+}
+
+const URG = { immediate: ['u-imm', 'Immédiat'], rapide: ['u-fast', 'Rapide'], programmee: ['u-prog', 'Programmé'], aucune: ['u-none', 'Différable'] };
+
+function renderReport(r, agents, tri) {
     let h = '';
     h += '<div class="fr fsb fnw" style="align-items:center"><h3 style="margin-top:0;border:none">Synthèse</h3>' + sevBadge(r.severite_globale) + '</div>';
-    if (r.type_image) h += '<p><b>Modalité :</b> ' + escapeHtml(r.type_image) + '</p>';
-    if (r.qualite) h += '<p><b>Qualité :</b> ' + escapeHtml(r.qualite) + '</p>';
+
+    if (tri) h += '<p class="trg"><b>' + escapeHtml(tri.modalite) + '</b> · ' + escapeHtml(tri.region) +
+        ' · ' + escapeHtml(tri.incidence) + ' · qualité ' + escapeHtml(tri.qualite) +
+        (tri.artefacts && tri.artefacts.length ? ' · artefacts : ' + escapeHtml(tri.artefacts.join(', ')) : '') + '</p>';
+
+    if (Array.isArray(r.drapeaux_rouges) && r.drapeaux_rouges.length) {
+        h += '<div class="redflag"><b>⚠️ Drapeaux rouges</b><ul>';
+        r.drapeaux_rouges.forEach(d => { h += '<li>' + escapeHtml(d) + '</li>'; });
+        h += '</ul></div>';
+    }
+
+    if (r.synthese) h += '<p>' + escapeHtml(r.synthese) + '</p>';
+
+    if (typeof r.accord === 'number' && r.divergences) {
+        h += '<p class="acc">Accord inter-experts : <b>' + Math.round(r.accord * 100) + '%</b>';
+        const M = S.lastMeta || {};
+        if (M.elements > 1) h += ' · ' + M.elements + ' élément(s), ' + M.images_envoyees + ' image(s) envoyée(s) · mode ' + (MODES[M.mode] || MODES.serie).n;
+        h += '</p>';
+    }
+    if (r.coherence_vues) h += '<p class="coh"><b>Concordance des vues</b> — ' + escapeHtml(r.coherence_vues) + '</p>';
+
     if (Array.isArray(r.findings) && r.findings.length) {
-        h += '<h3>Observations</h3><ul>';
-        r.findings.forEach(f => { h += '<li>' + sevBadge(f.severite) + ' ' + escapeHtml(f.texte || f) + '</li>'; });
+        h += '<h3>Observations</h3><ul class="fl">';
+        r.findings.forEach(f => {
+            const ims = f.images && f.images.length ? f.images : (f.image ? [f.image] : []);
+            h += '<li>' + (ims.length ? '<span class="imgtag" title="Vue(s) concernée(s)">IMG ' + ims.join('+') + '</span>' : '') +
+                sevBadge(f.severite) + ' ' + escapeHtml(f.texte || '') +
+                (f.localisation ? ' <span class="loc">' + escapeHtml(f.localisation) + '</span>' : '') +
+                (f.mesure ? ' <span class="mes">' + escapeHtml(f.mesure) + '</span>' : '') +
+                '<div class="fmeta">' + confBar(f.confiance) +
+                (f.experts && f.experts.length ? '<span class="exp">' + escapeHtml(f.experts.join(' · ')) + '</span>' : '') +
+                '</div></li>';
+        });
         h += '</ul>';
     }
+
+    if (Array.isArray(r.divergences) && r.divergences.length) {
+        h += '<h3>Divergences entre experts</h3><ul class="dv">';
+        r.divergences.forEach(d => {
+            h += '<li><b>' + escapeHtml(d.point) + '</b><ul>';
+            (d.positions || []).forEach(p => { h += '<li>' + escapeHtml(p) + '</li>'; });
+            h += '</ul></li>';
+        });
+        h += '</ul>';
+    }
+
+    if (Array.isArray(r.signes_negatifs) && r.signes_negatifs.length) {
+        h += '<h3>Recherché et non retrouvé</h3><ul class="neg">';
+        r.signes_negatifs.forEach(s => { h += '<li>' + escapeHtml(s) + '</li>'; });
+        h += '</ul>';
+    }
+
     if (Array.isArray(r.differentiel) && r.differentiel.length) {
-        h += '<h3>Diagnostic différentiel</h3><ul>';
-        r.differentiel.forEach(d => { h += '<li>' + escapeHtml(d) + '</li>'; });
+        h += '<h3>Diagnostic différentiel</h3><ul class="dd">';
+        r.differentiel.forEach(d => {
+            if (typeof d === 'string') { h += '<li>' + escapeHtml(d) + '</li>'; return; }
+            h += '<li><span class="prob p-' + escapeHtml(d.probabilite || 'faible') + '">' + escapeHtml(d.probabilite || '') + '</span> ' +
+                escapeHtml(d.hypothese || '') +
+                (d.arguments_pour ? '<div class="arg">+ ' + escapeHtml(d.arguments_pour) + '</div>' : '') +
+                (d.arguments_contre ? '<div class="arg argc">− ' + escapeHtml(d.arguments_contre) + '</div>' : '') + '</li>';
+        });
         h += '</ul>';
     }
+
     if (Array.isArray(r.recommandations) && r.recommandations.length) {
-        h += '<h3>Recommandations</h3><ul>';
-        r.recommandations.forEach(d => { h += '<li>' + escapeHtml(d) + '</li>'; });
+        h += '<h3>Conduite à tenir proposée</h3><ul class="rc">';
+        r.recommandations.forEach(d => {
+            if (typeof d === 'string') { h += '<li>' + escapeHtml(d) + '</li>'; return; }
+            const u = URG[d.urgence] || URG.aucune;
+            h += '<li><span class="urg ' + u[0] + '">' + u[1] + '</span> ' + escapeHtml(d.action || '') + '</li>';
+        });
         h += '</ul>';
     }
-    h += '<p style="margin-top:14px;font-size:.7rem;color:var(--txd);border-top:1px solid var(--bd);padding-top:8px">' +
-         'Experts : ' + agents.map(k => AG[k].n).join(', ') + ' • Modèle : ' + escapeHtml(S.mdl) + '<br>' +
-         '⚠️ Aide à la décision — ne remplace pas un diagnostic posé par un professionnel de santé.</p>';
+
+    const M = S.lastMeta || {};
+    h += '<p class="trace">Experts : ' + agents.map(k => AG[k].n).join(', ') +
+        '<br>Modèles : lecture <code>' + escapeHtml(M.modele_vision || '') + '</code> · triage <code>' + escapeHtml(M.modele_triage || '') + '</code>' +
+        '<br>Mode : ' + escapeHtml((MODES[M.mode] || MODES.serie).n) + ' · ' + (M.elements || 1) + ' élément(s) · ' + (M.images_envoyees || 1) + ' image(s) transmise(s)' +
+        '<br>Variante envoyée : ' + escapeHtml(M.variante || '') + ' · durée ' + Math.round((M.duree_ms || 0) / 100) / 10 + ' s' +
+        '<br>' + escapeHtml(M.horodatage || '') +
+        '<br><br>⚠️ Aide à la décision — ne remplace pas un diagnostic posé par un professionnel de santé.</p>';
+
     $('aiO').innerHTML = h;
 }
 
+function showImgStats() {
+    if (!S.imgA) { $('imgStats').style.display = 'none'; return; }
+    $('imgStats').style.display = '';
+    const mp = (S.w * S.h / 1e6).toFixed(1);
+    let h = '<span>Dimensions <span class="sv">' + S.w + '×' + S.h + '</span></span>' +
+            '<span>Résolution <span class="sv">' + mp + ' MP</span></span>';
+    if (S.pp) {
+        const b = S.pp.base;
+        h += '<span>Contraste <span class="sv">σ ' + b.std.toFixed(1) + '</span></span>' +
+             '<span>Netteté <span class="sv">' + Math.round(b.sharp) + '</span></span>' +
+             '<span>Entropie <span class="sv">' + b.entropy.toFixed(2) + '</span></span>';
+        if (b.clipLow > 0.05) h += '<span style="color:var(--wn)">Sous-exposé ' + Math.round(b.clipLow * 100) + '%</span>';
+        if (b.clipHigh > 0.05) h += '<span style="color:var(--wn)">Surexposé ' + Math.round(b.clipHigh * 100) + '%</span>';
+    }
+    if (S.series.length > 1) h += '<span>Série <span class="sv">' + (S.active + 1) + '/' + S.series.length + '</span></span>';
+    const it = S.series[S.active];
+    if (it && it.kind === 'frame') h += '<span>Trame <span class="sv">t = ' + fmtT(it.t) + '</span></span>';
+    h += '<span>Statut <span class="sv">' + (S.lastReport ? 'Analysée' : 'Non analysée') + '</span></span>';
+    $('imgStats').innerHTML = h;
+}
+
 window.runAutoAI = function() {
+    // Le mode Lot exécute une analyse complète et indépendante par élément.
+    if (S.mode === 'batch' && S.series.length > 1) return window.runBatch();
     if (!S.ak) { openApiM(); return toast('Configurez la clé API'); }
     if (!S.imgA) return toast('Chargez une image d\'abord');
     analyzeWithAI(true);
@@ -1205,7 +2672,7 @@ window.toggleFlash = function() {
 window.togMic = function() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) return toast('Dictée non supportée par ce navigateur');
-    if (S.recog && S.recActive) { S.recog.stop(); return; }
+    if (S.recog && S.recActive) { S.recActive = false; S.recog.stop(); return; }
     const rec = new SR();
     rec.lang = 'fr-FR'; rec.continuous = true; rec.interimResults = true;
     let base = $('notes').value;
@@ -1216,7 +2683,11 @@ window.togMic = function() {
         $('notes').value = (base ? base + ' ' : '') + txt;
     };
     rec.onerror = ev => toast('Dictée: ' + ev.error);
-    rec.onend = () => { S.recActive = false; $('micB').classList.remove('bp'); base = $('notes').value; };
+    rec.onend = () => {
+        base = $('notes').value;
+        if (S.recActive) { try { rec.start(); return; } catch (e) {} }
+        S.recActive = false; $('micB').classList.remove('bp');
+    };
     S.recog = rec;
     rec.start();
 };
@@ -1275,11 +2746,109 @@ window.exportPDF = function() {
     toast('PDF exporté');
 };
 
+// Avertissement d'origine au démarrage : bloquant pour tout appel API
+(function () {
+    const oi = originIssue();
+    if (!oi) return;
+    const b = document.createElement('div');
+    b.className = 'orgwarn';
+    b.innerHTML = '<b>⚠️ Ouverte depuis ' + oi + '</b>' +
+        '<span>Origine opaque : le navigateur bloque les appels à l\'API Mistral. ' +
+        'L\'analyse IA ne fonctionnera pas. Servez l\'application depuis une adresse https:// ' +
+        '(GitHub Pages, Vercel) ou installez-la en PWA.</span>';
+    const app = document.getElementById('app');
+    if (app) app.insertBefore(b, app.firstChild);
+})();
+
+
+// ============================================================
+//  PWA — service worker, mises à jour, installation
+// ============================================================
+(function () {
+    // Un service worker exige une origine sécurisée : inutile en file:// / content://
+    if (originIssue() || !('serviceWorker' in navigator)) return;
+
+    navigator.serviceWorker.register('sw.js', { scope: './' }).then(reg => {
+        S.swReg = reg;
+
+        // Une nouvelle version est prête pendant que l'ancienne tourne encore.
+        function watch(w) {
+            if (!w) return;
+            w.addEventListener('statechange', () => {
+                if (w.state === 'installed' && navigator.serviceWorker.controller) showUpdate(reg);
+            });
+        }
+        if (reg.waiting && navigator.serviceWorker.controller) showUpdate(reg);
+        watch(reg.installing);
+        reg.addEventListener('updatefound', () => watch(reg.installing));
+
+        // Recherche de mise à jour au retour au premier plan
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) reg.update().catch(() => {});
+        });
+    }).catch(() => { /* installation impossible : l'app fonctionne quand même en ligne */ });
+
+    let reloading = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (reloading) return;
+        reloading = true;
+        location.reload();
+    });
+})();
+
+function showUpdate(reg) {
+    if ($('swUpd')) return;
+    const b = document.createElement('div');
+    b.id = 'swUpd';
+    b.className = 'swupd';
+    b.innerHTML = '<span>Nouvelle version disponible</span>' +
+        '<button class="bt bp bmini" id="swUpdB">Mettre à jour</button>' +
+        '<button class="bt bmini" id="swUpdX">Plus tard</button>';
+    document.body.appendChild(b);
+    $('swUpdB').onclick = () => {
+        const w = reg.waiting || reg.installing;
+        if (w) w.postMessage({ type: 'SKIP_WAITING' });
+        b.remove();
+    };
+    $('swUpdX').onclick = () => b.remove();
+}
+
+// ---------- Invite d'installation ----------
+window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    S.instEvt = e;
+    const b = $('instB');
+    if (b) b.style.display = '';
+});
+
+window.addEventListener('appinstalled', () => {
+    S.instEvt = null;
+    const b = $('instB');
+    if (b) b.style.display = 'none';
+    toast('MedVision installé');
+});
+
+window.doInstall = function () {
+    if (S.instEvt) {
+        S.instEvt.prompt();
+        S.instEvt.userChoice.then(r => {
+            if (r && r.outcome === 'accepted') toast('Installation en cours…');
+            S.instEvt = null;
+            const b = $('instB');
+            if (b) b.style.display = 'none';
+        }).catch(() => {});
+        return;
+    }
+    // iOS n'expose pas beforeinstallprompt : instructions manuelles.
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    toast(ios ? 'Partager → « Sur l\'écran d\'accueil »' : 'Menu du navigateur → « Installer l\'application »');
+};
+
 // Load saved API key
 const rk = store.get('mv_key') || '';
 S.ak = rk.replace(/[\x00-\x1f\x7f\s]/g, '');
 const rm = store.get('mv_mdl');
-if (rm) { S.mdl = rm; const sel = $('mdlSel'); if (sel) sel.value = rm; }
+if (rm != null) { S.mdlForce = rm; S.mdl = rm || 'auto'; const sel = $('mdlSel'); if (sel) sel.value = rm; }
 upMdlInfo();
 
 if (document.readyState === 'loading')
