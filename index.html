@@ -255,6 +255,14 @@ canvas{display:block;touch-action:none;}
 .lim li{font-size:.78rem;color:var(--txd);margin-bottom:3px;}
 .imn{font-size:.66rem;color:var(--pr);font-family:var(--fmono);background:rgba(59,130,246,.13);padding:1px 5px;border-radius:3px;}
 
+.pinmsg{min-height:18px;font-size:.74rem;color:var(--txd);margin-top:10px;text-align:center;font-family:var(--fmono);}
+.pinmsg.e{color:var(--dg);}
+.pinlbl{font-size:.62rem;color:var(--txd);margin-top:14px;text-align:center;max-width:280px;line-height:1.5;opacity:.75;}
+
+.pinmsg{min-height:18px;font-size:.74rem;color:var(--txd);margin-top:10px;text-align:center;font-family:var(--fmono);}
+.pinmsg.e{color:var(--dg);}
+.pinlbl{font-size:.62rem;color:var(--txd);margin-top:14px;text-align:center;max-width:290px;line-height:1.5;opacity:.75;}
+
 /* ===== PWA ===== */
 .instb{background:var(--sf2);border:1px solid var(--ac);color:var(--ac);border-radius:20px;padding:6px 13px;font-size:.7rem;font-weight:600;font-family:var(--fmono);cursor:pointer;white-space:nowrap;}
 .instb:active{transform:scale(.96);}
@@ -344,6 +352,10 @@ canvas{display:block;touch-action:none;}
     <p style="color:var(--txd);font-size:.8rem;margin-bottom:4px">Expert Edition</p>
     <div class="pdots" id="pinDots"><span class="pdot"></span><span class="pdot"></span><span class="pdot"></span><span class="pdot"></span></div>
     <div class="pgr" id="pinPad"></div>
+    <div class="pinmsg" id="pinMsg"></div>
+    <div class="pinlbl">Code à 6 chiffres minimum · les données de santé sont chiffrées en AES-256-GCM avec une clé dérivée de ce code</div>
+    <div class="pinmsg" id="pinMsg"></div>
+    <div class="pinlbl">Code à 6 chiffres minimum · chiffrement AES-256-GCM des données de santé</div>
 </div>
 
 <!-- APP -->
@@ -540,6 +552,8 @@ const store = (() => {
     };
 })();
 
+const APP_VERSION = 'v13.2';
+
 const AG = {
     radio: {
         n: "Radiologue", i: "🦴", s: "Osseux, densités, tissus mous, matériel.",
@@ -731,7 +745,7 @@ const S = {
     pp: null, ppSel: 'clahe', busy: false, triage: null, lastMeta: null,
     mdlPool: null, mdlVision: null, mdlFast: null, mdlSynth: null, mdlForce: '',
     only: null, onDone: null, batch: null, vFrames: 6, chunks: null, autoRoute: false,
-    uRelCal: null, calD: null, calMm: null, zoomOff: false,
+    uRelCal: null, calD: null, calMm: null, zoomOff: false, pinNew: null, pinBusy: false,
     swReg: null, instEvt: null,
     // --- série multi-images / vidéo v12 ---
     series: [], active: 0, mode: 'serie', imgSet: null
@@ -797,24 +811,72 @@ function initPin() {
     }
 }
 
-function hPin(k) {
-    if (k === 'C') { S.pin = ''; rDots(); return; }
-    if (k === 'OK') {
-        if (S.pin.length === 4) {
-            $('authScreen').style.display = 'none';
-            $('app').classList.add('on');
-            setTimeout(rsz, 100);
-        } else toast('Code: 4 chiffres requis');
-        return;
-    }
-    if (S.pin.length < 4) {
-        S.pin += k;
-        rDots();
-    }
+function pinMsg(t, err) {
+    const el = $('pinMsg');
+    if (el) { el.textContent = t || ''; el.className = 'pinmsg' + (err ? ' e' : ''); }
 }
 
+function openApp() {
+    $('authScreen').style.display = 'none';
+    $('app').classList.add('on');
+    setTimeout(rsz, 100);
+    auditLog('deverrouillage', {});
+}
+
+function hPin(k) {
+    if (S.pinBusy) return;
+    if (k === 'C') { S.pin = ''; rDots(); pinMsg(''); return; }
+
+    if (k === 'OK') {
+        if (S.pin.length < 6) return pinMsg('Code à 6 chiffres minimum', true);
+        if (!VAULT.available()) {
+            return pinMsg('Chiffrement indisponible : servez l\'application en https://', true);
+        }
+        S.pinBusy = true;
+        pinMsg('Dérivation de la clé…');
+
+        // Premier lancement : création du code, avec confirmation.
+        if (!VAULT.isSet()) {
+            if (!S.pinNew) {
+                S.pinNew = S.pin; S.pin = ''; S.pinBusy = false; rDots();
+                return pinMsg('Confirmez le code');
+            }
+            if (S.pinNew !== S.pin) {
+                S.pinNew = null; S.pin = ''; S.pinBusy = false; rDots();
+                return pinMsg('Les deux saisies diffèrent', true);
+            }
+            return VAULT.create(S.pin).then(() => {
+                auditLog('creation_code', {});
+                S.pin = ''; S.pinNew = null; S.pinBusy = false; rDots();
+                openApp();
+            }).catch(e => { S.pinBusy = false; pinMsg('Échec : ' + e.message, true); });
+        }
+
+        return VAULT.unlock(S.pin).then(r => {
+            S.pin = ''; S.pinBusy = false; rDots();
+            if (r.ok) { pinMsg(''); openApp(); }
+            else { pinMsg(r.err, true); auditLog('echec_authentification', { fails: r.fails || 0 }); }
+        }).catch(e => { S.pinBusy = false; pinMsg('Échec : ' + e.message, true); });
+    }
+
+    if (S.pin.length < 12) { S.pin += k; rDots(); pinMsg(''); }
+}
+
+window.lockApp = function() {
+    VAULT.lock();
+    S.pin = ''; S.pinNew = null; rDots();
+    $('app').classList.remove('on');
+    $('authScreen').style.display = '';
+    pinMsg('Session verrouillée');
+    auditLog('verrouillage', {});
+};
+
 function rDots() {
-    const d = $('pinDots').children;
+    const cont = $('pinDots');
+    const need = Math.max(6, S.pin.length);
+    while (cont.children.length < need) { const e = document.createElement('span'); e.className = 'pdot'; cont.appendChild(e); }
+    while (cont.children.length > Math.max(6, S.pin.length)) cont.removeChild(cont.lastChild);
+    const d = cont.children;
     for (let i = 0; i < 4; i++) {
         d[i].className = 'pdot' + (i < S.pin.length ? ' f' : '');
     }
@@ -847,60 +909,105 @@ function ldPL() {
     const sel = $('patL');
     sel.innerHTML = '<option value="">-- Patient --</option>';
     t.objectStore('p').getAll().onsuccess = e => {
-        for (const pat of e.target.result) {
-            const opt = document.createElement('option');
-            opt.value = pat.id;
-            opt.textContent = pat.name;
-            sel.appendChild(opt);
-        }
+        const rows = e.target.result || [];
+        // Les identités sont chiffrées : on les déchiffre à l'affichage.
+        // Les enregistrements antérieurs, en clair, restent lisibles.
+        Promise.all(rows.map(pat =>
+            (pat.data ? VAULT.decrypt(pat.data).then(o => o.name).catch(() => '[chiffré]')
+                      : Promise.resolve(pat.name || '[sans nom]'))
+                .then(name => ({ id: pat.id, name: name }))
+        )).then(list => {
+            list.forEach(p2 => {
+                const opt = document.createElement('option');
+                opt.value = p2.id;
+                opt.textContent = p2.name;
+                sel.appendChild(opt);
+            });
+        });
     };
 }
 
 window.addPat = function() {
-    const n = prompt('Nom du patient:');
-    if (n && n.replace(/\s/g, '')) {
-        if (!S.db) return toast('DB N/A');
-        S.db.transaction('p', 'readwrite').objectStore('p').add({name: n.trim()}).onsuccess = () => {
+    const n = prompt('Nom du patient :');
+    if (!n || !n.replace(/\s/g, '')) return;
+    if (!S.db) return toast('Base indisponible');
+    if (!VAULT.key) return toast('Coffre verrouillé');
+    // L'identité du patient est une donnée de santé : elle est chiffrée.
+    VAULT.encrypt({ name: n.trim() }).then(blob => {
+        const req = S.db.transaction('p', 'readwrite').objectStore('p').add({ data: blob, v: APP_VERSION });
+        req.onsuccess = () => {
+            auditLog('creation_patient', {});
             ldPL();
-            toast('Patient ajouté');
+            toast('Patient ajouté (chiffré)');
         };
-    }
+        req.onerror = () => toast('Écriture impossible');
+    }).catch(e => toast('Chiffrement impossible : ' + e.message));
 };
 
 window.saveExam = function() {
     const pid = $('patL').value;
     if (!pid || !S.imgA) return toast('Patient ou image manquant');
-    if (!S.db) return toast('DB N/A');
-    S.db.transaction('e', 'readwrite').objectStore('e').add({
-        pid: parseInt(pid),
-        date: Date.now(),
+    if (!S.db) return toast('Base indisponible');
+    if (!VAULT.key) return toast('Coffre verrouillé — impossible d\'enregistrer');
+
+    // Tout ce qui constitue une donnée de santé est chiffré avant écriture.
+    // Seuls l'identifiant patient et l'horodatage restent en clair, pour l'indexation.
+    const clinique = {
         img: S.srcA,
         notes: $('notes').value,
         report: S.lastReport || null,
-        audit: S.lastMeta || null,
         contexte: {
             age: ($('ctxAge') && $('ctxAge').value) || '',
             sexe: ($('ctxSex') && $('ctxSex').value) || '',
             indication: ($('ctxInd') && $('ctxInd').value) || '',
-            pxMm: S.pxMm || null
+            pxMm: S.pxMm || null, uRelCal: S.uRelCal || null
         },
-        meta: {drw: S.drw, meas: S.meas, rois: S.rois}
-    }).onsuccess = () => toast('Examen sauvegardé');
+        meta: { drw: S.drw, meas: S.meas, rois: S.rois }
+    };
+    VAULT.encrypt(clinique).then(blob => {
+        S.db.transaction('e', 'readwrite').objectStore('e').add({
+            pid: parseInt(pid), date: Date.now(),
+            v: APP_VERSION,
+            audit: S.lastMeta || null,      // traçabilité technique, sans donnée de santé
+            data: blob
+        }).onsuccess = () => {
+            auditLog('enregistrement_examen', { pid: parseInt(pid), chiffre: true });
+            toast('Examen enregistré (chiffré)');
+        };
+    }).catch(e => toast('Chiffrement impossible : ' + e.message));
 };
 
 window.loadPat = function() {
     const pid = $('patL').value;
     if (!pid || !S.db) return;
+    if (!VAULT.key) return toast('Coffre verrouillé');
     S.db.transaction('e', 'readonly').objectStore('e').index('pid').getAll(parseInt(pid)).onsuccess = e => {
-        const r = e.target.result;
-        if (r.length > 0) {
-            const rec = r[r.length - 1];
-            const src = typeof rec.img === 'string' ? rec.img : URL.createObjectURL(rec.img);
-            ldImg(src);
-            $('notes').value = rec.notes || '';
-            if (rec.report) { S.lastReport = rec.report; setTimeout(() => { renderReport(rec.report, ['gen']); }, 300); }
-            toast('Examen chargé');
-        }
+        const rows = e.target.result || [];
+        if (!rows.length) return toast('Aucun examen pour ce patient');
+        // Les enregistrements sont chiffrés ; les anciens, en clair, restent lisibles.
+        const rec = rows[rows.length - 1];
+        const open = rec.data ? VAULT.decrypt(rec.data) : Promise.resolve(rec);
+        open.then(o => {
+            const src = typeof o.img === 'string' ? o.img : (o.img ? URL.createObjectURL(o.img) : null);
+            if (src) ldImg(src);
+            $('notes').value = o.notes || '';
+            if (o.contexte) {
+                if ($('ctxAge')) $('ctxAge').value = o.contexte.age || '';
+                if ($('ctxSex')) $('ctxSex').value = o.contexte.sexe || '';
+                if ($('ctxInd')) $('ctxInd').value = o.contexte.indication || '';
+                S.pxMm = o.contexte.pxMm || null;
+                S.uRelCal = o.contexte.uRelCal || null;
+                upCal();
+            }
+            if (o.meta) { S.drw = o.meta.drw || []; S.meas = o.meta.meas || []; S.rois = o.meta.rois || []; }
+            if (o.report) {
+                S.lastReport = o.report;
+                S.lastMeta = rec.audit || S.lastMeta;
+                setTimeout(() => renderReport(o.report, selectedAgents().length ? selectedAgents() : ['gen'], S.triage), 300);
+            }
+            auditLog('consultation_examen', { pid: parseInt(pid), date: rec.date });
+            toast('Examen déchiffré et chargé');
+        }).catch(() => toast('Déchiffrement impossible — code incorrect ?'));
     };
 };
 
@@ -1881,6 +1988,155 @@ function applyForce() {
 
 
 
+
+
+
+// ---------- Journal d'audit (ajout seul, chaîné) ----------
+// Chaque entrée référence l'empreinte de la précédente : toute suppression ou
+// modification a posteriori rompt la chaîne et devient détectable.
+function auditLog(action, data) {
+    try {
+        const log = JSON.parse(store.get('mv_audit') || '[]');
+        const prev = log.length ? log[log.length - 1].h : '0';
+        const e = { t: new Date().toISOString(), a: action, d: data || {}, v: APP_VERSION, p: prev };
+        e.h = hashChain(JSON.stringify(e));
+        log.push(e);
+        if (log.length > 500) log.splice(0, log.length - 500);
+        store.set('mv_audit', JSON.stringify(log));
+    } catch (e) { /* le journal ne doit jamais interrompre l'usage clinique */ }
+}
+
+function hashChain(str) {
+    let h1 = 0x811c9dc5, h2 = 0x01000193;
+    for (let i = 0; i < str.length; i++) {
+        h1 ^= str.charCodeAt(i); h1 = (h1 * 0x01000193) >>> 0;
+        h2 = (h2 ^ (str.charCodeAt(i) << 5)) >>> 0; h2 = (h2 * 0x85ebca6b) >>> 0;
+    }
+    return (h1 >>> 0).toString(16).padStart(8, '0') + (h2 >>> 0).toString(16).padStart(8, '0');
+}
+
+window.auditVerify = function() {
+    let log;
+    try { log = JSON.parse(store.get('mv_audit') || '[]'); } catch (e) { return toast('Journal illisible'); }
+    if (!log.length) return toast('Journal vide');
+    let prev = '0', bad = 0;
+    for (let i = 0; i < log.length; i++) {
+        const e = log[i], h = e.h;
+        const copy = { t: e.t, a: e.a, d: e.d, v: e.v, p: e.p };
+        if (e.p !== prev || hashChain(JSON.stringify(copy)) !== h) bad++;
+        prev = h;
+    }
+    toast(bad ? bad + ' rupture(s) de chaîne sur ' + log.length + ' entrées' : 'Journal intègre — ' + log.length + ' entrées');
+    return { total: log.length, ruptures: bad };
+};
+
+// ============================================================
+//  COFFRE — authentification réelle et chiffrement au repos
+// ============================================================
+// Constat avant correction : le code PIN n'authentifiait RIEN (toute saisie de
+// 4 chiffres déverrouillait) et les données de santé étaient stockées en clair
+// dans IndexedDB. Deux verrous rédhibitoires pour un dispositif médical.
+//
+// Dérivation  : PBKDF2-SHA256, 250 000 itérations, sel aléatoire 16 octets
+// Chiffrement : AES-256-GCM, IV aléatoire 12 octets par enregistrement
+// La clé de session ne quitte jamais la mémoire et est détruite au verrouillage.
+
+const VAULT = {
+    ITER: 250000,
+    LOCKOUT: [0, 0, 0, 5, 15, 60, 300, 900],   // secondes, par nombre d'échecs
+    key: null,          // CryptoKey AES-GCM, en mémoire uniquement
+
+    available() {
+        return !!(window.crypto && window.crypto.subtle && window.crypto.getRandomValues);
+    },
+
+    b64(buf) { let s = ''; const b = new Uint8Array(buf); for (let i = 0; i < b.length; i++) s += String.fromCharCode(b[i]); return btoa(s); },
+    unb64(str) { const s = atob(str), b = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) b[i] = s.charCodeAt(i); return b; },
+
+    _material(code) {
+        return crypto.subtle.importKey('raw', new TextEncoder().encode(code), 'PBKDF2', false, ['deriveBits', 'deriveKey']);
+    },
+
+    // Clé de chiffrement AES-256-GCM
+    deriveKey(code, salt) {
+        return this._material(code).then(m => crypto.subtle.deriveKey(
+            { name: 'PBKDF2', salt: salt, iterations: this.ITER, hash: 'SHA-256' },
+            m, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']));
+    },
+
+    // Vérificateur : dérivation SÉPARÉE, ne permet pas de remonter à la clé.
+    deriveVerifier(code, salt) {
+        const s2 = new Uint8Array(salt.length + 4);
+        s2.set(salt); s2.set(new TextEncoder().encode('vrfy'), salt.length);
+        return this._material(code).then(m => crypto.subtle.deriveBits(
+            { name: 'PBKDF2', salt: s2, iterations: this.ITER, hash: 'SHA-256' }, m, 256))
+            .then(b => this.b64(b));
+    },
+
+    // Comparaison à temps constant : aucune fuite par le temps de réponse.
+    eq(a, b) {
+        if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false;
+        let d = 0;
+        for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+        return d === 0;
+    },
+
+    cfg() { try { return JSON.parse(store.get('mv_vault') || 'null'); } catch (e) { return null; } },
+    isSet() { const c = this.cfg(); return !!(c && c.salt && c.verifier); },
+
+    create(code) {
+        const salt = crypto.getRandomValues(new Uint8Array(16));
+        return this.deriveVerifier(code, salt).then(v => {
+            store.set('mv_vault', JSON.stringify({
+                salt: this.b64(salt), verifier: v, iter: this.ITER,
+                created: new Date().toISOString(), fails: 0, until: 0
+            }));
+            return this.deriveKey(code, salt).then(k => { this.key = k; return true; });
+        });
+    },
+
+    lockedFor() {
+        const c = this.cfg(); if (!c) return 0;
+        return Math.max(0, Math.ceil(((c.until || 0) - Date.now()) / 1000));
+    },
+
+    unlock(code) {
+        const c = this.cfg();
+        if (!c) return Promise.resolve({ ok: false, err: 'Aucun code défini' });
+        const wait = this.lockedFor();
+        if (wait > 0) return Promise.resolve({ ok: false, err: 'Verrouillé — réessayez dans ' + wait + ' s', wait: wait });
+        const salt = this.unb64(c.salt);
+        return this.deriveVerifier(code, salt).then(v => {
+            if (!this.eq(v, c.verifier)) {
+                const f = (c.fails || 0) + 1;
+                const d = this.LOCKOUT[Math.min(f, this.LOCKOUT.length - 1)];
+                c.fails = f; c.until = d ? Date.now() + d * 1000 : 0;
+                store.set('mv_vault', JSON.stringify(c));
+                return { ok: false, err: 'Code incorrect' + (d ? ' — verrouillé ' + d + ' s' : ''), fails: f };
+            }
+            c.fails = 0; c.until = 0;
+            store.set('mv_vault', JSON.stringify(c));
+            return this.deriveKey(code, salt).then(k => { this.key = k; return { ok: true }; });
+        });
+    },
+
+    lock() { this.key = null; },
+
+    encrypt(obj) {
+        if (!this.key) return Promise.reject(new Error('coffre verrouillé'));
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const data = new TextEncoder().encode(JSON.stringify(obj));
+        return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, this.key, data)
+            .then(ct => ({ _enc: 'A256GCM', iv: this.b64(iv), ct: this.b64(ct) }));
+    },
+
+    decrypt(rec) {
+        if (!rec || rec._enc !== 'A256GCM') return Promise.resolve(rec);   // legacy en clair
+        if (!this.key) return Promise.reject(new Error('coffre verrouillé'));
+        return crypto.subtle.decrypt({ name: 'AES-GCM', iv: this.unb64(rec.iv) }, this.key, this.unb64(rec.ct))
+            .then(pt => JSON.parse(new TextDecoder().decode(pt)));
+    }
+};
 
 // ============================================================
 //  INSPECTION AGENTIQUE — l'agent demande ses propres zooms
