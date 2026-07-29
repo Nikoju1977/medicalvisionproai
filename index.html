@@ -238,6 +238,10 @@ canvas{display:block;touch-action:none;}
 .dg-info{border-left-color:var(--cy);}
 .dg-info b{color:var(--cy);}
 
+.agh{font-size:.72rem;font-weight:700;color:var(--txd);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:8px;}
+.agauto{margin-left:auto;padding:2px 9px;font-size:.6rem;text-transform:none;letter-spacing:0;}
+.aghint{font-size:.66rem;color:var(--txd);margin-top:6px;font-style:italic;}
+
 /* ===== Compte rendu : couverture, conclusion, limites ===== */
 .cov{font-family:var(--fmono);font-size:.7rem;padding:6px 9px;border-radius:6px;margin:8px 0;}
 .cov-ok{background:rgba(6,214,160,.09);color:var(--ac);border-left:2px solid var(--ac);}
@@ -428,8 +432,11 @@ canvas{display:block;touch-action:none;}
 
     <!-- AGENTS & AI -->
     <div class="cd">
-        <div style="font-size:.72rem;font-weight:700;color:var(--txd);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Experts IA Mistral</div>
+        <div class="agh">Experts IA Mistral
+            <button class="bt bmini agauto" onclick="applyRoute()" title="Composer le panel d'après la modalité détectée au triage">⚡ Auto</button>
+        </div>
         <div class="agr" id="aG"></div>
+        <div class="aghint">Aucun expert sélectionné : le panel est composé automatiquement d'après le triage.</div>
 
         <!-- Image Stats (auto-filled on load) -->
         <div class="imgstats" id="imgStats" style="display:none"></div>
@@ -520,7 +527,6 @@ canvas{display:block;touch-action:none;}
 "use strict";
 const $ = id => document.getElementById(id);
 const DPR = Math.min(window.devicePixelRatio || 1, 3);
-const IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
 // safeStorage : safeStorage avec repli mémoire (Android null-origin / mode privé)
 const store = (() => {
@@ -534,20 +540,183 @@ const store = (() => {
 })();
 
 const AG = {
-    radio: {n:"Radiologue", i:"🧠", s:"Analyse osseuse, fractures, densités, tissus mous."},
-    pulmo: {n:"Pneumologue", i:"🫁", s:"Poumons, plèvre, épanchements, nodules pulmonaires."},
-    neuro: {n:"Neurologue", i:"🧠", s:"Cerveau, AVC, rachis, tissus mous cérébraux."},
-    trauma: {n:"Urgentiste", i:"🚑", s:"Lésions vitales, ABCDE, pneumothorax, hémorragies."},
-    cardio: {n:"Cardiologue", i:"❤️", s:"Cœur, gros vaisseaux, index cardio-thoracique."},
-    dermato: {n:"Dermato", i:"🔎", s:"Peau, ABCDE, lésions pigmentées, mélanome."},
-    ophtalmo: {n:"Ophtalmo", i:"👁️", s:"Fond d'œil, rétine, nerf optique, DMLA."},
-    ortho: {n:"Orthopédiste", i:"🔧", s:"Squelette, articulations, fractures, arthrose."},
-    onco: {n:"Oncologue", i:"🍗", s:"Tumeurs, masses, métastases, TNM."},
-    patho: {n:"Pathologiste", i:"🧬", s:"Analyse tissulaire, cytologie, grade/stade."},
-    pedia: {n:"Pédiatre", i:"👶", s:"Spécificités enfant, croissance."},
-    endo: {n:"Endocrino", i:"🧫", s:"Glandes, thyroïde, métabolisme."},
-    gen: {n:"Généraliste", i:"🏥", s:"Synthèse clinique globale et orientation."}
+    radio: {
+        n: "Radiologue", i: "🦴", s: "Osseux, densités, tissus mous, matériel.",
+        mods: /\b(radio\w*|rx|scanner|tdm|irm|tomo\w*)\b/i, regions: /\b(os|osseu\w*|osteo\w*|membre|rachis|thorax|thoracique|abdom\w*|bassin|genou|epaule|main|pied|cheville|poignet|cote|clavicule|femur|tibia|humerus|squelette|osselet)\b/i,
+        role: "radiologue sénior, référent en imagerie ostéo-articulaire et thoracique",
+        grid: ["Alignement et congruence articulaire", "Continuité corticale sur tout le trajet, y compris les zones de superposition",
+               "Densité osseuse, trame trabéculaire, liserés de condensation ou de lyse",
+               "Interlignes articulaires : pincement, géodes, ostéophytes",
+               "Tissus mous péri-lésionnels, liseré graisseux, épanchement articulaire",
+               "Matériel implanté : position, descellement, liseré péri-prothétique"],
+        prio: ["fracture non déplacée ou en cheveu", "lésion lytique ou condensante", "appositions périostées", "luxation"],
+        limits: "Tu décris l'imagerie. Tu ne prescris pas et ne poses pas d'indication opératoire."
+    },
+    pulmo: {
+        n: "Pneumologue", i: "🫁", s: "Parenchyme, plèvre, épanchements, nodules.",
+        mods: /\b(radio\w*|rx|scanner|tdm)\b/i, regions: /\b(thorax|thoracique|poumon\w*|pulmonaire|chest|pleur\w*|parenchyme|bronch\w*|hile|hilaire|respiratoire)\b/i,
+        role: "pneumologue sénior, lecture systématique du parenchyme et de la plèvre",
+        grid: ["Transparence comparée des quatre quadrants pulmonaires",
+               "Syndrome alvéolaire : opacité systématisée, bronchogramme aérien",
+               "Syndrome interstitiel : lignes de Kerley, réticulations, verre dépoli",
+               "Plèvre : épanchement, comblement des culs-de-sac, pneumothorax, ligne pleurale",
+               "Nodules : nombre, contours, taille, calcifications",
+               "Hiles et médiastin : élargissement, adénopathies", "Coupoles diaphragmatiques et angles costo-diaphragmatiques"],
+        prio: ["pneumothorax compressif", "épanchement abondant", "nodule spiculé", "opacité systématisée"],
+        limits: "Tu ne conclus pas sur l'étiologie infectieuse sans contexte biologique."
+    },
+    neuro: {
+        n: "Neurologue", i: "🧠", s: "Encéphale, rachis, moelle.",
+        mods: /\b(scanner|tdm|irm|angio\w*)\b/i, regions: /\b(cran\w*|cerebr\w*|encephal\w*|tete|neuro\w*|rachis|moelle|medullaire|cervical\w*|lombaire|dorsal\w*|intracranien\w*)\b/i,
+        role: "neurologue sénior, imagerie encéphalique et médullaire",
+        grid: ["Symétrie des structures médianes, déviation de la ligne médiane",
+               "Différenciation substance grise / substance blanche",
+               "Systèmes ventriculaires : taille, symétrie, engagement",
+               "Espaces sous-arachnoïdiens et citernes de la base",
+               "Hyperdensités spontanées évoquant une hémorragie", "Hypodensités systématisées à un territoire artériel",
+               "Rachis : alignement, canal, disques, moelle"],
+        prio: ["hémorragie intracrânienne", "effet de masse", "engagement", "ischémie constituée"],
+        limits: "L'examen clinique neurologique prime : tu ne statues pas sur le déficit."
+    },
+    trauma: {
+        n: "Urgentiste", i: "🚑", s: "Lésions vitales, ABCDE, tri.",
+        mods: /.*/, transversal: true,
+        role: "urgentiste, lecture de tri orientée pronostic vital immédiat",
+        grid: ["A — Voies aériennes : trachée médiane ou déviée",
+               "B — Ventilation : pneumothorax, hémothorax, contusion, volet costal",
+               "C — Circulation : élargissement médiastinal, épanchement péricardique, hémopéritoine",
+               "D — Neurologique : hémorragie, fracture du crâne, atteinte rachidienne",
+               "E — Exposition : fractures instables, corps étrangers, emphysème sous-cutané"],
+        prio: ["pneumothorax compressif", "hémorragie active", "élargissement médiastinal", "fracture instable du rachis"],
+        limits: "Ton rôle est de repérer ce qui engage le pronostic vital, pas d'affiner le diagnostic."
+    },
+    cardio: {
+        n: "Cardiologue", i: "❤️", s: "Cœur, gros vaisseaux, ICT.",
+        mods: /\b(radio\w*|rx|scanner|tdm|irm|echo\w*|coro\w*)\b/i, regions: /\b(coeur|cardiaque|cardio\w*|thorax|thoracique|mediastin\w*|aorte|aortique|vaisseau\w*|vasculaire|ecg|electrocardio\w*|pericard\w*)\b/i,
+        role: "cardiologue sénior, morphologie cardiovasculaire",
+        grid: ["Index cardio-thoracique : rapport diamètre cardiaque / diamètre thoracique",
+               "Arcs cardiaques droits et gauches : saillie, effacement",
+               "Bouton aortique, déroulement de l'aorte, élargissement médiastinal",
+               "Vascularisation pulmonaire : redistribution, surcharge, œdème",
+               "Calcifications valvulaires, coronaires ou péricardiques", "Matériel : sondes, valves, stents"],
+        prio: ["cardiomégalie", "surcharge vasculaire pulmonaire", "élargissement médiastinal", "épanchement péricardique"],
+        limits: "L'imagerie ne remplace pas l'échocardiographie pour la fonction."
+    },
+    dermato: {
+        n: "Dermatologue", i: "🔎", s: "Peau, lésions pigmentées, dermoscopie.",
+        mods: /\b(photo\w*|clinique|dermoscopie|dermatoscopie|macro)\b/i, regions: /\b(derm\w*|peau|cutane\w*|naevus|melanome|dermoscopie|dermatoscopie|plaie|ulcere|eruption|lesion pigmentee)\b/i,
+        role: "dermatologue sénior, formé à la dermoscopie",
+        grid: ["ABCDE : Asymétrie, Bordures, Couleurs (nombre), Diamètre, Évolution",
+               "Réseau pigmentaire : régulier, atypique, interrompu",
+               "Points et globules : distribution, régularité", "Stries radiaires, pseudopodes en périphérie",
+               "Voile bleu-blanc, structures de régression", "Patron vasculaire : punctiforme, linéaire irrégulier, polymorphe",
+               "Peau péri-lésionnelle, signes inflammatoires ou de surinfection"],
+        prio: ["asymétrie majeure", "voile bleu-blanc", "patron vasculaire polymorphe", "régression"],
+        limits: "Toute lésion suspecte relève d'un examen dermoscopique direct et d'une histologie."
+    },
+    ophtalmo: {
+        n: "Ophtalmologue", i: "👁️", s: "Fond d'œil, rétine, papille.",
+        mods: /\b(retinographie|oct|angiographie|fond)\b/i, regions: /\b(oeil|oculaire|retine|retinien\w*|retinographie|papille|papillaire|macula|maculaire|ophtalm\w*|oct|fond d.?oeil|choroide)\b/i,
+        role: "ophtalmologue sénior, lecture du fond d'œil",
+        grid: ["Papille : couleur, netteté des contours, excavation, rapport cup/disc",
+               "Macula : reflet fovéolaire, drusen, œdème, exsudats",
+               "Arbre vasculaire : calibre artério-veineux, croisements, tortuosité",
+               "Hémorragies : en flammèches, en taches, pré-rétiniennes",
+               "Nodules cotonneux, exsudats secs", "Périphérie rétinienne, néovaisseaux, décollement"],
+        prio: ["œdème papillaire", "néovaisseaux", "hémorragie maculaire", "décollement de rétine"],
+        limits: "Le champ visuel et l'acuité ne se déduisent pas de l'image."
+    },
+    ortho: {
+        n: "Orthopédiste", i: "🔧", s: "Squelette, articulations, matériel.",
+        mods: /\b(radio\w*|rx|scanner|tdm|irm)\b/i, regions: /\b(articul\w*|genou|hanche|epaule|main|pied|cheville|poignet|coude|rachis|fracture|prothese|ligament|menisque|tendon|luxation)\b/i,
+        role: "chirurgien orthopédiste, lecture pré-thérapeutique",
+        grid: ["Trait de fracture : siège, déplacement, angulation, comminution",
+               "Atteinte articulaire et surface portante", "Stabilité du montage : axes, longueur, rotation",
+               "Interligne articulaire, pincement, ostéophytose", "Matériel : positionnement, rupture, descellement",
+               "Cartilage de croissance chez l'enfant"],
+        prio: ["fracture articulaire déplacée", "instabilité", "descellement de matériel", "atteinte du cartilage de croissance"],
+        limits: "Tu décris ce qui conditionne la décision, sans la prendre."
+    },
+    onco: {
+        n: "Oncologue", i: "🎯", s: "Masses, extension, comparaison évolutive.",
+        mods: /.*/, transversal: true,
+        role: "oncologue sénior, évaluation morphologique et évolutive des lésions",
+        grid: ["Lésion cible : siège, taille dans les plus grands axes, contours",
+               "Caractère infiltrant ou refoulant, envahissement de voisinage",
+               "Lésions secondaires : nombre, siège, taille",
+               "Aires ganglionnaires accessibles sur l'image",
+               "Comparaison à l'examen antérieur si fourni : progression, stabilité, régression"],
+        prio: ["masse à contours spiculés", "lyse osseuse", "adénopathie", "progression par rapport à l'antérieur"],
+        limits: "Aucune classification TNM ni RECIST sans bilan d'extension complet."
+    },
+    patho: {
+        n: "Pathologiste", i: "🧬", s: "Histologie, cytologie, architecture.",
+        mods: /\b(microscop\w*|lame|histologie)\b/i, regions: /\b(histo\w*|cyto\w*|lame|biopsie|anapath\w*|microscop\w*|coupe|hes|immunohisto\w*|piece operatoire)\b/i,
+        role: "anatomopathologiste sénior",
+        grid: ["Architecture tissulaire générale et respect des structures",
+               "Cellularité, rapport nucléo-cytoplasmique", "Atypies cytonucléaires, anisocaryose",
+               "Index mitotique, mitoses atypiques", "Nécrose, inflammation, désmoplasie",
+               "Invasion : capsule, vaisseaux, nerfs", "Marges d'exérèse si visibles"],
+        prio: ["atypies marquées", "mitoses atypiques", "invasion vasculaire", "marge envahie"],
+        limits: "Le grade définitif exige immunohistochimie et coloration standardisée."
+    },
+    pedia: {
+        n: "Pédiatre", i: "👶", s: "Spécificités de l'enfant, croissance.",
+        mods: /.*/, transversal: true,
+        role: "radiopédiatre, lecture adaptée à l'âge osseux et aux variantes du développement",
+        grid: ["Cartilages de croissance : ouverts, aspect, Salter-Harris si traumatisme",
+               "Âge osseux apparent confronté à l'âge civil", "Noyaux d'ossification présents et symétriques",
+               "Variantes de la normale à ne pas confondre avec une lésion",
+               "Signes évocateurs de maltraitance : fractures d'âges différents, localisations atypiques"],
+        prio: ["décollement épiphysaire", "fractures d'âges différents", "fracture métaphysaire en coin"],
+        limits: "Toute suspicion de maltraitance impose un protocole dédié et un signalement, hors du champ de cette analyse."
+    },
+    endo: {
+        n: "Endocrinologue", i: "🧫", s: "Thyroïde, surrénales, glandes.",
+        mods: /\b(echo\w*|scanner|tdm|irm|scintigraphie)\b/i, regions: /\b(thyroid\w*|cou|surrenal\w*|hypophys\w*|glande|glandulaire|parathyroid\w*|goitre|nodule thyroidien|scintigraphie)\b/i,
+        role: "endocrinologue sénior, imagerie glandulaire",
+        grid: ["Volume et symétrie glandulaire", "Nodules : nombre, taille, échostructure, contours, halo",
+               "Calcifications, notamment microcalcifications", "Vascularisation intra et péri-nodulaire",
+               "Aires ganglionnaires de drainage", "Retentissement local : compression, déviation trachéale"],
+        prio: ["microcalcifications", "nodule à contours irréguliers", "adénopathie suspecte", "compression trachéale"],
+        limits: "La classification EU-TIRADS exige une échographie dédiée et normalisée."
+    },
+    gen: {
+        n: "Généraliste", i: "🏥", s: "Synthèse clinique, orientation, cohérence.",
+        mods: /.*/, transversal: true,
+        role: "médecin généraliste expérimenté, chargé de la cohérence globale et de l'orientation",
+        grid: ["Cohérence entre l'indication clinique et ce que montre l'image",
+               "Éléments imposant une prise en charge urgente", "Ce que l'examen ne permet pas de trancher",
+               "Examen complémentaire le plus contributif en pratique", "Éléments rassurants explicitement vérifiés"],
+        prio: ["discordance clinico-radiologique", "élément justifiant une orientation urgente"],
+        limits: "Tu ne te substitues pas au spécialiste sur les points techniques."
+    }
 };
+
+// Pertinence d'un agent (0 à 1).
+// L'ancrage ANATOMIQUE est déterminant : une modalité seule ne suffit pas.
+// Sans cette règle, « scanner cérébral » mobilisait le pneumologue et
+// « dermatoscopie » le radiologue (le fragment « os » y est contenu).
+// Les accents cassent \b en JavaScript : « \bécho » ne matche jamais, car
+// « é » n'est pas un caractère de mot. On retire donc les diacritiques et on
+// écrit tous les motifs en ASCII.
+function normTxt(x) {
+    return String(x || '').toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/\u0153/g, 'oe').replace(/\u00e6/g, 'ae');
+}
+
+function agRelevance(k, txt) {
+    const a = AG[k]; if (!a) return 0;
+    const t = normTxt(txt);
+    if (a.transversal) return 0.45;
+    const region = a.regions ? a.regions.test(t) : false;
+    const mod = a.mods ? a.mods.test(t) : false;
+    if (region && mod) return 1;
+    if (region) return 0.85;
+    if (mod) return 0.25;
+    return 0.05;
+}
 
 const S = {
     pin: "", db: null, imgA: null, imgB: null, srcA: null, srcB: null,
@@ -560,7 +729,7 @@ const S = {
     // --- moteur d'analyse v11 ---
     pp: null, ppSel: 'clahe', busy: false, triage: null, lastMeta: null,
     mdlPool: null, mdlVision: null, mdlFast: null, mdlSynth: null, mdlForce: '',
-    only: null, onDone: null, batch: null, vFrames: 6, chunks: null,
+    only: null, onDone: null, batch: null, vFrames: 6, chunks: null, autoRoute: false,
     swReg: null, instEvt: null,
     // --- série multi-images / vidéo v12 ---
     series: [], active: 0, mode: 'serie', imgSet: null
@@ -1684,6 +1853,34 @@ function applyForce() {
 }
 
 
+
+// ============================================================
+//  ROUTAGE AUTOMATIQUE DES SPÉCIALISTES
+// ============================================================
+// Après le triage, on classe les agents par pertinence pour la modalité et
+// la région identifiées, puis on propose la composition du panel.
+function routeAgents(tri, max) {
+    const txt = (tri.modalite || '') + ' ' + (tri.region || '') + ' ' + (tri.incidence || '');
+    const scored = Object.keys(AG)
+        .map(k => ({ k: k, sc: agRelevance(k, txt) }))
+        .sort((a, b) => b.sc - a.sc);
+    const spec = scored.filter(x => x.sc >= 0.85).map(x => x.k);
+    const trans = scored.filter(x => x.sc < 1 && x.sc >= 0.4).map(x => x.k);
+    const out = spec.slice(0, Math.max(1, (max || 3) - 1));
+    // Le généraliste garantit la cohérence clinique globale du panel.
+    if (out.indexOf('gen') < 0) out.push('gen');
+    else if (trans.length) out.push(trans.find(k => out.indexOf(k) < 0) || 'gen');
+    return out.filter((v, i, a) => a.indexOf(v) === i).slice(0, max || 3);
+}
+
+window.applyRoute = function () {
+    if (!S.triage) return toast('Lancez d\'abord une analyse');
+    const ks = routeAgents(S.triage, 3);
+    document.querySelectorAll('#aG .ac.on').forEach(e => e.classList.remove('on'));
+    ks.forEach(k => togAg(k));
+    toast('Panel : ' + ks.map(k => AG[k].n).join(', '));
+};
+
 // ============================================================
 //  MODE LOT — une analyse complète et indépendante par élément
 // ============================================================
@@ -2272,7 +2469,9 @@ function clinCtx() {
 //  PIPELINE D'ANALYSE
 // ============================================================
 function analyzeWithAI(auto) {
-    if (selectedAgents().length === 0 && auto) { ['gen', 'radio'].forEach(k => togAg(k)); }
+    // Aucun expert choisi : on laisse le triage composer le panel lui-même.
+    S.autoRoute = selectedAgents().length === 0;
+    if (S.autoRoute) ['gen', 'radio'].forEach(k => togAg(k));
     const agents = selectedAgents();
     if (agents.length === 0) return toast('Sélectionnez au moins un expert');
     if (!S.series.length) return toast('Chargez au moins une image');
@@ -2347,7 +2546,18 @@ function analyzeWithAI(auto) {
             return mchat(S.mdlFast, triMsg, SCH_TRIAGE, { effort: 'low', max_tokens: 600, timeout: 45000 })
                 .then(tri => {
                     S.triage = tri;
-                    updPipe(2, 'done', tri.modalite);
+                    // Routage : si l'utilisateur n'a rien choisi, on compose le
+                    // panel à partir de la modalité et de la région identifiées.
+                    if (S.autoRoute) {
+                        const ks = routeAgents(tri, 3);
+                        document.querySelectorAll('#aG .ac.on').forEach(e => e.classList.remove('on'));
+                        ks.forEach(k => togAg(k));
+                        agents.length = 0; ks.forEach(k => agents.push(k));
+                        S.autoRoute = false;
+                        updPipe(2, 'done', tri.modalite + ' → ' + ks.map(k => AG[k].n).join(', '));
+                    } else {
+                        updPipe(2, 'done', tri.modalite);
+                    }
                     if (tri.analysable === false) {
                         $('aiO').innerHTML = '<h3>Image non analysable</h3><p>Qualité : ' + escapeHtml(tri.qualite) +
                             '</p><p>Artefacts : ' + escapeHtml((tri.artefacts || []).join(', ') || '—') +
@@ -2451,18 +2661,29 @@ function analyzeWithAI(auto) {
 
 function lectureMsg(agents, tri, grille, set) {
     set = set || S.imgSet;
-    const roles = agents.map(k => '• ' + AG[k].n + ' — ' + AG[k].s).join('\n');
+    // Identité, grille propre, priorités et périmètre de CHAQUE agent.
+    function persona(k) {
+        const a = AG[k];
+        return ['Tu es ' + a.n + ' — ' + a.role + '.',
+                '',
+                'TA GRILLE DE LECTURE SPÉCIALISÉE, à parcourir intégralement :',
+                a.grid.map((g, i) => '  ' + (i + 1) + '. ' + g).join('\n'),
+                '',
+                'À NE JAMAIS MANQUER dans ton domaine : ' + a.prio.join(' · ') + '.',
+                'PÉRIMÈTRE : ' + a.limits].join('\n');
+    }
     const sys = [
         agents.length === 1
-            ? "Tu es " + AG[agents[0]].n + ", médecin sénior spécialisé en imagerie. " + AG[agents[0]].s
-            : "Tu es un collège d'experts en imagerie médicale :\n" + roles,
+            ? persona(agents[0])
+            : "Tu es un collège d'experts en imagerie médicale. Chacun applique sa grille :\n\n" +
+              agents.map(k => persona(k)).join('\n\n---\n\n'),
         "",
         "Tu produis une AIDE À LA DÉCISION destinée à un professionnel de santé. Jamais un diagnostic affirmatif.",
         "",
         "EXAMEN : " + tri.modalite + " — " + tri.region + " — incidence " + tri.incidence +
         " — qualité " + tri.qualite + (tri.artefacts && tri.artefacts.length ? " — artefacts : " + tri.artefacts.join(', ') : ""),
         "",
-        "GRILLE DE LECTURE OBLIGATOIRE — parcours-la intégralement avant de conclure :",
+        "GRILLE DE MODALITÉ — à croiser avec ta grille spécialisée :",
         grille,
         "",
         "MÉTHODE :",
@@ -2475,6 +2696,8 @@ function lectureMsg(agents, tri, grille, set) {
             ? "6. Chaque observation et chaque ROI DOIT porter le numéro d'image (`image`) auquel elle se rapporte. Une anomalie confirmée sur plusieurs vues mérite une confiance plus élevée qu'une anomalie visible sur une seule."
             : "6. Renseigne `image` à 1 pour toutes les observations et ROI.",
         "7. Si l'image ne permet pas de conclure sur un point, dis-le plutôt que de spéculer.",
+        "8. Reste dans ton périmètre : signale ce qui relève d'un autre spécialiste plutôt que de trancher à sa place.",
+        "9. Calibration de la confiance — une confiance de 0,8 signifie que sur dix images comparables, tu aurais raison huit fois. Ne surestime pas : une confiance mal calibrée est plus nuisible qu'une observation manquante.",
         "",
         "Langue : français. Terminologie médicale exacte."
     ].join('\n');
