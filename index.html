@@ -1953,6 +1953,21 @@ function cropZone(elIdx, x1, y1, x2, y2) {
              zone: [ax, ay, bx, by] };
 }
 
+// Le zoom n'a d'intérêt que si la source dépasse ce qui a été envoyé :
+// sur une image déjà sous 1540 px, aucun pixel n'a été perdu et l'inspection
+// coûterait un appel pour rien.
+function zoomUseful(set) {
+    if (!set || !set.sent) return false;
+    for (let i = 0; i < set.sent.length; i++) {
+        const it = S.series[set.sent[i]];
+        if (!it || !it.img) continue;
+        const n = Math.max(it.img.naturalWidth || it.img.width || 0,
+                           it.img.naturalHeight || it.img.height || 0);
+        if (n > PP.MAXSIDE * 1.25) return true;
+    }
+    return false;
+}
+
 // Boucle d'inspection : appels successifs tant que l'agent réclame des zooms.
 function inspectRounds(model, messages, set, opts, onZoom) {
     let round = 0;
@@ -2804,7 +2819,7 @@ function analyzeWithAI(auto) {
                     roster.forEach(grp => CH.forEach((set, ci) => {
                         const base = lectureMsg(grp, tri, grille, set);
                         jobs.push(
-                            (S.zoomOff
+                            (S.zoomOff || !zoomUseful(set)
                                 ? Promise.resolve(base)
                                 : inspectRounds(S.mdlVision, base, set,
                                     { effort: 'medium', timeout: 90000 },
@@ -2964,7 +2979,7 @@ function finish(rep, agents, tri, t0, annStep) {
         elements_total: S.series.length,
         elements_analyses: S.chunks ? S.chunks.reduce((a, c) => a + c.sent.length, 0) : 1,
         lots: S.chunks ? S.chunks.length : 1,
-        inspection_zoom: !S.zoomOff, duree_ms: Date.now() - t0, horodatage: new Date().toISOString()
+        inspection_zoom: !S.zoomOff && S.chunks && S.chunks.some(zoomUseful), duree_ms: Date.now() - t0, horodatage: new Date().toISOString()
     };
     // Les ROI portent un numéro d'image de la REQUÊTE ; on le remappe vers la série.
     const map = (S.imgSet && S.imgSet.map) || [0];
