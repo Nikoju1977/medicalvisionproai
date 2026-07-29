@@ -324,6 +324,7 @@ canvas{display:block;touch-action:none;}
 .pinlbl{font-size:.62rem;color:var(--txd);margin-top:14px;text-align:center;max-width:290px;line-height:1.5;opacity:.75;}
 
 /* ===== PWA ===== */
+.lsel{background:var(--sf2);border:1px solid var(--bd);color:var(--tx);border-radius:20px;padding:5px 9px;font-size:.66rem;width:auto;margin:0;font-family:var(--fmono);}
 .instb{background:var(--sf2);border:1px solid var(--ac);color:var(--ac);border-radius:20px;padding:6px 13px;font-size:.7rem;font-weight:600;font-family:var(--fmono);cursor:pointer;white-space:nowrap;}
 .instb:active{transform:scale(.96);}
 .swupd{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:9000;background:var(--sf);border:1px solid var(--ac);border-radius:12px;padding:11px 13px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;box-shadow:0 8px 28px rgba(0,0,0,.55);animation:fadeIn .25s ease;}
@@ -409,7 +410,7 @@ canvas{display:block;touch-action:none;}
 <div id="authScreen" class="auth">
     <div style="font-size:3.2rem;margin-bottom:10px">🧬</div>
     <h2 style="font-size:1.5rem">MedVision Pro</h2>
-    <p style="color:var(--txd);font-size:.8rem;margin-bottom:4px">Expert Edition</p>
+    <p style="color:var(--txd);font-size:.8rem;margin-bottom:4px" data-i18n="auth.edition">Expert Edition</p>
     <div class="pdots" id="pinDots"><span class="pdot"></span><span class="pdot"></span><span class="pdot"></span><span class="pdot"></span></div>
     <div class="pgr" id="pinPad"></div>
     <div class="pinmsg" id="pinMsg"></div>
@@ -419,7 +420,8 @@ canvas{display:block;touch-action:none;}
 <!-- APP -->
 <div id="app" class="app">
     <header>
-        <div><div class="logo">MedVision AI</div><div class="sub">v12 • Nicolas JULIENNE</div></div>
+        <div><div class="logo">MedVision AI</div><div class="sub"><span id="appVer"></span> · <span data-i18n="app.sub">Aide à la décision — usage professionnel</span></div></div>
+        <select id="langSel" class="lsel" onchange="setLang(this.value)" data-i18n-title="lang.label" title="Langue"></select>
         <button id="instB" class="instb" style="display:none" onclick="doInstall()">⤓ Installer</button>
         <div class="fr fnw">
             <button class="bt bi" onclick="openApiM()" title="Configuration API" aria-label="Configuration API Mistral">🔑</button>
@@ -503,7 +505,7 @@ canvas{display:block;touch-action:none;}
     <!-- Attestation d'usage professionnel -->
 <div id="attM" class="mdl">
     <div class="mbox">
-        <h3 style="margin-top:0">Usage réservé aux professionnels de santé</h3>
+        <h3 style="margin-top:0" data-i18n="att.title">Usage réservé aux professionnels de santé</h3>
         <p class="attx">MedVision AI Pro est un <b>logiciel d'aide à la décision</b> destiné aux professionnels
         de santé qualifiés. Il produit des observations et des hypothèses argumentées — il ne pose pas de
         diagnostic et ne se substitue pas à votre jugement clinique.</p>
@@ -511,8 +513,8 @@ canvas{display:block;touch-action:none;}
         dont la performance diagnostique n'est pas établie. Toute conclusion doit être confirmée par vos soins
         avant toute décision clinique.</p>
         <div class="fr fsb fnw">
-            <button class="bt" onclick="showDestination()">Destination complète</button>
-            <button class="bt bp" onclick="acceptAttest()">J'atteste être professionnel de santé</button>
+            <button class="bt" onclick="showDestination()" data-i18n="att.full">Destination complète</button>
+            <button class="bt bp" onclick="acceptAttest()" data-i18n="att.accept">J'atteste être professionnel de santé</button>
         </div>
     </div>
 </div>
@@ -527,11 +529,11 @@ canvas{display:block;touch-action:none;}
 
 <!-- AGENTS & AI -->
     <div class="cd">
-        <div class="agh">Experts IA Mistral
+        <div class="agh"><span data-i18n="sec.experts">Experts IA Mistral</span>
             <button class="bt bmini agauto" onclick="applyRoute()" title="Composer le panel d'après la modalité détectée au triage">⚡ Auto</button>
         </div>
         <div class="agr" id="aG"></div>
-        <div class="aghint">Aucun expert sélectionné : le panel est composé automatiquement d'après le triage.</div>
+        <div class="aghint" data-i18n="sec.autohint">Aucun expert sélectionné : le panel est composé automatiquement d'après le triage.</div>
 
         <!-- Image Stats (auto-filled on load) -->
         <div class="imgstats" id="imgStats" style="display:none"></div>
@@ -544,20 +546,20 @@ canvas{display:block;touch-action:none;}
 
         <!-- Contexte clinique -->
         <div class="ctxr">
-            <input id="ctxAge" inputmode="numeric" placeholder="Âge" aria-label="Âge du patient">
+            <input id="ctxAge" inputmode="numeric" data-i18n-ph="ctx.age" placeholder="Âge" aria-label="Âge">
             <select id="ctxSex" aria-label="Sexe">
-                <option value="">Sexe</option><option>Femme</option><option>Homme</option>
+                <option value="" data-i18n="ctx.sex">Sexe</option><option data-i18n="ctx.female">Femme</option><option data-i18n="ctx.male">Homme</option>
             </select>
-            <input id="ctxInd" placeholder="Indication clinique (motif de l'examen)" aria-label="Indication clinique">
+            <input id="ctxInd" data-i18n-ph="ctx.ind" placeholder="Indication clinique" aria-label="Indication clinique">
         </div>
 
         <div class="nwr">
-            <textarea id="notes" rows="2" placeholder="Notes cliniques (ou dictez)..."></textarea>
+            <textarea id="notes" rows="2" data-i18n-ph="ctx.notes" placeholder="Notes cliniques (ou dictez)..."></textarea>
             <button class="bt bi mcb" onclick="togMic()" id="micB">🎤</button>
         </div>
 
-        <label class="pnl"><input type="checkbox" id="panelOff"><span>Lecture unique (désactive les lectures indépendantes + consensus)</span></label>
-        <label class="pnl"><input type="checkbox" id="zoomOff" onchange="setZoom()"><span>Désactiver l'inspection par zoom (plus rapide, moins précis)</span></label>
+        <label class="pnl"><input type="checkbox" id="panelOff"><span data-i18n="opt.single">Lecture unique (désactive les lectures indépendantes + consensus)</span></label>
+        <label class="pnl"><input type="checkbox" id="zoomOff" onchange="setZoom()"><span data-i18n="opt.nozoom">Désactiver l'inspection par zoom (plus rapide, moins précis)</span></label>
 
         <!-- Analysis Buttons -->
         <div class="fr fw" style="margin-bottom:8px">
@@ -635,7 +637,7 @@ const store = (() => {
     };
 })();
 
-const APP_VERSION = 'v13.4';
+const APP_VERSION = 'v14.0';
 
 const AG = {
     radio: {
@@ -828,7 +830,7 @@ const S = {
     pp: null, ppSel: 'clahe', busy: false, triage: null, lastMeta: null,
     mdlPool: null, mdlVision: null, mdlFast: null, mdlSynth: null, mdlForce: '',
     only: null, onDone: null, batch: null, vFrames: 6, chunks: null, autoRoute: false,
-    uRelCal: null, calD: null, calMm: null, zoomOff: false, pinNew: null, pinBusy: false,
+    uRelCal: null, calD: null, calMm: null, zoomOff: false, pinNew: null, pinBusy: false, lang: 'fr',
     swReg: null, instEvt: null,
     // --- série multi-images / vidéo v12 ---
     series: [], active: 0, mode: 'serie', imgSet: null
@@ -1015,7 +1017,7 @@ window.addPat = function() {
     const n = prompt('Nom du patient :');
     if (!n || !n.replace(/\s/g, '')) return;
     if (!S.db) return toast('Base indisponible');
-    if (!VAULT.key) return toast('Coffre verrouillé');
+    if (!VAULT.key) return toast(t('msg.locked'));
     // L'identité du patient est une donnée de santé : elle est chiffrée.
     VAULT.encrypt({ name: n.trim() }).then(blob => {
         const req = S.db.transaction('p', 'readwrite').objectStore('p').add({ data: blob, v: APP_VERSION });
@@ -1056,7 +1058,7 @@ window.saveExam = function() {
             data: blob
         }).onsuccess = () => {
             auditLog('enregistrement_examen', { pid: parseInt(pid), chiffre: true });
-            toast('Examen enregistré (chiffré)');
+            toast(t('msg.saved'));
         };
     }).catch(e => toast('Chiffrement impossible : ' + e.message));
 };
@@ -1064,7 +1066,7 @@ window.saveExam = function() {
 window.loadPat = function() {
     const pid = $('patL').value;
     if (!pid || !S.db) return;
-    if (!VAULT.key) return toast('Coffre verrouillé');
+    if (!VAULT.key) return toast(t('msg.locked'));
     S.db.transaction('e', 'readonly').objectStore('e').index('pid').getAll(parseInt(pid)).onsuccess = e => {
         const rows = e.target.result || [];
         if (!rows.length) return toast('Aucun examen pour ce patient');
@@ -2077,6 +2079,456 @@ function applyForce() {
 
 
 // ============================================================
+//  INTERNATIONALISATION
+// ============================================================
+// Deux couches distinctes, volontairement :
+//   1. L'INTERFACE est traduite ici (libellés courts, sans ambiguïté).
+//   2. Le CONTENU MÉDICAL (grilles de lecture, compte rendu) n'est jamais
+//      traduit par l'application : les consignes restent en français comme
+//      échafaudage interne et le modèle rédige nativement dans la langue
+//      cible. Traduire mécaniquement une terminologie clinique introduirait
+//      des erreurs inacceptables dans un dispositif médical.
+const LANGS = {
+    fr: { n: 'Français',  f: '🇫🇷', rep: 'français' },
+    en: { n: 'English',   f: '🇬🇧', rep: 'English' },
+    de: { n: 'Deutsch',   f: '🇩🇪', rep: 'Deutsch' },
+    cs: { n: 'Čeština',   f: '🇨🇿', rep: 'čeština' },
+    it: { n: 'Italiano',  f: '🇮🇹', rep: 'italiano' },
+    es: { n: 'Español',   f: '🇪🇸', rep: 'español' },
+    pt: { n: 'Português', f: '🇵🇹', rep: 'português' },
+    nl: { n: 'Nederlands',f: '🇳🇱', rep: 'Nederlands' },
+    pl: { n: 'Polski',    f: '🇵🇱', rep: 'polski' }
+};
+
+const I18N = {
+fr: {
+    'app.sub': 'Aide à la décision — usage professionnel',
+    'auth.edition': 'Expert Edition', 'auth.hint': 'Code à 6 chiffres minimum · les données de santé sont chiffrées en AES-256-GCM avec une clé dérivée de ce code',
+    'auth.confirm': 'Confirmez le code', 'auth.mismatch': 'Les deux saisies diffèrent', 'auth.short': 'Code à 6 chiffres minimum',
+    'auth.wrong': 'Code incorrect', 'auth.deriving': 'Dérivation de la clé…', 'auth.locked': 'Session verrouillée',
+    'auth.nocrypto': 'Chiffrement indisponible : servez l\'application en https://',
+    'api.title': 'Configuration API Mistral', 'api.stored': 'Clé Mistral AI stockée localement sur votre appareil.',
+    'api.model': 'Modèle IA pour l\'analyse', 'api.diag': 'Diagnostic', 'api.save': 'Enregistrer', 'api.close': 'Fermer',
+    'sec.experts': 'Experts IA Mistral', 'sec.auto': 'Auto', 'sec.autohint': 'Aucun expert sélectionné : le panel est composé automatiquement d\'après le triage.',
+    'ctx.age': 'Âge', 'ctx.sex': 'Sexe', 'ctx.female': 'Femme', 'ctx.male': 'Homme',
+    'ctx.ind': 'Indication clinique (motif de l\'examen)', 'ctx.notes': 'Notes cliniques (ou dictez)…',
+    'opt.single': 'Lecture unique (désactive les lectures indépendantes + consensus)',
+    'opt.nozoom': 'Désactiver l\'inspection par zoom (plus rapide, moins précis)',
+    'opt.frames': 'trames', 'lang.label': 'Langue',
+    'rep.summary': 'Synthèse', 'rep.indication': 'Indication', 'rep.technique': 'Technique', 'rep.results': 'Résultats',
+    'rep.findings': 'Observations', 'rep.main': 'Hypothèse principale', 'rep.for': 'En faveur', 'rep.against': 'En défaveur',
+    'rep.conclusion': 'Conclusion', 'rep.discr': 'Pour trancher', 'rep.diff': 'Diagnostic différentiel',
+    'rep.diverg': 'Divergences entre experts', 'rep.negative': 'Recherché et non retrouvé',
+    'rep.plan': 'Conduite à tenir proposée', 'rep.flags': 'Drapeaux rouges',
+    'rep.limits': 'Limites de cet examen — ne permet pas d\'écarter', 'rep.agree': 'Accord inter-experts',
+    'rep.trace': 'Traçabilité', 'rep.experts': 'Experts', 'rep.models': 'Modèles', 'rep.variant': 'Variante envoyée',
+    'rep.duration': 'durée', 'rep.coverage': 'élément(s) de la série analysés', 'rep.partial': 'couverture partielle',
+    'rep.disclaimer': 'Aide à la décision destinée à un professionnel de santé qualifié. Hypothèses non validées cliniquement — confirmation par le praticien requise avant toute décision.',
+    'prob.tres_probable': 'Très probable', 'prob.probable': 'Probable', 'prob.possible': 'Possible',
+    'prob.peu_probable': 'Peu probable', 'prob.indetermine': 'Indéterminé',
+    'sev.crit': 'Critique', 'sev.high': 'Élevé', 'sev.mod': 'Modéré', 'sev.low': 'Faible', 'sev.norm': 'Normal',
+    'urg.immediate': 'Immédiat', 'urg.rapide': 'Rapide', 'urg.programmee': 'Programmé', 'urg.aucune': 'Différable',
+    'pipe.pre': 'Pré-traitement', 'pipe.models': 'Modèles', 'pipe.triage': 'Triage modalité',
+    'pipe.read': 'Lecture experte', 'pipe.reads': 'Lectures', 'pipe.consensus': 'Consensus', 'pipe.annot': 'Annotations',
+    'pdf.title': 'COMPTE RENDU D\'ANALYSE ASSISTÉE', 'pdf.id': 'Identification', 'pdf.patient': 'Patient',
+    'pdf.date': 'Date de l\'examen', 'pdf.exam': 'Identifiant', 'pdf.elements': 'Éléments analysés',
+    'pdf.calib': 'Calibration', 'pdf.notcalib': 'Image non calibrée : aucune mesure absolue exploitable.',
+    'pdf.clinctx': 'Contexte clinique', 'pdf.meas': 'Mesures',
+    'pdf.uncert': 'Incertitudes élargies, facteur d\'élargissement k = 2 (niveau de confiance ≈ 95 %).',
+    'pdf.noanalysis': 'Aucune analyse assistée n\'a été effectuée sur cet examen.',
+    'pdf.valid': 'VALIDATION PAR LE PRATICIEN',
+    'pdf.validtxt1': 'Ce document est produit par un logiciel d\'aide à la décision. Les hypothèses formulées n\'ont pas',
+    'pdf.validtxt2': 'de valeur diagnostique tant qu\'elles n\'ont pas été confirmées par un professionnel de santé qualifié.',
+    'pdf.sign': 'Nom, qualité et signature', 'pdf.validdate': 'Date de validation',
+    'pdf.foot1': 'Aide à la décision destinée à un professionnel de santé qualifié. Ne constitue pas un diagnostic.',
+    'pdf.foot2': 'Conclusions non validées cliniquement — confirmation par le praticien requise avant toute décision.',
+    'pdf.page': 'Page', 'pdf.notset': 'non renseigné', 'pdf.readmodel': 'Modèle de lecture',
+    'pdf.triagemodel': 'Modèle de triage', 'pdf.synthmodel': 'Modèle de synthèse', 'pdf.expertsused': 'Experts mobilisés',
+    'pdf.imgvariant': 'Variante d\'image', 'pdf.zoominsp': 'Inspection par zoom', 'pdf.batches': 'Lots d\'analyse',
+    'pdf.timestamp': 'Horodatage', 'pdf.swversion': 'Version logicielle', 'pdf.enabled': 'activée', 'pdf.notneeded': 'non requise',
+    'dst.title': 'Destination prévue', 'dst.out': 'Hors destination', 'dst.limits': 'Limites connues',
+    'att.title': 'Usage réservé aux professionnels de santé', 'att.full': 'Destination complète',
+    'att.accept': 'J\'atteste être professionnel de santé',
+    'msg.noexpert': 'Sélectionnez au moins un expert', 'msg.busy': 'Analyse déjà en cours',
+    'msg.saved': 'Examen enregistré (chiffré)', 'msg.locked': 'Coffre verrouillé',
+    'msg.exported': 'Compte rendu exporté', 'msg.nopdf': 'Bibliothèque PDF non chargée', 'msg.noexam': 'Aucun examen à exporter'
+}
+};
+
+// ---------- Traductions ----------
+I18N.en = {
+    'app.sub': 'Clinical decision support — professional use',
+    'auth.edition': 'Expert Edition', 'auth.hint': 'Minimum 6-digit code · health data is encrypted with AES-256-GCM using a key derived from this code',
+    'auth.confirm': 'Confirm the code', 'auth.mismatch': 'The two entries differ', 'auth.short': 'Minimum 6-digit code',
+    'auth.wrong': 'Incorrect code', 'auth.deriving': 'Deriving key…', 'auth.locked': 'Session locked',
+    'auth.nocrypto': 'Encryption unavailable: serve the application over https://',
+    'api.title': 'Mistral API configuration', 'api.stored': 'Mistral AI key stored locally on your device.',
+    'api.model': 'AI model for analysis', 'api.diag': 'Diagnostics', 'api.save': 'Save', 'api.close': 'Close',
+    'sec.experts': 'Mistral AI experts', 'sec.auto': 'Auto', 'sec.autohint': 'No expert selected: the panel is composed automatically from triage.',
+    'ctx.age': 'Age', 'ctx.sex': 'Sex', 'ctx.female': 'Female', 'ctx.male': 'Male',
+    'ctx.ind': 'Clinical indication (reason for examination)', 'ctx.notes': 'Clinical notes (or dictate)…',
+    'opt.single': 'Single reading (disables independent readings + consensus)',
+    'opt.nozoom': 'Disable zoom inspection (faster, less precise)',
+    'opt.frames': 'frames', 'lang.label': 'Language',
+    'rep.summary': 'Summary', 'rep.indication': 'Indication', 'rep.technique': 'Technique', 'rep.results': 'Findings',
+    'rep.findings': 'Observations', 'rep.main': 'Leading hypothesis', 'rep.for': 'Supporting', 'rep.against': 'Against',
+    'rep.conclusion': 'Conclusion', 'rep.discr': 'To discriminate', 'rep.diff': 'Differential diagnosis',
+    'rep.diverg': 'Disagreements between experts', 'rep.negative': 'Sought and not found',
+    'rep.plan': 'Suggested management', 'rep.flags': 'Red flags',
+    'rep.limits': 'Limitations of this examination — cannot rule out', 'rep.agree': 'Inter-expert agreement',
+    'rep.trace': 'Traceability', 'rep.experts': 'Experts', 'rep.models': 'Models', 'rep.variant': 'Variant sent',
+    'rep.duration': 'duration', 'rep.coverage': 'series element(s) analysed', 'rep.partial': 'partial coverage',
+    'rep.disclaimer': 'Decision support intended for a qualified healthcare professional. Hypotheses not clinically validated — confirmation by the practitioner required before any decision.',
+    'prob.tres_probable': 'Highly likely', 'prob.probable': 'Likely', 'prob.possible': 'Possible',
+    'prob.peu_probable': 'Unlikely', 'prob.indetermine': 'Indeterminate',
+    'sev.crit': 'Critical', 'sev.high': 'High', 'sev.mod': 'Moderate', 'sev.low': 'Low', 'sev.norm': 'Normal',
+    'urg.immediate': 'Immediate', 'urg.rapide': 'Prompt', 'urg.programmee': 'Scheduled', 'urg.aucune': 'Deferrable',
+    'pipe.pre': 'Pre-processing', 'pipe.models': 'Models', 'pipe.triage': 'Modality triage',
+    'pipe.read': 'Expert reading', 'pipe.reads': 'Readings', 'pipe.consensus': 'Consensus', 'pipe.annot': 'Annotations',
+    'pdf.title': 'ASSISTED ANALYSIS REPORT', 'pdf.id': 'Identification', 'pdf.patient': 'Patient',
+    'pdf.date': 'Examination date', 'pdf.exam': 'Identifier', 'pdf.elements': 'Elements analysed',
+    'pdf.calib': 'Calibration', 'pdf.notcalib': 'Image not calibrated: no absolute measurement available.',
+    'pdf.clinctx': 'Clinical context', 'pdf.meas': 'Measurements',
+    'pdf.uncert': 'Expanded uncertainties, coverage factor k = 2 (confidence level ≈ 95%).',
+    'pdf.noanalysis': 'No assisted analysis was performed on this examination.',
+    'pdf.valid': 'VALIDATION BY THE PRACTITIONER',
+    'pdf.validtxt1': 'This document is produced by decision-support software. The hypotheses stated have no',
+    'pdf.validtxt2': 'diagnostic value until confirmed by a qualified healthcare professional.',
+    'pdf.sign': 'Name, title and signature', 'pdf.validdate': 'Date of validation',
+    'pdf.foot1': 'Decision support intended for a qualified healthcare professional. Does not constitute a diagnosis.',
+    'pdf.foot2': 'Conclusions not clinically validated — confirmation by the practitioner required before any decision.',
+    'pdf.page': 'Page', 'pdf.notset': 'not recorded', 'pdf.readmodel': 'Reading model',
+    'pdf.triagemodel': 'Triage model', 'pdf.synthmodel': 'Synthesis model', 'pdf.expertsused': 'Experts involved',
+    'pdf.imgvariant': 'Image variant', 'pdf.zoominsp': 'Zoom inspection', 'pdf.batches': 'Analysis batches',
+    'pdf.timestamp': 'Timestamp', 'pdf.swversion': 'Software version', 'pdf.enabled': 'enabled', 'pdf.notneeded': 'not required',
+    'dst.title': 'Intended purpose', 'dst.out': 'Outside intended purpose', 'dst.limits': 'Known limitations',
+    'att.title': 'Restricted to healthcare professionals', 'att.full': 'Full intended purpose',
+    'att.accept': 'I certify that I am a healthcare professional',
+    'msg.noexpert': 'Select at least one expert', 'msg.busy': 'Analysis already running',
+    'msg.saved': 'Examination saved (encrypted)', 'msg.locked': 'Vault locked',
+    'msg.exported': 'Report exported', 'msg.nopdf': 'PDF library not loaded', 'msg.noexam': 'No examination to export'
+};
+I18N.de = {
+    'app.sub': 'Entscheidungsunterstützung — professionelle Nutzung',
+    'auth.edition': 'Expert Edition', 'auth.hint': 'Mindestens 6-stelliger Code · Gesundheitsdaten werden mit AES-256-GCM verschlüsselt, Schlüssel aus diesem Code abgeleitet',
+    'auth.confirm': 'Code bestätigen', 'auth.mismatch': 'Die beiden Eingaben stimmen nicht überein', 'auth.short': 'Mindestens 6-stelliger Code',
+    'auth.wrong': 'Falscher Code', 'auth.deriving': 'Schlüsselableitung…', 'auth.locked': 'Sitzung gesperrt',
+    'auth.nocrypto': 'Verschlüsselung nicht verfügbar: Anwendung über https:// bereitstellen',
+    'api.title': 'Mistral-API-Konfiguration', 'api.stored': 'Mistral-AI-Schlüssel lokal auf Ihrem Gerät gespeichert.',
+    'api.model': 'KI-Modell für die Analyse', 'api.diag': 'Diagnose', 'api.save': 'Speichern', 'api.close': 'Schließen',
+    'sec.experts': 'Mistral-KI-Experten', 'sec.auto': 'Auto', 'sec.autohint': 'Kein Experte ausgewählt: das Panel wird automatisch aus der Triage zusammengestellt.',
+    'ctx.age': 'Alter', 'ctx.sex': 'Geschlecht', 'ctx.female': 'Weiblich', 'ctx.male': 'Männlich',
+    'ctx.ind': 'Klinische Indikation (Untersuchungsgrund)', 'ctx.notes': 'Klinische Notizen (oder diktieren)…',
+    'opt.single': 'Einzelbefundung (deaktiviert unabhängige Befundungen + Konsens)',
+    'opt.nozoom': 'Zoom-Inspektion deaktivieren (schneller, weniger präzise)',
+    'opt.frames': 'Bilder', 'lang.label': 'Sprache',
+    'rep.summary': 'Zusammenfassung', 'rep.indication': 'Indikation', 'rep.technique': 'Technik', 'rep.results': 'Befund',
+    'rep.findings': 'Beobachtungen', 'rep.main': 'Führende Hypothese', 'rep.for': 'Dafür', 'rep.against': 'Dagegen',
+    'rep.conclusion': 'Beurteilung', 'rep.discr': 'Zur Abgrenzung', 'rep.diff': 'Differentialdiagnose',
+    'rep.diverg': 'Abweichungen zwischen Experten', 'rep.negative': 'Gesucht und nicht gefunden',
+    'rep.plan': 'Vorgeschlagenes Vorgehen', 'rep.flags': 'Warnzeichen',
+    'rep.limits': 'Grenzen dieser Untersuchung — nicht auszuschließen', 'rep.agree': 'Übereinstimmung der Experten',
+    'rep.trace': 'Nachvollziehbarkeit', 'rep.experts': 'Experten', 'rep.models': 'Modelle', 'rep.variant': 'Gesendete Variante',
+    'rep.duration': 'Dauer', 'rep.coverage': 'Element(e) der Serie analysiert', 'rep.partial': 'unvollständige Abdeckung',
+    'rep.disclaimer': 'Entscheidungsunterstützung für qualifiziertes medizinisches Fachpersonal. Hypothesen klinisch nicht validiert — Bestätigung durch den Arzt vor jeder Entscheidung erforderlich.',
+    'prob.tres_probable': 'Sehr wahrscheinlich', 'prob.probable': 'Wahrscheinlich', 'prob.possible': 'Möglich',
+    'prob.peu_probable': 'Unwahrscheinlich', 'prob.indetermine': 'Unbestimmt',
+    'sev.crit': 'Kritisch', 'sev.high': 'Hoch', 'sev.mod': 'Mittel', 'sev.low': 'Gering', 'sev.norm': 'Normal',
+    'urg.immediate': 'Sofort', 'urg.rapide': 'Zeitnah', 'urg.programmee': 'Geplant', 'urg.aucune': 'Aufschiebbar',
+    'pipe.pre': 'Vorverarbeitung', 'pipe.models': 'Modelle', 'pipe.triage': 'Modalitäts-Triage',
+    'pipe.read': 'Expertenbefundung', 'pipe.reads': 'Befundungen', 'pipe.consensus': 'Konsens', 'pipe.annot': 'Annotationen',
+    'pdf.title': 'BERICHT DER ASSISTIERTEN ANALYSE', 'pdf.id': 'Identifikation', 'pdf.patient': 'Patient',
+    'pdf.date': 'Untersuchungsdatum', 'pdf.exam': 'Kennung', 'pdf.elements': 'Analysierte Elemente',
+    'pdf.calib': 'Kalibrierung', 'pdf.notcalib': 'Bild nicht kalibriert: keine absolute Messung verwertbar.',
+    'pdf.clinctx': 'Klinischer Kontext', 'pdf.meas': 'Messungen',
+    'pdf.uncert': 'Erweiterte Unsicherheiten, Erweiterungsfaktor k = 2 (Vertrauensniveau ≈ 95 %).',
+    'pdf.noanalysis': 'Für diese Untersuchung wurde keine assistierte Analyse durchgeführt.',
+    'pdf.valid': 'VALIDIERUNG DURCH DEN ARZT',
+    'pdf.validtxt1': 'Dieses Dokument wurde von einer Entscheidungsunterstützungssoftware erstellt. Die genannten Hypothesen haben',
+    'pdf.validtxt2': 'keinen diagnostischen Wert, solange sie nicht von qualifiziertem medizinischem Fachpersonal bestätigt wurden.',
+    'pdf.sign': 'Name, Funktion und Unterschrift', 'pdf.validdate': 'Datum der Validierung',
+    'pdf.foot1': 'Entscheidungsunterstützung für qualifiziertes medizinisches Fachpersonal. Stellt keine Diagnose dar.',
+    'pdf.foot2': 'Beurteilungen klinisch nicht validiert — Bestätigung durch den Arzt vor jeder Entscheidung erforderlich.',
+    'pdf.page': 'Seite', 'pdf.notset': 'nicht angegeben', 'pdf.readmodel': 'Befundungsmodell',
+    'pdf.triagemodel': 'Triage-Modell', 'pdf.synthmodel': 'Synthesemodell', 'pdf.expertsused': 'Beteiligte Experten',
+    'pdf.imgvariant': 'Bildvariante', 'pdf.zoominsp': 'Zoom-Inspektion', 'pdf.batches': 'Analyse-Lose',
+    'pdf.timestamp': 'Zeitstempel', 'pdf.swversion': 'Softwareversion', 'pdf.enabled': 'aktiviert', 'pdf.notneeded': 'nicht erforderlich',
+    'dst.title': 'Zweckbestimmung', 'dst.out': 'Außerhalb der Zweckbestimmung', 'dst.limits': 'Bekannte Grenzen',
+    'att.title': 'Nur für medizinisches Fachpersonal', 'att.full': 'Vollständige Zweckbestimmung',
+    'att.accept': 'Ich bestätige, medizinisches Fachpersonal zu sein',
+    'msg.noexpert': 'Wählen Sie mindestens einen Experten', 'msg.busy': 'Analyse läuft bereits',
+    'msg.saved': 'Untersuchung gespeichert (verschlüsselt)', 'msg.locked': 'Datenspeicher gesperrt',
+    'msg.exported': 'Bericht exportiert', 'msg.nopdf': 'PDF-Bibliothek nicht geladen', 'msg.noexam': 'Keine Untersuchung zum Exportieren'
+};
+I18N.cs = {
+    'app.sub': 'Podpora rozhodování — profesionální použití',
+    'auth.edition': 'Expert Edition', 'auth.hint': 'Kód minimálně 6 číslic · zdravotní údaje jsou šifrovány AES-256-GCM klíčem odvozeným z tohoto kódu',
+    'auth.confirm': 'Potvrďte kód', 'auth.mismatch': 'Zadání se neshodují', 'auth.short': 'Kód minimálně 6 číslic',
+    'auth.wrong': 'Nesprávný kód', 'auth.deriving': 'Odvozování klíče…', 'auth.locked': 'Sezení uzamčeno',
+    'auth.nocrypto': 'Šifrování není dostupné: spusťte aplikaci přes https://',
+    'api.title': 'Konfigurace API Mistral', 'api.stored': 'Klíč Mistral AI uložen lokálně ve vašem zařízení.',
+    'api.model': 'Model AI pro analýzu', 'api.diag': 'Diagnostika', 'api.save': 'Uložit', 'api.close': 'Zavřít',
+    'sec.experts': 'Experti Mistral AI', 'sec.auto': 'Auto', 'sec.autohint': 'Není vybrán žádný expert: panel je sestaven automaticky podle triáže.',
+    'ctx.age': 'Věk', 'ctx.sex': 'Pohlaví', 'ctx.female': 'Žena', 'ctx.male': 'Muž',
+    'ctx.ind': 'Klinická indikace (důvod vyšetření)', 'ctx.notes': 'Klinické poznámky (nebo diktujte)…',
+    'opt.single': 'Jediné čtení (vypne nezávislá čtení + konsenzus)',
+    'opt.nozoom': 'Vypnout inspekci přiblížením (rychlejší, méně přesné)',
+    'opt.frames': 'snímků', 'lang.label': 'Jazyk',
+    'rep.summary': 'Souhrn', 'rep.indication': 'Indikace', 'rep.technique': 'Technika', 'rep.results': 'Nález',
+    'rep.findings': 'Pozorování', 'rep.main': 'Vedoucí hypotéza', 'rep.for': 'Pro', 'rep.against': 'Proti',
+    'rep.conclusion': 'Závěr', 'rep.discr': 'K rozlišení', 'rep.diff': 'Diferenciální diagnóza',
+    'rep.diverg': 'Rozdíly mezi experty', 'rep.negative': 'Hledáno a nenalezeno',
+    'rep.plan': 'Navržený postup', 'rep.flags': 'Varovné příznaky',
+    'rep.limits': 'Omezení tohoto vyšetření — nelze vyloučit', 'rep.agree': 'Shoda mezi experty',
+    'rep.trace': 'Dohledatelnost', 'rep.experts': 'Experti', 'rep.models': 'Modely', 'rep.variant': 'Odeslaná varianta',
+    'rep.duration': 'trvání', 'rep.coverage': 'prvků série analyzováno', 'rep.partial': 'částečné pokrytí',
+    'rep.disclaimer': 'Podpora rozhodování určená kvalifikovanému zdravotnickému pracovníkovi. Hypotézy nejsou klinicky validovány — před jakýmkoli rozhodnutím je nutné potvrzení lékařem.',
+    'prob.tres_probable': 'Velmi pravděpodobné', 'prob.probable': 'Pravděpodobné', 'prob.possible': 'Možné',
+    'prob.peu_probable': 'Málo pravděpodobné', 'prob.indetermine': 'Neurčeno',
+    'sev.crit': 'Kritické', 'sev.high': 'Vysoké', 'sev.mod': 'Střední', 'sev.low': 'Nízké', 'sev.norm': 'Normální',
+    'urg.immediate': 'Okamžitě', 'urg.rapide': 'Urychleně', 'urg.programmee': 'Plánovaně', 'urg.aucune': 'Odložitelné',
+    'pipe.pre': 'Předzpracování', 'pipe.models': 'Modely', 'pipe.triage': 'Triáž modality',
+    'pipe.read': 'Expertní čtení', 'pipe.reads': 'Čtení', 'pipe.consensus': 'Konsenzus', 'pipe.annot': 'Anotace',
+    'pdf.title': 'ZPRÁVA O ASISTOVANÉ ANALÝZE', 'pdf.id': 'Identifikace', 'pdf.patient': 'Pacient',
+    'pdf.date': 'Datum vyšetření', 'pdf.exam': 'Identifikátor', 'pdf.elements': 'Analyzované prvky',
+    'pdf.calib': 'Kalibrace', 'pdf.notcalib': 'Obraz není kalibrován: absolutní měření nelze použít.',
+    'pdf.clinctx': 'Klinický kontext', 'pdf.meas': 'Měření',
+    'pdf.uncert': 'Rozšířené nejistoty, koeficient rozšíření k = 2 (úroveň spolehlivosti ≈ 95 %).',
+    'pdf.noanalysis': 'U tohoto vyšetření nebyla provedena asistovaná analýza.',
+    'pdf.valid': 'VALIDACE LÉKAŘEM',
+    'pdf.validtxt1': 'Tento dokument byl vytvořen softwarem pro podporu rozhodování. Uvedené hypotézy nemají',
+    'pdf.validtxt2': 'diagnostickou hodnotu, dokud nejsou potvrzeny kvalifikovaným zdravotnickým pracovníkem.',
+    'pdf.sign': 'Jméno, funkce a podpis', 'pdf.validdate': 'Datum validace',
+    'pdf.foot1': 'Podpora rozhodování určená kvalifikovanému zdravotnickému pracovníkovi. Nepředstavuje diagnózu.',
+    'pdf.foot2': 'Závěry nejsou klinicky validovány — před jakýmkoli rozhodnutím je nutné potvrzení lékařem.',
+    'pdf.page': 'Strana', 'pdf.notset': 'neuvedeno', 'pdf.readmodel': 'Model čtení',
+    'pdf.triagemodel': 'Model triáže', 'pdf.synthmodel': 'Model syntézy', 'pdf.expertsused': 'Zapojení experti',
+    'pdf.imgvariant': 'Varianta obrazu', 'pdf.zoominsp': 'Inspekce přiblížením', 'pdf.batches': 'Dávky analýzy',
+    'pdf.timestamp': 'Časová značka', 'pdf.swversion': 'Verze softwaru', 'pdf.enabled': 'aktivní', 'pdf.notneeded': 'není nutná',
+    'dst.title': 'Určený účel', 'dst.out': 'Mimo určený účel', 'dst.limits': 'Známá omezení',
+    'att.title': 'Pouze pro zdravotnické pracovníky', 'att.full': 'Úplný určený účel',
+    'att.accept': 'Potvrzuji, že jsem zdravotnický pracovník',
+    'msg.noexpert': 'Vyberte alespoň jednoho experta', 'msg.busy': 'Analýza již probíhá',
+    'msg.saved': 'Vyšetření uloženo (šifrovaně)', 'msg.locked': 'Trezor uzamčen',
+    'msg.exported': 'Zpráva exportována', 'msg.nopdf': 'Knihovna PDF nenačtena', 'msg.noexam': 'Žádné vyšetření k exportu'
+};
+I18N.it = {
+    'app.sub': 'Supporto alle decisioni — uso professionale',
+    'auth.edition': 'Expert Edition', 'auth.hint': 'Codice di almeno 6 cifre · i dati sanitari sono cifrati con AES-256-GCM con chiave derivata da questo codice',
+    'auth.confirm': 'Confermare il codice', 'auth.mismatch': 'Le due immissioni differiscono', 'auth.short': 'Codice di almeno 6 cifre',
+    'auth.wrong': 'Codice errato', 'auth.deriving': 'Derivazione della chiave…', 'auth.locked': 'Sessione bloccata',
+    'auth.nocrypto': 'Cifratura non disponibile: distribuire l\'applicazione su https://',
+    'api.title': 'Configurazione API Mistral', 'api.stored': 'Chiave Mistral AI memorizzata localmente sul dispositivo.',
+    'api.model': 'Modello IA per l\'analisi', 'api.diag': 'Diagnostica', 'api.save': 'Salva', 'api.close': 'Chiudi',
+    'sec.experts': 'Esperti Mistral AI', 'sec.auto': 'Auto', 'sec.autohint': 'Nessun esperto selezionato: il panel è composto automaticamente dal triage.',
+    'ctx.age': 'Età', 'ctx.sex': 'Sesso', 'ctx.female': 'Donna', 'ctx.male': 'Uomo',
+    'ctx.ind': 'Indicazione clinica (motivo dell\'esame)', 'ctx.notes': 'Note cliniche (o dettare)…',
+    'opt.single': 'Lettura singola (disattiva letture indipendenti + consenso)',
+    'opt.nozoom': 'Disattivare l\'ispezione con zoom (più rapido, meno preciso)',
+    'opt.frames': 'fotogrammi', 'lang.label': 'Lingua',
+    'rep.summary': 'Sintesi', 'rep.indication': 'Indicazione', 'rep.technique': 'Tecnica', 'rep.results': 'Referto',
+    'rep.findings': 'Osservazioni', 'rep.main': 'Ipotesi principale', 'rep.for': 'A favore', 'rep.against': 'Contro',
+    'rep.conclusion': 'Conclusione', 'rep.discr': 'Per discriminare', 'rep.diff': 'Diagnosi differenziale',
+    'rep.diverg': 'Divergenze tra esperti', 'rep.negative': 'Ricercato e non riscontrato',
+    'rep.plan': 'Condotta proposta', 'rep.flags': 'Segnali d\'allarme',
+    'rep.limits': 'Limiti di questo esame — non permette di escludere', 'rep.agree': 'Accordo tra esperti',
+    'rep.trace': 'Tracciabilità', 'rep.experts': 'Esperti', 'rep.models': 'Modelli', 'rep.variant': 'Variante inviata',
+    'rep.duration': 'durata', 'rep.coverage': 'elemento/i della serie analizzati', 'rep.partial': 'copertura parziale',
+    'rep.disclaimer': 'Supporto alle decisioni destinato a un professionista sanitario qualificato. Ipotesi non validate clinicamente — conferma da parte del medico necessaria prima di ogni decisione.',
+    'prob.tres_probable': 'Molto probabile', 'prob.probable': 'Probabile', 'prob.possible': 'Possibile',
+    'prob.peu_probable': 'Poco probabile', 'prob.indetermine': 'Indeterminato',
+    'sev.crit': 'Critico', 'sev.high': 'Elevato', 'sev.mod': 'Moderato', 'sev.low': 'Basso', 'sev.norm': 'Normale',
+    'urg.immediate': 'Immediato', 'urg.rapide': 'Rapido', 'urg.programmee': 'Programmato', 'urg.aucune': 'Differibile',
+    'pipe.pre': 'Pre-elaborazione', 'pipe.models': 'Modelli', 'pipe.triage': 'Triage modalità',
+    'pipe.read': 'Lettura esperta', 'pipe.reads': 'Letture', 'pipe.consensus': 'Consenso', 'pipe.annot': 'Annotazioni',
+    'pdf.title': 'REFERTO DI ANALISI ASSISTITA', 'pdf.id': 'Identificazione', 'pdf.patient': 'Paziente',
+    'pdf.date': 'Data dell\'esame', 'pdf.exam': 'Identificativo', 'pdf.elements': 'Elementi analizzati',
+    'pdf.calib': 'Calibrazione', 'pdf.notcalib': 'Immagine non calibrata: nessuna misura assoluta utilizzabile.',
+    'pdf.clinctx': 'Contesto clinico', 'pdf.meas': 'Misure',
+    'pdf.uncert': 'Incertezze estese, fattore di copertura k = 2 (livello di fiducia ≈ 95 %).',
+    'pdf.noanalysis': 'Nessuna analisi assistita è stata effettuata su questo esame.',
+    'pdf.valid': 'VALIDAZIONE DA PARTE DEL MEDICO',
+    'pdf.validtxt1': 'Questo documento è prodotto da un software di supporto alle decisioni. Le ipotesi formulate non hanno',
+    'pdf.validtxt2': 'valore diagnostico finché non sono confermate da un professionista sanitario qualificato.',
+    'pdf.sign': 'Nome, qualifica e firma', 'pdf.validdate': 'Data di validazione',
+    'pdf.foot1': 'Supporto alle decisioni destinato a un professionista sanitario qualificato. Non costituisce una diagnosi.',
+    'pdf.foot2': 'Conclusioni non validate clinicamente — conferma da parte del medico necessaria prima di ogni decisione.',
+    'pdf.page': 'Pagina', 'pdf.notset': 'non indicato', 'pdf.readmodel': 'Modello di lettura',
+    'pdf.triagemodel': 'Modello di triage', 'pdf.synthmodel': 'Modello di sintesi', 'pdf.expertsused': 'Esperti coinvolti',
+    'pdf.imgvariant': 'Variante immagine', 'pdf.zoominsp': 'Ispezione con zoom', 'pdf.batches': 'Lotti di analisi',
+    'pdf.timestamp': 'Marca temporale', 'pdf.swversion': 'Versione software', 'pdf.enabled': 'attiva', 'pdf.notneeded': 'non necessaria',
+    'dst.title': 'Destinazione d\'uso', 'dst.out': 'Fuori destinazione d\'uso', 'dst.limits': 'Limiti noti',
+    'att.title': 'Riservato ai professionisti sanitari', 'att.full': 'Destinazione d\'uso completa',
+    'att.accept': 'Dichiaro di essere un professionista sanitario',
+    'msg.noexpert': 'Selezionare almeno un esperto', 'msg.busy': 'Analisi già in corso',
+    'msg.saved': 'Esame salvato (cifrato)', 'msg.locked': 'Archivio bloccato',
+    'msg.exported': 'Referto esportato', 'msg.nopdf': 'Libreria PDF non caricata', 'msg.noexam': 'Nessun esame da esportare'
+};
+I18N.es = {
+    'app.sub': 'Ayuda a la decisión — uso profesional',
+    'auth.edition': 'Expert Edition', 'auth.hint': 'Código de 6 dígitos como mínimo · los datos de salud se cifran con AES-256-GCM con una clave derivada de este código',
+    'auth.confirm': 'Confirme el código', 'auth.mismatch': 'Las dos entradas no coinciden', 'auth.short': 'Código de 6 dígitos como mínimo',
+    'auth.wrong': 'Código incorrecto', 'auth.deriving': 'Derivación de la clave…', 'auth.locked': 'Sesión bloqueada',
+    'auth.nocrypto': 'Cifrado no disponible: sirva la aplicación en https://',
+    'api.title': 'Configuración API Mistral', 'api.stored': 'Clave Mistral AI almacenada localmente en su dispositivo.',
+    'api.model': 'Modelo de IA para el análisis', 'api.diag': 'Diagnóstico', 'api.save': 'Guardar', 'api.close': 'Cerrar',
+    'sec.experts': 'Expertos Mistral AI', 'sec.auto': 'Auto', 'sec.autohint': 'Ningún experto seleccionado: el panel se compone automáticamente según el triaje.',
+    'ctx.age': 'Edad', 'ctx.sex': 'Sexo', 'ctx.female': 'Mujer', 'ctx.male': 'Hombre',
+    'ctx.ind': 'Indicación clínica (motivo del examen)', 'ctx.notes': 'Notas clínicas (o dicte)…',
+    'opt.single': 'Lectura única (desactiva las lecturas independientes + consenso)',
+    'opt.nozoom': 'Desactivar la inspección con zoom (más rápido, menos preciso)',
+    'opt.frames': 'fotogramas', 'lang.label': 'Idioma',
+    'rep.summary': 'Síntesis', 'rep.indication': 'Indicación', 'rep.technique': 'Técnica', 'rep.results': 'Hallazgos',
+    'rep.findings': 'Observaciones', 'rep.main': 'Hipótesis principal', 'rep.for': 'A favor', 'rep.against': 'En contra',
+    'rep.conclusion': 'Conclusión', 'rep.discr': 'Para discriminar', 'rep.diff': 'Diagnóstico diferencial',
+    'rep.diverg': 'Divergencias entre expertos', 'rep.negative': 'Buscado y no encontrado',
+    'rep.plan': 'Conducta propuesta', 'rep.flags': 'Señales de alarma',
+    'rep.limits': 'Límites de este examen — no permite descartar', 'rep.agree': 'Acuerdo entre expertos',
+    'rep.trace': 'Trazabilidad', 'rep.experts': 'Expertos', 'rep.models': 'Modelos', 'rep.variant': 'Variante enviada',
+    'rep.duration': 'duración', 'rep.coverage': 'elemento(s) de la serie analizados', 'rep.partial': 'cobertura parcial',
+    'rep.disclaimer': 'Ayuda a la decisión destinada a un profesional sanitario cualificado. Hipótesis no validadas clínicamente — confirmación por el médico requerida antes de cualquier decisión.',
+    'prob.tres_probable': 'Muy probable', 'prob.probable': 'Probable', 'prob.possible': 'Posible',
+    'prob.peu_probable': 'Poco probable', 'prob.indetermine': 'Indeterminado',
+    'sev.crit': 'Crítico', 'sev.high': 'Elevado', 'sev.mod': 'Moderado', 'sev.low': 'Bajo', 'sev.norm': 'Normal',
+    'urg.immediate': 'Inmediato', 'urg.rapide': 'Rápido', 'urg.programmee': 'Programado', 'urg.aucune': 'Diferible',
+    'pipe.pre': 'Preprocesamiento', 'pipe.models': 'Modelos', 'pipe.triage': 'Triaje de modalidad',
+    'pipe.read': 'Lectura experta', 'pipe.reads': 'Lecturas', 'pipe.consensus': 'Consenso', 'pipe.annot': 'Anotaciones',
+    'pdf.title': 'INFORME DE ANÁLISIS ASISTIDO', 'pdf.id': 'Identificación', 'pdf.patient': 'Paciente',
+    'pdf.date': 'Fecha del examen', 'pdf.exam': 'Identificador', 'pdf.elements': 'Elementos analizados',
+    'pdf.calib': 'Calibración', 'pdf.notcalib': 'Imagen no calibrada: ninguna medida absoluta utilizable.',
+    'pdf.clinctx': 'Contexto clínico', 'pdf.meas': 'Mediciones',
+    'pdf.uncert': 'Incertidumbres expandidas, factor de cobertura k = 2 (nivel de confianza ≈ 95 %).',
+    'pdf.noanalysis': 'No se ha realizado ningún análisis asistido en este examen.',
+    'pdf.valid': 'VALIDACIÓN POR EL MÉDICO',
+    'pdf.validtxt1': 'Este documento ha sido producido por un software de ayuda a la decisión. Las hipótesis formuladas no tienen',
+    'pdf.validtxt2': 'valor diagnóstico mientras no hayan sido confirmadas por un profesional sanitario cualificado.',
+    'pdf.sign': 'Nombre, cualificación y firma', 'pdf.validdate': 'Fecha de validación',
+    'pdf.foot1': 'Ayuda a la decisión destinada a un profesional sanitario cualificado. No constituye un diagnóstico.',
+    'pdf.foot2': 'Conclusiones no validadas clínicamente — confirmación por el médico requerida antes de cualquier decisión.',
+    'pdf.page': 'Página', 'pdf.notset': 'no indicado', 'pdf.readmodel': 'Modelo de lectura',
+    'pdf.triagemodel': 'Modelo de triaje', 'pdf.synthmodel': 'Modelo de síntesis', 'pdf.expertsused': 'Expertos movilizados',
+    'pdf.imgvariant': 'Variante de imagen', 'pdf.zoominsp': 'Inspección con zoom', 'pdf.batches': 'Lotes de análisis',
+    'pdf.timestamp': 'Sello de tiempo', 'pdf.swversion': 'Versión del software', 'pdf.enabled': 'activada', 'pdf.notneeded': 'no requerida',
+    'dst.title': 'Finalidad prevista', 'dst.out': 'Fuera de la finalidad prevista', 'dst.limits': 'Límites conocidos',
+    'att.title': 'Reservado a profesionales sanitarios', 'att.full': 'Finalidad prevista completa',
+    'att.accept': 'Certifico ser profesional sanitario',
+    'msg.noexpert': 'Seleccione al menos un experto', 'msg.busy': 'Análisis ya en curso',
+    'msg.saved': 'Examen guardado (cifrado)', 'msg.locked': 'Bóveda bloqueada',
+    'msg.exported': 'Informe exportado', 'msg.nopdf': 'Biblioteca PDF no cargada', 'msg.noexam': 'Ningún examen para exportar'
+};
+I18N.pt = {
+    'app.sub': 'Apoio à decisão — uso profissional',
+    'auth.edition': 'Expert Edition', 'auth.hint': 'Código de pelo menos 6 dígitos · os dados de saúde são cifrados com AES-256-GCM com uma chave derivada deste código',
+    'auth.confirm': 'Confirme o código', 'auth.mismatch': 'As duas entradas diferem', 'auth.short': 'Código de pelo menos 6 dígitos',
+    'auth.wrong': 'Código incorreto', 'auth.deriving': 'Derivação da chave…', 'auth.locked': 'Sessão bloqueada',
+    'auth.nocrypto': 'Cifragem indisponível: sirva a aplicação em https://',
+    'api.title': 'Configuração da API Mistral', 'api.stored': 'Chave Mistral AI armazenada localmente no seu dispositivo.',
+    'api.model': 'Modelo de IA para a análise', 'api.diag': 'Diagnóstico', 'api.save': 'Guardar', 'api.close': 'Fechar',
+    'sec.experts': 'Especialistas Mistral AI', 'sec.auto': 'Auto', 'sec.autohint': 'Nenhum especialista selecionado: o painel é composto automaticamente a partir da triagem.',
+    'ctx.age': 'Idade', 'ctx.sex': 'Sexo', 'ctx.female': 'Mulher', 'ctx.male': 'Homem',
+    'ctx.ind': 'Indicação clínica (motivo do exame)', 'ctx.notes': 'Notas clínicas (ou dite)…',
+    'opt.single': 'Leitura única (desativa as leituras independentes + consenso)',
+    'opt.nozoom': 'Desativar a inspeção com zoom (mais rápido, menos preciso)',
+    'opt.frames': 'fotogramas', 'lang.label': 'Idioma',
+    'rep.summary': 'Síntese', 'rep.indication': 'Indicação', 'rep.technique': 'Técnica', 'rep.results': 'Achados',
+    'rep.findings': 'Observações', 'rep.main': 'Hipótese principal', 'rep.for': 'A favor', 'rep.against': 'Contra',
+    'rep.conclusion': 'Conclusão', 'rep.discr': 'Para discriminar', 'rep.diff': 'Diagnóstico diferencial',
+    'rep.diverg': 'Divergências entre especialistas', 'rep.negative': 'Procurado e não encontrado',
+    'rep.plan': 'Conduta proposta', 'rep.flags': 'Sinais de alarme',
+    'rep.limits': 'Limites deste exame — não permite excluir', 'rep.agree': 'Concordância entre especialistas',
+    'rep.trace': 'Rastreabilidade', 'rep.experts': 'Especialistas', 'rep.models': 'Modelos', 'rep.variant': 'Variante enviada',
+    'rep.duration': 'duração', 'rep.coverage': 'elemento(s) da série analisados', 'rep.partial': 'cobertura parcial',
+    'rep.disclaimer': 'Apoio à decisão destinado a um profissional de saúde qualificado. Hipóteses não validadas clinicamente — confirmação pelo médico necessária antes de qualquer decisão.',
+    'prob.tres_probable': 'Muito provável', 'prob.probable': 'Provável', 'prob.possible': 'Possível',
+    'prob.peu_probable': 'Pouco provável', 'prob.indetermine': 'Indeterminado',
+    'sev.crit': 'Crítico', 'sev.high': 'Elevado', 'sev.mod': 'Moderado', 'sev.low': 'Baixo', 'sev.norm': 'Normal',
+    'urg.immediate': 'Imediato', 'urg.rapide': 'Rápido', 'urg.programmee': 'Programado', 'urg.aucune': 'Diferível',
+    'pipe.pre': 'Pré-processamento', 'pipe.models': 'Modelos', 'pipe.triage': 'Triagem de modalidade',
+    'pipe.read': 'Leitura especializada', 'pipe.reads': 'Leituras', 'pipe.consensus': 'Consenso', 'pipe.annot': 'Anotações',
+    'pdf.title': 'RELATÓRIO DE ANÁLISE ASSISTIDA', 'pdf.id': 'Identificação', 'pdf.patient': 'Paciente',
+    'pdf.date': 'Data do exame', 'pdf.exam': 'Identificador', 'pdf.elements': 'Elementos analisados',
+    'pdf.calib': 'Calibração', 'pdf.notcalib': 'Imagem não calibrada: nenhuma medida absoluta utilizável.',
+    'pdf.clinctx': 'Contexto clínico', 'pdf.meas': 'Medições',
+    'pdf.uncert': 'Incertezas expandidas, fator de expansão k = 2 (nível de confiança ≈ 95 %).',
+    'pdf.noanalysis': 'Nenhuma análise assistida foi efetuada neste exame.',
+    'pdf.valid': 'VALIDAÇÃO PELO MÉDICO',
+    'pdf.validtxt1': 'Este documento é produzido por um software de apoio à decisão. As hipóteses formuladas não têm',
+    'pdf.validtxt2': 'valor diagnóstico enquanto não forem confirmadas por um profissional de saúde qualificado.',
+    'pdf.sign': 'Nome, qualificação e assinatura', 'pdf.validdate': 'Data de validação',
+    'pdf.foot1': 'Apoio à decisão destinado a um profissional de saúde qualificado. Não constitui um diagnóstico.',
+    'pdf.foot2': 'Conclusões não validadas clinicamente — confirmação pelo médico necessária antes de qualquer decisão.',
+    'pdf.page': 'Página', 'pdf.notset': 'não indicado', 'pdf.readmodel': 'Modelo de leitura',
+    'pdf.triagemodel': 'Modelo de triagem', 'pdf.synthmodel': 'Modelo de síntese', 'pdf.expertsused': 'Especialistas mobilizados',
+    'pdf.imgvariant': 'Variante de imagem', 'pdf.zoominsp': 'Inspeção com zoom', 'pdf.batches': 'Lotes de análise',
+    'pdf.timestamp': 'Marca temporal', 'pdf.swversion': 'Versão do software', 'pdf.enabled': 'ativada', 'pdf.notneeded': 'não necessária',
+    'dst.title': 'Finalidade prevista', 'dst.out': 'Fora da finalidade prevista', 'dst.limits': 'Limites conhecidos',
+    'att.title': 'Reservado a profissionais de saúde', 'att.full': 'Finalidade prevista completa',
+    'att.accept': 'Declaro ser profissional de saúde',
+    'msg.noexpert': 'Selecione pelo menos um especialista', 'msg.busy': 'Análise já em curso',
+    'msg.saved': 'Exame guardado (cifrado)', 'msg.locked': 'Cofre bloqueado',
+    'msg.exported': 'Relatório exportado', 'msg.nopdf': 'Biblioteca PDF não carregada', 'msg.noexam': 'Nenhum exame para exportar'
+};
+I18N.nl = Object.assign({}, I18N.en, {
+    'app.sub': 'Beslissingsondersteuning — professioneel gebruik',
+    'api.save': 'Opslaan', 'api.close': 'Sluiten', 'ctx.age': 'Leeftijd', 'ctx.sex': 'Geslacht',
+    'ctx.female': 'Vrouw', 'ctx.male': 'Man', 'lang.label': 'Taal',
+    'rep.conclusion': 'Conclusie', 'rep.indication': 'Indicatie', 'rep.technique': 'Techniek',
+    'rep.results': 'Bevindingen', 'rep.main': 'Belangrijkste hypothese', 'rep.diff': 'Differentiaaldiagnose',
+    'pdf.page': 'Pagina', 'pdf.patient': 'Patiënt', 'dst.title': 'Beoogd doel',
+    'att.title': 'Uitsluitend voor zorgverleners', 'att.accept': 'Ik verklaar zorgverlener te zijn'
+});
+I18N.pl = Object.assign({}, I18N.en, {
+    'app.sub': 'Wspomaganie decyzji — użytek profesjonalny',
+    'api.save': 'Zapisz', 'api.close': 'Zamknij', 'ctx.age': 'Wiek', 'ctx.sex': 'Płeć',
+    'ctx.female': 'Kobieta', 'ctx.male': 'Mężczyzna', 'lang.label': 'Język',
+    'rep.conclusion': 'Wnioski', 'rep.indication': 'Wskazanie', 'rep.technique': 'Technika',
+    'rep.results': 'Wyniki', 'rep.main': 'Główna hipoteza', 'rep.diff': 'Diagnostyka różnicowa',
+    'pdf.page': 'Strona', 'pdf.patient': 'Pacjent', 'dst.title': 'Przeznaczenie',
+    'att.title': 'Tylko dla pracowników ochrony zdrowia', 'att.accept': 'Oświadczam, że jestem pracownikiem ochrony zdrowia'
+});
+
+// ---------- Résolution ----------
+function detectLang() {
+    const saved = store.get('mv_lang');
+    if (saved && LANGS[saved]) return saved;
+    const nav = (navigator.languages || [navigator.language || 'fr']);
+    for (let i = 0; i < nav.length; i++) {
+        const c = String(nav[i]).toLowerCase().split('-')[0];
+        if (LANGS[c]) return c;
+    }
+    return 'fr';
+}
+
+// Repli en cascade : langue → anglais → français → clé brute.
+function t(k) {
+    const L = I18N[S.lang] || I18N.fr;
+    return L[k] || I18N.en[k] || I18N.fr[k] || k;
+}
+
+function applyLang() {
+    document.documentElement.lang = S.lang;
+    document.querySelectorAll('[data-i18n]').forEach(e => { e.textContent = t(e.getAttribute('data-i18n')); });
+    document.querySelectorAll('[data-i18n-ph]').forEach(e => { e.placeholder = t(e.getAttribute('data-i18n-ph')); });
+    document.querySelectorAll('[data-i18n-title]').forEach(e => {
+        const v = t(e.getAttribute('data-i18n-title'));
+        e.title = v; e.setAttribute('aria-label', v);
+    });
+    if (S.lastReport) renderReport(S.lastReport, selectedAgents(), S.triage);
+}
+
+window.setLang = function(l) {
+    if (!LANGS[l]) return;
+    S.lang = l;
+    store.set('mv_lang', l);
+    applyLang();
+    auditLog('changement_langue', { lang: l });
+    toast(LANGS[l].f + '  ' + LANGS[l].n);
+};
+
+// Langue de rédaction du compte rendu, transmise au modèle.
+function reportLang() { return (LANGS[S.lang] || LANGS.fr).rep; }
+
+// ============================================================
 //  DESTINATION PRÉVUE (MDR 2017/745, art. 2 §12)
 // ============================================================
 // La destination prévue détermine la classification. Elle doit être déclarée,
@@ -2516,9 +2968,9 @@ window.applyRoute = function () {
 // ============================================================
 window.runBatch = function() {
     const agents = selectedAgents();
-    if (!agents.length) return toast('Sélectionnez au moins un expert');
+    if (!agents.length) return toast(t('msg.noexpert'));
     if (S.series.length < 2) return toast('Le mode Lot demande au moins 2 éléments');
-    if (S.busy) return toast('Analyse déjà en cours');
+    if (S.busy) return toast(t('msg.busy'));
 
     const results = [];
     const total = S.series.length;
@@ -3123,9 +3575,9 @@ function analyzeWithAI(auto) {
     S.autoRoute = selectedAgents().length === 0;
     if (S.autoRoute) ['gen', 'radio'].forEach(k => togAg(k));
     const agents = selectedAgents();
-    if (agents.length === 0) return toast('Sélectionnez au moins un expert');
+    if (agents.length === 0) return toast(t('msg.noexpert'));
     if (!S.series.length) return toast('Chargez au moins une image');
-    if (S.busy) return toast('Analyse déjà en cours');
+    if (S.busy) return toast(t('msg.busy'));
     S.busy = true;
     stashAnn();
 
@@ -3188,7 +3640,7 @@ function analyzeWithAI(auto) {
             // --- Étape 2 : triage modalité/région ---
             updPipe(2, 'active');
             const triSys = "Tu es un technicien en imagerie médicale. Identifie la nature technique de l'image fournie. " +
-                "Ne pose aucun diagnostic. Sois factuel et concis, en français.";
+                "Ne pose aucun diagnostic. Sois factuel et concis. Réponds en " + reportLang() + ".";
             const triMsg = [
                 { role: 'system', content: triSys },
                 { role: 'user', content: [{ type: 'text', text: 'Identifie modalité, région anatomique, incidence, qualité diagnostique et artefacts.' }].concat([S.imgSet.parts[0]]) }
@@ -3297,7 +3749,10 @@ function analyzeWithAI(auto) {
                         "PRÉCISION EXIGÉE : nomme les entités pathologiques par leur nom, localise au segment ou au lobe, chiffre ce qui est chiffrable, gradue ce qui se gradue. Une conclusion floue sur une image parlante n'aide personne.",
                         "CE QUE TU N'ÉCRIS JAMAIS : une affirmation diagnostique présentée comme certaine et définitive, une prescription, une posologie, un geste. Tu formules des hypothèses argumentées et hiérarchisées — c'est le médecin demandeur qui pose le diagnostic.",
                         "- `limites` = ce que cet examen NE PERMET PAS d'écarter : régions non couvertes, incidences manquantes, qualité insuffisante, pathologies nécessitant une autre modalité. Ce champ est OBLIGATOIRE et ne doit jamais être vide : un compte rendu sans limites explicites induit une fausse réassurance.",
-                        "- Aide à la décision : jamais de diagnostic affirmatif, pas de prescription."
+                        "- Aide à la décision : jamais de diagnostic affirmatif, pas de prescription.",
+                        "",
+                        "LANGUE DE RÉDACTION : " + reportLang() + ". Terminologie médicale native de cette langue, " +
+                        "sans traduction littérale. Les présentes consignes sont en français, ta réponse ne l'est pas."
                     ].join('\n');
                     return mchat(S.mdlSynth, [
                         { role: 'system', content: synSys },
@@ -3366,7 +3821,9 @@ function lectureMsg(agents, tri, grille, set) {
         "9. Tu disposes de l'outil `inspecter_zone` : si un détail est trop petit ou trop peu contrasté pour être tranché sur la vue d'ensemble, RÉCLAME un agrandissement à la résolution native plutôt que de spéculer. Tu peux le faire jusqu'à " + MAX_ZOOM + " fois.",
         "10. Calibration de la confiance — une confiance de 0,8 signifie que sur dix images comparables, tu aurais raison huit fois. Ne surestime pas : une confiance mal calibrée est plus nuisible qu'une observation manquante.",
         "",
-        "Langue : français. Terminologie médicale exacte."
+        "LANGUE DE RÉDACTION : " + reportLang() + ". Emploie la terminologie médicale native et exacte de cette langue — " +
+        "n'effectue pas une traduction littérale depuis le français.",
+        "Les consignes ci-dessus sont en français : ce n'est qu'un cadre de travail, ta réponse doit être intégralement en " + reportLang() + "."
     ].join('\n');
 
     return [
@@ -3442,9 +3899,9 @@ function renderPP(pp) {
 }
 
 function sevBadge(s) {
-    const map = { crit: ['sev-crit', 'Critique'], high: ['sev-high', 'Élevé'], mod: ['sev-mod', 'Modéré'], low: ['sev-low', 'Faible'], norm: ['sev-norm', 'Normal'] };
-    const m = map[s] || map.norm;
-    return '<span class="sev ' + m[0] + '">' + m[1] + '</span>';
+    const cls = { crit: 'sev-crit', high: 'sev-high', mod: 'sev-mod', low: 'sev-low', norm: 'sev-norm' };
+    const k = cls[s] ? s : 'norm';
+    return '<span class="sev ' + cls[k] + '">' + t('sev.' + k) + '</span>';
 }
 
 function confBar(c) {
@@ -3453,11 +3910,15 @@ function confBar(c) {
     return '<span class="cfw" title="Confiance ' + p + '%"><span class="cfb" style="width:' + p + '%;background:' + col + '"></span></span><span class="cft">' + p + '%</span>';
 }
 
-const URG = { immediate: ['u-imm', 'Immédiat'], rapide: ['u-fast', 'Rapide'], programmee: ['u-prog', 'Programmé'], aucune: ['u-none', 'Différable'] };
+const URGC = { immediate: 'u-imm', rapide: 'u-fast', programmee: 'u-prog', aucune: 'u-none' };
+function urgBadge(u) {
+    const k = URGC[u] ? u : 'aucune';
+    return '<span class="urg ' + URGC[k] + '">' + t('urg.' + k) + '</span>';
+}
 
 function renderReport(r, agents, tri) {
     let h = '';
-    h += '<div class="fr fsb fnw" style="align-items:center"><h3 style="margin-top:0;border:none">Synthèse</h3>' + sevBadge(r.severite_globale) + '</div>';
+    h += '<div class="fr fsb fnw" style="align-items:center"><h3 style="margin-top:0;border:none">' + t('rep.summary') + '</h3>' + sevBadge(r.severite_globale) + '</div>';
 
     const M0 = S.lastMeta || {};
     if (M0.elements_total) {
@@ -3479,35 +3940,33 @@ function renderReport(r, agents, tri) {
     }
 
     if (r.synthese) h += '<p>' + escapeHtml(r.synthese) + '</p>';
-    if (r.indication) h += '<div class="crs"><b>Indication</b><p>' + escapeHtml(r.indication) + '</p></div>';
-    if (r.technique) h += '<div class="crs"><b>Technique</b><p>' + escapeHtml(r.technique) + '</p></div>';
-    if (r.resultats) h += '<div class="crs"><b>Résultats</b><p>' + escapeHtml(r.resultats).replace(/\n/g, '<br>') + '</p></div>';
+    if (r.indication) h += '<div class="crs"><b>' + t('rep.indication') + '</b><p>' + escapeHtml(r.indication) + '</p></div>';
+    if (r.technique) h += '<div class="crs"><b>' + t('rep.technique') + '</b><p>' + escapeHtml(r.technique) + '</p></div>';
+    if (r.resultats) h += '<div class="crs"><b>' + t('rep.results') + '</b><p>' + escapeHtml(r.resultats).replace(/\n/g, '<br>') + '</p></div>';
 
     if (r.diagnostic_principal && r.diagnostic_principal.libelle) {
         const dp = r.diagnostic_principal;
-        const PB = { tres_probable: ['pb-tp', 'Très probable'], probable: ['pb-p', 'Probable'],
-                     possible: ['pb-po', 'Possible'], peu_probable: ['pb-pp', 'Peu probable'],
-                     indetermine: ['pb-i', 'Indéterminé'] };
-        const b = PB[dp.probabilite] || PB.indetermine;
-        h += '<div class="dxp"><div class="dxp-h"><span class="pb ' + b[0] + '">' + b[1] + '</span>' +
+        const PBC = { tres_probable: 'pb-tp', probable: 'pb-p', possible: 'pb-po', peu_probable: 'pb-pp', indetermine: 'pb-i' };
+        const pk = PBC[dp.probabilite] ? dp.probabilite : 'indetermine';
+        h += '<div class="dxp"><div class="dxp-h"><span class="pb ' + PBC[pk] + '">' + t('prob.' + pk) + '</span>' +
              '<b>' + escapeHtml(dp.libelle) + '</b></div>';
         if ((dp.arguments_pour || []).length) {
-            h += '<div class="dxa"><span>En faveur</span><ul>';
+            h += '<div class="dxa"><span>' + t('rep.for') + '</span><ul>';
             dp.arguments_pour.forEach(x => { h += '<li>' + escapeHtml(x) + '</li>'; });
             h += '</ul></div>';
         }
         if ((dp.arguments_contre || []).length) {
-            h += '<div class="dxa dxa-c"><span>En défaveur</span><ul>';
+            h += '<div class="dxa dxa-c"><span>' + t('rep.against') + '</span><ul>';
             dp.arguments_contre.forEach(x => { h += '<li>' + escapeHtml(x) + '</li>'; });
             h += '</ul></div>';
         }
         h += '</div>';
     }
 
-    if (r.conclusion) h += '<div class="ccl"><b>Conclusion</b><p>' + escapeHtml(r.conclusion) + '</p></div>';
+    if (r.conclusion) h += '<div class="ccl"><b>' + t('rep.conclusion') + '</b><p>' + escapeHtml(r.conclusion) + '</p></div>';
 
     if (Array.isArray(r.elements_discriminants) && r.elements_discriminants.length) {
-        h += '<div class="disc"><b>Pour trancher</b><ul>';
+        h += '<div class="disc"><b>' + t('rep.discr') + '</b><ul>';
         r.elements_discriminants.forEach(x => { h += '<li>' + escapeHtml(x) + '</li>'; });
         h += '</ul></div>';
     }
@@ -3521,7 +3980,7 @@ function renderReport(r, agents, tri) {
     if (r.coherence_vues) h += '<p class="coh"><b>Concordance des vues</b> — ' + escapeHtml(r.coherence_vues) + '</p>';
 
     if (Array.isArray(r.findings) && r.findings.length) {
-        h += '<h3>Observations</h3><ul class="fl">';
+        h += '<h3>' + t('rep.findings') + '</h3><ul class="fl">';
         r.findings.forEach(f => {
             const ims = f.images && f.images.length ? f.images : (f.image ? [f.image] : []);
             h += '<li>' + (ims.length ? '<span class="imgtag" title="Vue(s) concernée(s)">IMG ' + ims.join('+') + '</span>' : '') +
@@ -3538,7 +3997,7 @@ function renderReport(r, agents, tri) {
     }
 
     if (Array.isArray(r.divergences) && r.divergences.length) {
-        h += '<h3>Divergences entre experts</h3><ul class="dv">';
+        h += '<h3>' + t('rep.diverg') + '</h3><ul class="dv">';
         r.divergences.forEach(d => {
             h += '<li><b>' + escapeHtml(d.point) + '</b><ul>';
             (d.positions || []).forEach(p => { h += '<li>' + escapeHtml(p) + '</li>'; });
@@ -3548,13 +4007,13 @@ function renderReport(r, agents, tri) {
     }
 
     if (Array.isArray(r.signes_negatifs) && r.signes_negatifs.length) {
-        h += '<h3>Recherché et non retrouvé</h3><ul class="neg">';
+        h += '<h3>' + t('rep.negative') + '</h3><ul class="neg">';
         r.signes_negatifs.forEach(s => { h += '<li>' + escapeHtml(s) + '</li>'; });
         h += '</ul>';
     }
 
     if (Array.isArray(r.differentiel) && r.differentiel.length) {
-        h += '<h3>Diagnostic différentiel</h3><ul class="dd">';
+        h += '<h3>' + t('rep.diff') + '</h3><ul class="dd">';
         r.differentiel.forEach(d => {
             if (typeof d === 'string') { h += '<li>' + escapeHtml(d) + '</li>'; return; }
             h += '<li><span class="prob p-' + escapeHtml(d.probabilite || 'faible') + '">' + escapeHtml(d.probabilite || '') + '</span> ' +
@@ -3566,31 +4025,29 @@ function renderReport(r, agents, tri) {
     }
 
     if (Array.isArray(r.recommandations) && r.recommandations.length) {
-        h += '<h3>Conduite à tenir proposée</h3><ul class="rc">';
+        h += '<h3>' + t('rep.plan') + '</h3><ul class="rc">';
         r.recommandations.forEach(d => {
             if (typeof d === 'string') { h += '<li>' + escapeHtml(d) + '</li>'; return; }
-            const u = URG[d.urgence] || URG.aucune;
-            h += '<li><span class="urg ' + u[0] + '">' + u[1] + '</span> ' + escapeHtml(d.action || '') + '</li>';
+            h += '<li>' + urgBadge(d.urgence) + ' ' + escapeHtml(d.action || '') + '</li>';
         });
         h += '</ul>';
     }
 
     if (Array.isArray(r.limites) && r.limites.length) {
-        h += '<div class="lim"><b>Limites de cet examen — ne permet pas d\'écarter</b><ul>';
+        h += '<div class="lim"><b>' + t('rep.limits') + '</b><ul>';
         r.limites.forEach(x => { h += '<li>' + escapeHtml(x) + '</li>'; });
         h += '</ul></div>';
     }
 
     const M = S.lastMeta || {};
-    h += '<p class="trace">Experts : ' + agents.map(k => AG[k].n).join(', ') +
-        '<br>Modèles : lecture <code>' + escapeHtml(M.modele_vision || '') + '</code> · triage <code>' + escapeHtml(M.modele_triage || '') + '</code>' +
+    h += '<p class="trace">' + t('rep.experts') + ' : ' + agents.map(k => AG[k].n).join(', ') +
+        '<br>' + t('rep.models') + ' : lecture <code>' + escapeHtml(M.modele_vision || '') + '</code> · triage <code>' + escapeHtml(M.modele_triage || '') + '</code>' +
         '<br>Mode : ' + escapeHtml((MODES[M.mode] || MODES.serie).n) + ' · ' + (M.elements || 1) + ' élément(s) · ' + (M.images_envoyees || 1) + ' image(s) transmise(s)' +
         '<br>Variante envoyée : ' + escapeHtml(M.variante || '') +
         (M.elements_total ? ' · ' + M.elements_analyses + '/' + M.elements_total + ' élément(s) · ' + M.lots + ' lot(s)' : '') +
         ' · durée ' + Math.round((M.duree_ms || 0) / 100) / 10 + ' s' +
         '<br>' + escapeHtml(M.horodatage || '') +
-        '<br><br>⚠️ Aide à la décision destinée à un professionnel de santé qualifié. ' +
-        'Hypothèses non validées cliniquement — confirmation par le praticien requise avant toute décision.</p>';
+        '<br><br>⚠️ ' + t('rep.disclaimer') + '</p>';
 
     $('aiO').innerHTML = h;
 }
@@ -3733,8 +4190,8 @@ window.togMic = function() {
 // ---------- Export PDF ----------
 window.exportPDF = function() {
     const ns = window.jspdf;
-    if (!ns || !ns.jsPDF) return toast('Bibliothèque PDF non chargée');
-    if (!S.imgA) return toast('Aucun examen à exporter');
+    if (!ns || !ns.jsPDF) return toast(t('msg.nopdf'));
+    if (!S.imgA) return toast(t('msg.noexam'));
 
     const doc = new ns.jsPDF({ unit: 'mm', format: 'a4' });
     const PW = 210, PH = 297, M = 16, W = PW - 2 * M;
@@ -3751,19 +4208,19 @@ window.exportPDF = function() {
         doc.setFillColor(248, 249, 251); doc.rect(0, 0, PW, 26, 'F');
         doc.setFillColor(AC[0], AC[1], AC[2]); doc.rect(0, 0, PW, 1.4, 'F');
         doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(TX[0], TX[1], TX[2]);
-        doc.text('COMPTE RENDU D\'ANALYSE ASSISTÉE', M, 12);
+        doc.text(t('pdf.title'), M, 12);
         doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(DIM[0], DIM[1], DIM[2]);
         doc.text('MedVision AI Pro ' + APP_VERSION + '  ·  Studio Niko Design  ·  Aide à la décision — usage professionnel', M, 17.5);
-        doc.text('Examen ' + examId, M, 21.5);
+        doc.text(t('pdf.exam') + ' ' + examId, M, 21.5);
         y = 34;
     }
 
     function footer() {
         doc.setDrawColor(225); doc.setLineWidth(0.2); doc.line(M, PH - 16, PW - M, PH - 16);
         doc.setFont('helvetica', 'normal'); doc.setFontSize(6.6); doc.setTextColor(DIM[0], DIM[1], DIM[2]);
-        doc.text('Aide à la décision destinée à un professionnel de santé qualifié. Ne constitue pas un diagnostic.', M, PH - 11.5);
-        doc.text('Conclusions non validées cliniquement — confirmation par le praticien requise avant toute décision.', M, PH - 8);
-        doc.text('Page ' + page, PW - M, PH - 8, { align: 'right' });
+        doc.text(t('pdf.foot1'), M, PH - 11.5);
+        doc.text(t('pdf.foot2'), M, PH - 8);
+        doc.text(t('pdf.page') + ' ' + page, PW - M, PH - 8, { align: 'right' });
     }
 
     function need(h) { if (y + h > PH - 22) { footer(); doc.addPage(); header(); } }
@@ -3812,16 +4269,16 @@ window.exportPDF = function() {
     const opt = $('patL').options[$('patL').selectedIndex];
     const M0 = S.lastMeta || {}, r = S.lastReport, tri = S.triage || {};
 
-    section('Identification');
-    kv([['Patient', (opt && opt.value ? opt.text : 'non renseigné')],
-        ['Date de l\'examen', stamp.toLocaleString('fr-FR')],
-        ['Identifiant', examId],
-        ['Éléments analysés', (M0.elements_analyses != null ? M0.elements_analyses + ' / ' + M0.elements_total : '1')]]);
+    section(t('pdf.id'));
+    kv([[t('pdf.patient'), (opt && opt.value ? opt.text : 'non renseigné')],
+        [t('pdf.date'), stamp.toLocaleString(S.lang)],
+        [t('pdf.exam'), examId],
+        [t('pdf.elements'), (M0.elements_analyses != null ? M0.elements_analyses + ' / ' + M0.elements_total : '1')]]);
 
-    section('Indication');
+    section(t('rep.indication'));
     para((r && r.indication) || ($('ctxInd') && $('ctxInd').value) || 'Non renseignée');
 
-    section('Technique');
+    section(t('rep.technique'));
     para((r && r.technique) ||
          ((tri.modalite || 'Modalité non identifiée') + (tri.incidence ? ', incidence ' + tri.incidence : '') +
           (tri.qualite ? ', qualité ' + tri.qualite : '')));
@@ -3830,7 +4287,7 @@ window.exportPDF = function() {
         para('Calibration : ' + S.pxMm.toFixed(4) + ' mm/pixel' +
              (S.uRelCal ? ' (±' + (S.uRelCal * MET.K * 100).toFixed(1) + ' %, k=2)' : '') +
              (w ? ' — ' + w : ''), 7.6, DIM);
-    } else para('Image non calibrée : aucune mesure absolue exploitable.', 7.6, WN);
+    } else para(t('pdf.notcalib'), 7.6, WN);
 
     // Image
     try {
@@ -3843,10 +4300,10 @@ window.exportPDF = function() {
     } catch (e) { /* image non exportable : le compte rendu reste valide */ }
 
     const notes = $('notes').value.trim();
-    if (notes) { section('Contexte clinique'); para(notes); }
+    if (notes) { section(t('pdf.clinctx')); para(notes); }
 
     if (S.meas && S.meas.length && S.pxMm) {
-        section('Mesures');
+        section(t('pdf.meas'));
         S.meas.forEach((mm, i2) => {
             const dpx = Math.hypot(mm.x2 - mm.x1, mm.y2 - mm.y1);
             const L = MET.length(dpx, S.pxMm, S.uRelCal);
@@ -3854,19 +4311,19 @@ window.exportPDF = function() {
             doc.text('M' + (i2 + 1) + '   ' + MET.fmt(L), M, y); y += 4.6;
         });
         y += 2;
-        para('Incertitudes élargies, facteur d\'élargissement k = 2 (niveau de confiance ≈ 95 %).', 7, DIM);
+        para(t('pdf.uncert'), 7, DIM);
     }
 
     if (!r) {
         section('Analyse');
-        para('Aucune analyse assistée n\'a été effectuée sur cet examen.', 8.6, WN);
+        para(t('pdf.noanalysis'), 8.6, WN);
         footer(); doc.save('CR_' + examId + '.pdf');
         auditLog('export_pdf', { examId: examId, avecAnalyse: false });
         return toast('Compte rendu exporté');
     }
 
     // ---------- Résultats ----------
-    section('Résultats');
+    section(t('rep.results'));
     para(r.resultats || r.synthese || '—');
 
     if (Array.isArray(r.findings) && r.findings.length) {
@@ -3894,7 +4351,7 @@ window.exportPDF = function() {
     }
 
     if (Array.isArray(r.signes_negatifs) && r.signes_negatifs.length) {
-        section('Recherché et non retrouvé'); bullets(r.signes_negatifs, DIM, '–');
+        section(t('rep.negative')); bullets(r.signes_negatifs, DIM, '–');
     }
 
     // ---------- Diagnostic principal ----------
@@ -3902,7 +4359,7 @@ window.exportPDF = function() {
         const dp = r.diagnostic_principal;
         const PB = { tres_probable: 'Très probable', probable: 'Probable', possible: 'Possible',
                      peu_probable: 'Peu probable', indetermine: 'Indéterminé' };
-        section('Hypothèse principale');
+        section(t('rep.main'));
         need(12);
         doc.setFillColor(246, 252, 250); doc.setDrawColor(AC[0], AC[1], AC[2]); doc.setLineWidth(0.35);
         const bh = 11 + doc.splitTextToSize(dp.libelle, W - 8).length * 4.4;
@@ -3916,18 +4373,18 @@ window.exportPDF = function() {
         y += bh + 2;
         if ((dp.arguments_pour || []).length) {
             doc.setFont('helvetica', 'bold'); doc.setFontSize(7.2); doc.setTextColor(AC[0], AC[1], AC[2]);
-            need(5); doc.text('EN FAVEUR', M, y); y += 4;
+            need(5); doc.text(t('rep.for').toUpperCase(), M, y); y += 4;
             bullets(dp.arguments_pour, TX, '+');
         }
         if ((dp.arguments_contre || []).length) {
             doc.setFont('helvetica', 'bold'); doc.setFontSize(7.2); doc.setTextColor(WN[0], WN[1], WN[2]);
-            need(5); doc.text('EN DÉFAVEUR', M, y); y += 4;
+            need(5); doc.text(t('rep.against').toUpperCase(), M, y); y += 4;
             bullets(dp.arguments_contre, DIM, '\u2212');
         }
     }
 
     if (Array.isArray(r.differentiel) && r.differentiel.length) {
-        section('Diagnostic différentiel');
+        section(t('rep.diff'));
         r.differentiel.forEach(dd => {
             if (typeof dd === 'string') return bullets([dd]);
             const p2 = { elevee: 'Probabilité élevée', moyenne: 'Probabilité moyenne', faible: 'Probabilité faible' };
@@ -3944,7 +4401,7 @@ window.exportPDF = function() {
     }
 
     if (Array.isArray(r.divergences) && r.divergences.length) {
-        section('Divergences entre experts');
+        section(t('rep.diverg'));
         r.divergences.forEach(dv => {
             need(6); doc.setFont('helvetica', 'bold'); doc.setFontSize(8.2); doc.setTextColor(TX[0], TX[1], TX[2]);
             doc.text(dv.point || '', M, y); y += 4.4;
@@ -3952,7 +4409,7 @@ window.exportPDF = function() {
         });
     }
 
-    section('Conclusion');
+    section(t('rep.conclusion'));
     if (r.conclusion) {
         need(6 + doc.splitTextToSize(r.conclusion, W - 8).length * 4.6);
         doc.setFillColor(250, 250, 252); doc.setDrawColor(AC[0], AC[1], AC[2]); doc.setLineWidth(0.9);
@@ -3966,16 +4423,16 @@ window.exportPDF = function() {
     } else para('—');
 
     if (typeof r.accord === 'number') {
-        para('Accord inter-experts : ' + Math.round(r.accord * 100) + ' %' +
+        para(t('rep.agree') + ' : ' + Math.round(r.accord * 100) + ' %' +
              (M0.experts ? '  ·  ' + M0.experts.join(', ') : ''), 7.6, DIM);
     }
 
     if (Array.isArray(r.elements_discriminants) && r.elements_discriminants.length) {
-        section('Éléments permettant de trancher'); bullets(r.elements_discriminants, TX, '→');
+        section(t('rep.discr')); bullets(r.elements_discriminants, TX, '→');
     }
 
     if (Array.isArray(r.recommandations) && r.recommandations.length) {
-        section('Conduite à tenir proposée');
+        section(t('rep.plan'));
         const U = { immediate: 'IMMÉDIAT', rapide: 'RAPIDE', programmee: 'PROGRAMMÉ', aucune: 'DIFFÉRABLE' };
         r.recommandations.forEach(rc => {
             if (typeof rc === 'string') return bullets([rc]);
@@ -3990,46 +4447,46 @@ window.exportPDF = function() {
     }
 
     if (Array.isArray(r.drapeaux_rouges) && r.drapeaux_rouges.length) {
-        section('Drapeaux rouges'); bullets(r.drapeaux_rouges, DG, '!');
+        section(t('rep.flags')); bullets(r.drapeaux_rouges, DG, '!');
     }
 
     if (Array.isArray(r.limites) && r.limites.length) {
-        section('Limites — ce que cet examen ne permet pas d\'écarter');
+        section(t('rep.limits'));
         bullets(r.limites, WN, '·');
     }
 
     // ---------- Traçabilité + validation ----------
-    section('Traçabilité');
-    kv([['Modèle de lecture', M0.modele_vision || '—'],
-        ['Modèle de triage', M0.modele_triage || '—'],
-        ['Modèle de synthèse', M0.modele_synthese || '—'],
-        ['Experts mobilisés', (M0.experts || []).join(', ') || '—'],
-        ['Variante d\'image', M0.variante || '—'],
-        ['Inspection par zoom', M0.inspection_zoom ? 'activée' : 'non requise'],
-        ['Lots d\'analyse', M0.lots || 1],
-        ['Durée', M0.duree_ms ? (M0.duree_ms / 1000).toFixed(1) + ' s' : '—'],
-        ['Horodatage', M0.horodatage || '—'],
-        ['Version logicielle', APP_VERSION]]);
+    section(t('rep.trace'));
+    kv([[t('pdf.readmodel'), M0.modele_vision || '—'],
+        [t('pdf.triagemodel'), M0.modele_triage || '—'],
+        [t('pdf.synthmodel'), M0.modele_synthese || '—'],
+        [t('pdf.expertsused'), (M0.experts || []).join(', ') || '—'],
+        [t('pdf.imgvariant'), M0.variante || '—'],
+        [t('pdf.zoominsp'), M0.inspection_zoom ? t('pdf.enabled') : t('pdf.notneeded')],
+        [t('pdf.batches'), M0.lots || 1],
+        [t('rep.duration'), M0.duree_ms ? (M0.duree_ms / 1000).toFixed(1) + ' s' : '—'],
+        [t('pdf.timestamp'), M0.horodatage || '—'],
+        [t('pdf.swversion'), APP_VERSION]]);
 
     need(34);
     doc.setDrawColor(200); doc.setLineWidth(0.3); doc.rect(M, y, W, 30);
     doc.setFont('helvetica', 'bold'); doc.setFontSize(7.4); doc.setTextColor(TX[0], TX[1], TX[2]);
-    doc.text('VALIDATION PAR LE PRATICIEN', M + 4, y + 6);
+    doc.text(t('pdf.valid'), M + 4, y + 6);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(DIM[0], DIM[1], DIM[2]);
-    doc.text('Ce document est produit par un logiciel d\'aide à la décision. Les hypothèses formulées n\'ont pas', M + 4, y + 11.5);
-    doc.text('de valeur diagnostique tant qu\'elles n\'ont pas été confirmées par un professionnel de santé qualifié.', M + 4, y + 15);
+    doc.text(t('pdf.validtxt1'), M + 4, y + 11.5);
+    doc.text(t('pdf.validtxt2'), M + 4, y + 15);
     doc.setDrawColor(170);
     doc.line(M + 4, y + 25, M + 70, y + 25);
     doc.line(M + 82, y + 25, W + M - 4, y + 25);
     doc.setFontSize(6.6);
-    doc.text('Nom, qualité et signature', M + 4, y + 28);
-    doc.text('Date de validation', M + 82, y + 28);
+    doc.text(t('pdf.sign'), M + 4, y + 28);
+    doc.text(t('pdf.validdate'), M + 82, y + 28);
     y += 34;
 
     footer();
     doc.save('CR_' + examId + '.pdf');
     auditLog('export_pdf', { examId: examId, avecAnalyse: true, pages: page });
-    toast('Compte rendu exporté — ' + page + ' page(s)');
+    toast(t('msg.exported') + ' — ' + page + ' ' + t('pdf.page').toLowerCase() + '(s)');
 };
 
 window.addEventListener('beforeinstallprompt', e => {
@@ -4061,6 +4518,22 @@ window.doInstall = function () {
     const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
     toast(ios ? 'Partager → « Sur l\'écran d\'accueil »' : 'Menu du navigateur → « Installer l\'application »');
 };
+
+// ---------- Langue ----------
+S.lang = detectLang();
+(function () {
+    const sel = $('langSel');
+    if (sel) {
+        Object.keys(LANGS).forEach(k => {
+            const o = document.createElement('option');
+            o.value = k; o.textContent = LANGS[k].f + ' ' + LANGS[k].n;
+            if (k === S.lang) o.selected = true;
+            sel.appendChild(o);
+        });
+    }
+    const av = $('appVer'); if (av) av.textContent = APP_VERSION + ' · Nicolas JULIENNE';
+    applyLang();
+})();
 
 // Load saved API key
 const rk = store.get('mv_key') || '';
