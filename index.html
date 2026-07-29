@@ -1165,7 +1165,8 @@ function onTS(e) {
     S.lP = gP(e);
     S.sP = S.lP;
     if (S.tool === 'draw') S.drw.push([S.lP]);
-    if (S.tool === 'roi') {}
+    // Chaque tracé ouvre une nouvelle zone : le clinicien peut en entourer plusieurs.
+    if (S.tool === 'roi') S.rois.push({ x: S.lP.x, y: S.lP.y, w: 0, h: 0 });
     if (S.tool === 'meas') S.tM = {a: S.lP, b: S.lP};
 }
 
@@ -1175,6 +1176,8 @@ function onMD(e) {
     S.lP = gP(e);
     S.sP = S.lP;
     if (S.tool === 'draw') S.drw.push([S.lP]);
+    // Chaque tracé ouvre une nouvelle zone : le clinicien peut en entourer plusieurs.
+    if (S.tool === 'roi') S.rois.push({ x: S.lP.x, y: S.lP.y, w: 0, h: 0 });
     if (S.tool === 'meas') S.tM = {a: S.lP, b: S.lP};
 }
 
@@ -1206,7 +1209,10 @@ function onMV(e) {
     } else if (S.tool === 'draw' && S.drw.length > 0) {
         S.drw[S.drw.length - 1].push(p);
     } else if (S.tool === 'roi') {
-        S.rois = [{x: Math.min(S.sP.x, p.x), y: Math.min(S.sP.y, p.y), w: Math.abs(p.x - S.sP.x), h: Math.abs(p.y - S.sP.y)}];
+        if (S.rois.length) S.rois[S.rois.length - 1] = {
+            x: Math.min(S.sP.x, p.x), y: Math.min(S.sP.y, p.y),
+            w: Math.abs(p.x - S.sP.x), h: Math.abs(p.y - S.sP.y)
+        };
     } else if (S.tool === 'meas' && S.tM) {
         S.tM.b = p;
     }
@@ -1215,6 +1221,11 @@ function onMV(e) {
 }
 
 function onMU(e) {
+    // Un simple clic crée une zone de taille nulle : on l'écarte.
+    if (S.tool === 'roi' && S.rois.length) {
+        const last = S.rois[S.rois.length - 1];
+        if (last.w < 4 || last.h < 4) S.rois.pop();
+    }
     if (S.ip) {
         const t = e.touches || [];
         if (t.length < 2) S.ip = false;
@@ -1262,7 +1273,7 @@ window.setT = function(t) {
 window.undo = function() {
     if (S.drw.length) S.drw.pop();
     else if (S.meas.length) S.meas.pop();
-    else if (S.rois.length) S.rois = [];
+    else if (S.rois.length) S.rois.pop();
     drw();
 };
 
@@ -2930,12 +2941,29 @@ window.runAI = function() {
 };
 
 // ---------- Caméra ----------
+// navigator.mediaDevices est ABSENT sur origine non sécurisée (http://, file://,
+// content://) et sur les navigateurs anciens. Y accéder directement provoquait
+// un TypeError silencieux au lieu d'un message exploitable.
+function camAvailable() {
+    return !!(navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function');
+}
+
+function camUnavailableMsg() {
+    const oi = typeof originIssue === 'function' ? originIssue() : null;
+    if (oi) return 'Caméra indisponible : page ouverte en ' + oi + '. Servez l\'application en https://';
+    if (location.protocol === 'http:' && location.hostname !== 'localhost')
+        return 'Caméra indisponible : les navigateurs l\'exigent en https://';
+    return 'Caméra non prise en charge par ce navigateur';
+}
+
 window.startCam = function() {
+    if (!camAvailable()) return toast(camUnavailableMsg());
     $('camM').classList.add('open');
     openStream();
 };
 function openStream() {
     const vid = $('vid');
+    if (!camAvailable()) { toast(camUnavailableMsg()); clM('camM'); return; }
     if (S.videoStream) S.videoStream.getTracks().forEach(t => t.stop());
     navigator.mediaDevices.getUserMedia({ video: { facingMode: S.facing, width: { ideal: 1920 }, height: { ideal: 1440 } } })
         .then(stream => {
