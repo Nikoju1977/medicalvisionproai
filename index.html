@@ -3733,126 +3733,305 @@ window.togMic = function() {
 // ---------- Export PDF ----------
 window.exportPDF = function() {
     const ns = window.jspdf;
-    if (!ns || !ns.jsPDF) return toast('jsPDF non chargé');
-    if (!S.imgA) return toast('Aucune image à exporter');
+    if (!ns || !ns.jsPDF) return toast('Bibliothèque PDF non chargée');
+    if (!S.imgA) return toast('Aucun examen à exporter');
+
     const doc = new ns.jsPDF({ unit: 'mm', format: 'a4' });
-    const pw = 210, m = 14; let y = 18;
-    doc.setFontSize(16); doc.setTextColor(20, 20, 30);
-    doc.text('MedVision AI Pro — Rapport', m, y); y += 7;
-    doc.setFontSize(9); doc.setTextColor(120);
+    const PW = 210, PH = 297, M = 16, W = PW - 2 * M;
+    const AC = [6, 120, 100], TX = [28, 32, 40], DIM = [110, 118, 130], WN = [190, 120, 20], DG = [200, 50, 50];
+    let y = 0, page = 0;
+
+    // Identifiant d'examen : opposable, reproductible, sans donnée de santé.
+    const stamp = new Date();
+    const examId = 'MV-' + stamp.toISOString().slice(0, 10).replace(/-/g, '') + '-' +
+                   hashChain(stamp.toISOString() + (S.lastMeta ? S.lastMeta.horodatage : '') + APP_VERSION).slice(0, 8).toUpperCase();
+
+    function header() {
+        page++;
+        doc.setFillColor(248, 249, 251); doc.rect(0, 0, PW, 26, 'F');
+        doc.setFillColor(AC[0], AC[1], AC[2]); doc.rect(0, 0, PW, 1.4, 'F');
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(TX[0], TX[1], TX[2]);
+        doc.text('COMPTE RENDU D\'ANALYSE ASSISTÉE', M, 12);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(DIM[0], DIM[1], DIM[2]);
+        doc.text('MedVision AI Pro ' + APP_VERSION + '  ·  Studio Niko Design  ·  Aide à la décision — usage professionnel', M, 17.5);
+        doc.text('Examen ' + examId, M, 21.5);
+        y = 34;
+    }
+
+    function footer() {
+        doc.setDrawColor(225); doc.setLineWidth(0.2); doc.line(M, PH - 16, PW - M, PH - 16);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(6.6); doc.setTextColor(DIM[0], DIM[1], DIM[2]);
+        doc.text('Aide à la décision destinée à un professionnel de santé qualifié. Ne constitue pas un diagnostic.', M, PH - 11.5);
+        doc.text('Conclusions non validées cliniquement — confirmation par le praticien requise avant toute décision.', M, PH - 8);
+        doc.text('Page ' + page, PW - M, PH - 8, { align: 'right' });
+    }
+
+    function need(h) { if (y + h > PH - 22) { footer(); doc.addPage(); header(); } }
+
+    function section(t) {
+        need(14);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(AC[0], AC[1], AC[2]);
+        doc.text(t.toUpperCase(), M, y);
+        doc.setDrawColor(AC[0], AC[1], AC[2]); doc.setLineWidth(0.3); doc.line(M, y + 1.4, M + W, y + 1.4);
+        y += 6;
+    }
+
+    function para(txt, size, col) {
+        if (!txt) return;
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(size || 8.6);
+        const c = col || TX; doc.setTextColor(c[0], c[1], c[2]);
+        const lines = doc.splitTextToSize(String(txt), W);
+        lines.forEach(l => { need(6); doc.text(l, M, y); y += 4.4; });
+        y += 2;
+    }
+
+    function bullets(arr, col, prefix) {
+        (arr || []).forEach(x => {
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(8.4);
+            const c = col || TX; doc.setTextColor(c[0], c[1], c[2]);
+            const lines = doc.splitTextToSize((prefix || '•') + ' ' + x, W - 4);
+            lines.forEach((l, k) => { need(6); doc.text(l, M + (k ? 4 : 0), y); y += 4.2; });
+        });
+        y += 2;
+    }
+
+    function kv(pairs) {
+        doc.setFontSize(8); 
+        pairs.forEach(([k, v]) => {
+            need(5);
+            doc.setFont('helvetica', 'bold'); doc.setTextColor(DIM[0], DIM[1], DIM[2]); doc.text(k, M, y);
+            doc.setFont('helvetica', 'normal'); doc.setTextColor(TX[0], TX[1], TX[2]);
+            doc.text(String(v == null ? '—' : v), M + 42, y);
+            y += 4.6;
+        });
+        y += 2;
+    }
+
+    // ---------- Page 1 ----------
+    header();
     const opt = $('patL').options[$('patL').selectedIndex];
-    doc.text('Patient : ' + (opt && opt.value ? opt.text : 'N/A') + '   |   ' + new Date().toLocaleString('fr-FR'), m, y); y += 7;
+    const M0 = S.lastMeta || {}, r = S.lastReport, tri = S.triage || {};
+
+    section('Identification');
+    kv([['Patient', (opt && opt.value ? opt.text : 'non renseigné')],
+        ['Date de l\'examen', stamp.toLocaleString('fr-FR')],
+        ['Identifiant', examId],
+        ['Éléments analysés', (M0.elements_analyses != null ? M0.elements_analyses + ' / ' + M0.elements_total : '1')]]);
+
+    section('Indication');
+    para((r && r.indication) || ($('ctxInd') && $('ctxInd').value) || 'Non renseignée');
+
+    section('Technique');
+    para((r && r.technique) ||
+         ((tri.modalite || 'Modalité non identifiée') + (tri.incidence ? ', incidence ' + tri.incidence : '') +
+          (tri.qualite ? ', qualité ' + tri.qualite : '')));
+    if (S.pxMm) {
+        const w = MET.calWarn(S.uRelCal);
+        para('Calibration : ' + S.pxMm.toFixed(4) + ' mm/pixel' +
+             (S.uRelCal ? ' (±' + (S.uRelCal * MET.K * 100).toFixed(1) + ' %, k=2)' : '') +
+             (w ? ' — ' + w : ''), 7.6, DIM);
+    } else para('Image non calibrée : aucune mesure absolue exploitable.', 7.6, WN);
+
+    // Image
     try {
-        const iw = pw - 2 * m;
-        const ih = Math.min(iw * (S.h / S.w), 110);
+        const ih = Math.min(W * (S.h / S.w), 88);
+        need(ih + 6);
         const fmt = S.srcA.indexOf('image/png') > -1 ? 'PNG' : 'JPEG';
-        doc.addImage(S.srcA, fmt, m, y, iw, ih);
-        y += ih + 7;
-    } catch (e) {}
+        doc.addImage(S.srcA, fmt, M, y, W, ih); 
+        doc.setDrawColor(215); doc.setLineWidth(0.25); doc.rect(M, y, W, ih);
+        y += ih + 5;
+    } catch (e) { /* image non exportable : le compte rendu reste valide */ }
+
     const notes = $('notes').value.trim();
-    if (notes) {
-        doc.setTextColor(30); doc.setFontSize(11); doc.text('Notes cliniques', m, y); y += 5;
-        doc.setFontSize(9); doc.setTextColor(80);
-        const w = doc.splitTextToSize(notes, pw - 2 * m); doc.text(w, m, y); y += w.length * 4 + 4;
+    if (notes) { section('Contexte clinique'); para(notes); }
+
+    if (S.meas && S.meas.length && S.pxMm) {
+        section('Mesures');
+        S.meas.forEach((mm, i2) => {
+            const dpx = Math.hypot(mm.x2 - mm.x1, mm.y2 - mm.y1);
+            const L = MET.length(dpx, S.pxMm, S.uRelCal);
+            need(5); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.4); doc.setTextColor(TX[0], TX[1], TX[2]);
+            doc.text('M' + (i2 + 1) + '   ' + MET.fmt(L), M, y); y += 4.6;
+        });
+        y += 2;
+        para('Incertitudes élargies, facteur d\'élargissement k = 2 (niveau de confiance ≈ 95 %).', 7, DIM);
     }
-    const r = S.lastReport;
-    if (r) {
-        if (y > 250) { doc.addPage(); y = 18; }
-        doc.setTextColor(30); doc.setFontSize(11); doc.text('Analyse IA (' + S.mdl + ')', m, y); y += 5;
-        doc.setFontSize(9); doc.setTextColor(80);
-        const lines = [];
-        if (r.type_image) lines.push('Modalité : ' + r.type_image);
-        if (r.severite_globale) lines.push('Sévérité globale : ' + r.severite_globale);
-        (r.findings || []).forEach(f => lines.push('• [' + (f.severite || '') + '] ' + (f.texte || f)));
-        (r.differentiel || []).forEach(d => lines.push('DD : ' + d));
-        (r.recommandations || []).forEach(d => lines.push('→ ' + d));
-        lines.forEach(l => { const w = doc.splitTextToSize(l, pw - 2 * m); doc.text(w, m, y); y += w.length * 4 + 1; if (y > 275) { doc.addPage(); y = 18; } });
+
+    if (!r) {
+        section('Analyse');
+        para('Aucune analyse assistée n\'a été effectuée sur cet examen.', 8.6, WN);
+        footer(); doc.save('CR_' + examId + '.pdf');
+        auditLog('export_pdf', { examId: examId, avecAnalyse: false });
+        return toast('Compte rendu exporté');
     }
-    if (S.meas.length) {
-        if (y > 255) { doc.addPage(); y = 18; }
-        doc.setTextColor(30); doc.setFontSize(11); doc.text('Mesures', m, y); y += 5;
-        doc.setFontSize(9); doc.setTextColor(80);
-        S.meas.forEach((mm, i) => {
-            const d = Math.sqrt(Math.pow(mm.b.x - mm.a.x, 2) + Math.pow(mm.b.y - mm.a.y, 2));
-            const _mm = S.pxMm ? MET.length(d, S.pxMm, S.uRelCal) : null;
-            const v = _mm ? MET.fmt(_mm) : Math.round(d) + ' px';
-            doc.text('Mesure ' + (i + 1) + ' : ' + v, m, y); y += 5;
+
+    // ---------- Résultats ----------
+    section('Résultats');
+    para(r.resultats || r.synthese || '—');
+
+    if (Array.isArray(r.findings) && r.findings.length) {
+        const SEVL = { crit: 'CRITIQUE', high: 'ÉLEVÉ', mod: 'MODÉRÉ', low: 'FAIBLE', norm: 'NORMAL' };
+        r.findings.forEach(f => {
+            need(9);
+            const col = f.severite === 'crit' || f.severite === 'high' ? DG : (f.severite === 'mod' ? WN : TX);
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(6.8); doc.setTextColor(col[0], col[1], col[2]);
+            doc.text('[' + (SEVL[f.severite] || '—') + ']', M, y);
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(8.4); doc.setTextColor(TX[0], TX[1], TX[2]);
+            const lines = doc.splitTextToSize(f.texte || '', W - 22);
+            lines.forEach((l, k) => { if (k) need(5); doc.text(l, M + 22, y); y += 4.2; });
+            const meta = [];
+            if (f.localisation) meta.push(f.localisation);
+            if (f.mesure) meta.push(f.mesure);
+            if (f.image != null) meta.push('image ' + f.image);
+            if (f.confiance != null) meta.push('confiance ' + Math.round(f.confiance * 100) + ' %');
+            if (meta.length) {
+                doc.setFontSize(7); doc.setTextColor(DIM[0], DIM[1], DIM[2]);
+                doc.text(meta.join('  ·  '), M + 22, y); y += 4.2;
+            }
+            y += 1.4;
+        });
+        y += 1;
+    }
+
+    if (Array.isArray(r.signes_negatifs) && r.signes_negatifs.length) {
+        section('Recherché et non retrouvé'); bullets(r.signes_negatifs, DIM, '–');
+    }
+
+    // ---------- Diagnostic principal ----------
+    if (r.diagnostic_principal && r.diagnostic_principal.libelle) {
+        const dp = r.diagnostic_principal;
+        const PB = { tres_probable: 'Très probable', probable: 'Probable', possible: 'Possible',
+                     peu_probable: 'Peu probable', indetermine: 'Indéterminé' };
+        section('Hypothèse principale');
+        need(12);
+        doc.setFillColor(246, 252, 250); doc.setDrawColor(AC[0], AC[1], AC[2]); doc.setLineWidth(0.35);
+        const bh = 11 + doc.splitTextToSize(dp.libelle, W - 8).length * 4.4;
+        doc.roundedRect(M, y - 3, W, bh, 1.5, 1.5, 'FD');
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(AC[0], AC[1], AC[2]);
+        doc.text((PB[dp.probabilite] || '—').toUpperCase(), M + 4, y + 1.5);
+        doc.setFontSize(10); doc.setTextColor(TX[0], TX[1], TX[2]);
+        const dl = doc.splitTextToSize(dp.libelle, W - 8);
+        let yy = y + 7;
+        dl.forEach(l => { doc.text(l, M + 4, yy); yy += 4.4; });
+        y += bh + 2;
+        if ((dp.arguments_pour || []).length) {
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(7.2); doc.setTextColor(AC[0], AC[1], AC[2]);
+            need(5); doc.text('EN FAVEUR', M, y); y += 4;
+            bullets(dp.arguments_pour, TX, '+');
+        }
+        if ((dp.arguments_contre || []).length) {
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(7.2); doc.setTextColor(WN[0], WN[1], WN[2]);
+            need(5); doc.text('EN DÉFAVEUR', M, y); y += 4;
+            bullets(dp.arguments_contre, DIM, '\u2212');
+        }
+    }
+
+    if (Array.isArray(r.differentiel) && r.differentiel.length) {
+        section('Diagnostic différentiel');
+        r.differentiel.forEach(dd => {
+            if (typeof dd === 'string') return bullets([dd]);
+            const p2 = { elevee: 'Probabilité élevée', moyenne: 'Probabilité moyenne', faible: 'Probabilité faible' };
+            need(6);
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(DIM[0], DIM[1], DIM[2]);
+            doc.text((p2[dd.probabilite] || '').toUpperCase(), M, y);
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(8.4); doc.setTextColor(TX[0], TX[1], TX[2]);
+            const l2 = doc.splitTextToSize(dd.hypothese || '', W - 34);
+            l2.forEach((l, k) => { if (k) need(5); doc.text(l, M + 34, y); y += 4.2; });
+            if (dd.arguments_pour) { doc.setFontSize(7.2); doc.setTextColor(DIM[0], DIM[1], DIM[2]);
+                doc.splitTextToSize('+ ' + dd.arguments_pour, W - 36).forEach(l => { need(4); doc.text(l, M + 34, y); y += 3.6; }); }
+            y += 1.6;
         });
     }
-    doc.setFontSize(7); doc.setTextColor(150);
-    doc.text('Aide à la décision — ne remplace pas un diagnostic médical. © Studio Niko Design', m, 290);
-    doc.save('MedVision_' + Date.now() + '.pdf');
-    toast('PDF exporté');
+
+    if (Array.isArray(r.divergences) && r.divergences.length) {
+        section('Divergences entre experts');
+        r.divergences.forEach(dv => {
+            need(6); doc.setFont('helvetica', 'bold'); doc.setFontSize(8.2); doc.setTextColor(TX[0], TX[1], TX[2]);
+            doc.text(dv.point || '', M, y); y += 4.4;
+            bullets(dv.positions || [], DIM, '·');
+        });
+    }
+
+    section('Conclusion');
+    if (r.conclusion) {
+        need(6 + doc.splitTextToSize(r.conclusion, W - 8).length * 4.6);
+        doc.setFillColor(250, 250, 252); doc.setDrawColor(AC[0], AC[1], AC[2]); doc.setLineWidth(0.9);
+        const cl = doc.splitTextToSize(r.conclusion, W - 8);
+        const ch = cl.length * 4.8 + 6;
+        doc.rect(M, y - 3, 0.9, ch, 'F');
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9.4); doc.setTextColor(TX[0], TX[1], TX[2]);
+        let cy = y + 1;
+        cl.forEach(l => { doc.text(l, M + 5, cy); cy += 4.8; });
+        y += ch + 2;
+    } else para('—');
+
+    if (typeof r.accord === 'number') {
+        para('Accord inter-experts : ' + Math.round(r.accord * 100) + ' %' +
+             (M0.experts ? '  ·  ' + M0.experts.join(', ') : ''), 7.6, DIM);
+    }
+
+    if (Array.isArray(r.elements_discriminants) && r.elements_discriminants.length) {
+        section('Éléments permettant de trancher'); bullets(r.elements_discriminants, TX, '→');
+    }
+
+    if (Array.isArray(r.recommandations) && r.recommandations.length) {
+        section('Conduite à tenir proposée');
+        const U = { immediate: 'IMMÉDIAT', rapide: 'RAPIDE', programmee: 'PROGRAMMÉ', aucune: 'DIFFÉRABLE' };
+        r.recommandations.forEach(rc => {
+            if (typeof rc === 'string') return bullets([rc]);
+            need(6);
+            const col = rc.urgence === 'immediate' ? DG : (rc.urgence === 'rapide' ? WN : DIM);
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(6.8); doc.setTextColor(col[0], col[1], col[2]);
+            doc.text('[' + (U[rc.urgence] || '—') + ']', M, y);
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(8.4); doc.setTextColor(TX[0], TX[1], TX[2]);
+            doc.splitTextToSize(rc.action || '', W - 26).forEach((l, k) => { if (k) need(5); doc.text(l, M + 26, y); y += 4.2; });
+            y += 1.2;
+        });
+    }
+
+    if (Array.isArray(r.drapeaux_rouges) && r.drapeaux_rouges.length) {
+        section('Drapeaux rouges'); bullets(r.drapeaux_rouges, DG, '!');
+    }
+
+    if (Array.isArray(r.limites) && r.limites.length) {
+        section('Limites — ce que cet examen ne permet pas d\'écarter');
+        bullets(r.limites, WN, '·');
+    }
+
+    // ---------- Traçabilité + validation ----------
+    section('Traçabilité');
+    kv([['Modèle de lecture', M0.modele_vision || '—'],
+        ['Modèle de triage', M0.modele_triage || '—'],
+        ['Modèle de synthèse', M0.modele_synthese || '—'],
+        ['Experts mobilisés', (M0.experts || []).join(', ') || '—'],
+        ['Variante d\'image', M0.variante || '—'],
+        ['Inspection par zoom', M0.inspection_zoom ? 'activée' : 'non requise'],
+        ['Lots d\'analyse', M0.lots || 1],
+        ['Durée', M0.duree_ms ? (M0.duree_ms / 1000).toFixed(1) + ' s' : '—'],
+        ['Horodatage', M0.horodatage || '—'],
+        ['Version logicielle', APP_VERSION]]);
+
+    need(34);
+    doc.setDrawColor(200); doc.setLineWidth(0.3); doc.rect(M, y, W, 30);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.4); doc.setTextColor(TX[0], TX[1], TX[2]);
+    doc.text('VALIDATION PAR LE PRATICIEN', M + 4, y + 6);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(DIM[0], DIM[1], DIM[2]);
+    doc.text('Ce document est produit par un logiciel d\'aide à la décision. Les hypothèses formulées n\'ont pas', M + 4, y + 11.5);
+    doc.text('de valeur diagnostique tant qu\'elles n\'ont pas été confirmées par un professionnel de santé qualifié.', M + 4, y + 15);
+    doc.setDrawColor(170);
+    doc.line(M + 4, y + 25, M + 70, y + 25);
+    doc.line(M + 82, y + 25, W + M - 4, y + 25);
+    doc.setFontSize(6.6);
+    doc.text('Nom, qualité et signature', M + 4, y + 28);
+    doc.text('Date de validation', M + 82, y + 28);
+    y += 34;
+
+    footer();
+    doc.save('CR_' + examId + '.pdf');
+    auditLog('export_pdf', { examId: examId, avecAnalyse: true, pages: page });
+    toast('Compte rendu exporté — ' + page + ' page(s)');
 };
 
-// Avertissement d'origine au démarrage : bloquant pour tout appel API
-(function () {
-    const oi = originIssue();
-    if (!oi) return;
-    const b = document.createElement('div');
-    b.className = 'orgwarn';
-    b.innerHTML = '<b>⚠️ Ouverte depuis ' + oi + '</b>' +
-        '<span>Origine opaque : le navigateur bloque les appels à l\'API Mistral. ' +
-        'L\'analyse IA ne fonctionnera pas. Servez l\'application depuis une adresse https:// ' +
-        '(GitHub Pages, Vercel) ou installez-la en PWA.</span>';
-    const app = document.getElementById('app');
-    if (app) app.insertBefore(b, app.firstChild);
-})();
-
-
-// ============================================================
-//  PWA — service worker, mises à jour, installation
-// ============================================================
-(function () {
-    // Un service worker exige une origine sécurisée : inutile en file:// / content://
-    if (originIssue() || !('serviceWorker' in navigator)) return;
-
-    navigator.serviceWorker.register('sw.js', { scope: './' }).then(reg => {
-        S.swReg = reg;
-
-        // Une nouvelle version est prête pendant que l'ancienne tourne encore.
-        function watch(w) {
-            if (!w) return;
-            w.addEventListener('statechange', () => {
-                if (w.state === 'installed' && navigator.serviceWorker.controller) showUpdate(reg);
-            });
-        }
-        if (reg.waiting && navigator.serviceWorker.controller) showUpdate(reg);
-        watch(reg.installing);
-        reg.addEventListener('updatefound', () => watch(reg.installing));
-
-        // Recherche de mise à jour au retour au premier plan
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) reg.update().catch(() => {});
-        });
-    }).catch(() => { /* installation impossible : l'app fonctionne quand même en ligne */ });
-
-    let reloading = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (reloading) return;
-        reloading = true;
-        location.reload();
-    });
-})();
-
-function showUpdate(reg) {
-    if ($('swUpd')) return;
-    const b = document.createElement('div');
-    b.id = 'swUpd';
-    b.className = 'swupd';
-    b.innerHTML = '<span>Nouvelle version disponible</span>' +
-        '<button class="bt bp bmini" id="swUpdB">Mettre à jour</button>' +
-        '<button class="bt bmini" id="swUpdX">Plus tard</button>';
-    document.body.appendChild(b);
-    $('swUpdB').onclick = () => {
-        const w = reg.waiting || reg.installing;
-        if (w) w.postMessage({ type: 'SKIP_WAITING' });
-        b.remove();
-    };
-    $('swUpdX').onclick = () => b.remove();
-}
-
-// ---------- Invite d'installation ----------
 window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     S.instEvt = e;
