@@ -8,11 +8,18 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
   "orientation": "any",
   "background_color": "#050a12",
   "theme_color": "#050a12",
-  "categories": ["medical", "health", "productivity"],
+  "categories": [
+    "medical",
+    "health",
+    "productivity"
+  ],
   "prefer_related_applications": false,
   "icons": [
     {
@@ -46,14 +53,25 @@
       "short_name": "Caméra",
       "description": "Ouvrir la caméra pour capturer un examen",
       "url": "./?action=camera",
-      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "Importer une image",
       "short_name": "Importer",
       "description": "Charger un examen depuis la galerie",
       "url": "./?action=import",
-      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
-  ]
+  ],
+  "version": "13.4"
 }
