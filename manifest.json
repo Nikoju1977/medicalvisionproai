@@ -1,7 +1,7 @@
 {
   "name": "MedVision AI Pro — Expert Edition",
   "short_name": "MedVision",
-  "description": "Analyse d'imagerie médicale assistée par IA : pré-traitement CLAHE, panel multi-experts Mistral, annotations ROI, export PDF. Aide à la décision — ne remplace pas un diagnostic médical.",
+  "description": "Aide à la décision en imagerie médicale assistée par IA — multi-agents Mistral, métrologie GUM, 9 langues. Usage réservé aux professionnels de santé.",
   "id": "studio-niko-medvision-ai-pro",
   "lang": "fr",
   "dir": "ltr",
@@ -73,5 +73,5 @@
       ]
     }
   ],
-  "version": "13.4"
+  "version": "14.0"
 }
