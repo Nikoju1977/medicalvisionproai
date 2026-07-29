@@ -462,6 +462,7 @@ canvas{display:block;touch-action:none;}
         </div>
 
         <label class="pnl"><input type="checkbox" id="panelOff"><span>Lecture unique (désactive les lectures indépendantes + consensus)</span></label>
+        <label class="pnl"><input type="checkbox" id="zoomOff" onchange="setZoom()"><span>Désactiver l'inspection par zoom (plus rapide, moins précis)</span></label>
 
         <!-- Analysis Buttons -->
         <div class="fr fw" style="margin-bottom:8px">
@@ -730,6 +731,7 @@ const S = {
     pp: null, ppSel: 'clahe', busy: false, triage: null, lastMeta: null,
     mdlPool: null, mdlVision: null, mdlFast: null, mdlSynth: null, mdlForce: '',
     only: null, onDone: null, batch: null, vFrames: 6, chunks: null, autoRoute: false,
+    uRelCal: null, calD: null, calMm: null, zoomOff: false,
     swReg: null, instEvt: null,
     // --- série multi-images / vidéo v12 ---
     series: [], active: 0, mode: 'serie', imgSet: null
@@ -921,6 +923,11 @@ function rsz() {
 window.pickF = () => $('fIn').click();
 window.pickV = () => $('vIn').click();
 
+window.setZoom = function() {
+    S.zoomOff = !!$('zoomOff').checked;
+    toast(S.zoomOff ? 'Inspection par zoom désactivée' : 'Inspection par zoom active');
+};
+
 window.setVFrames = function() {
     S.vFrames = parseInt($('vfSel').value, 10) || 6;
     toast(S.vFrames + ' trames extraites par vidéo');
@@ -1001,7 +1008,8 @@ function ldImg(src, name) { ldImgSingle(src, name); }
 function upCal() {
     const el = $('calS');
     if (S.pxMm) {
-        el.textContent = 'CALIBRÉ (' + S.pxMm.toFixed(3) + ' mm/px)';
+        el.textContent = 'CALIBRÉ · ' + S.pxMm.toFixed(4) + ' mm/px' +
+            (S.uRelCal ? ' ±' + (S.uRelCal * MET.K * 100).toFixed(1) + '%' : '');
         el.style.color = 'var(--ac)';
     } else {
         el.textContent = 'Non calibré (px)';
@@ -1092,7 +1100,8 @@ function rCvs(ctx, cvs, img) {
 
 function dMeas(ctx, m) {
     const dp = Math.sqrt(Math.pow(m.b.x - m.a.x, 2) + Math.pow(m.b.y - m.a.y, 2));
-    const txt = S.pxMm ? (dp * S.pxMm).toFixed(1) + 'mm' : Math.round(dp) + 'px';
+    const _m = S.pxMm ? MET.length(dp, S.pxMm, S.uRelCal) : null;
+    const txt = _m ? _m.mm.toFixed(_m.mm < 10 ? 2 : 1) + '±' + _m.U.toFixed(1) + 'mm' : Math.round(dp) + 'px';
     ctx.strokeStyle = '#06d6a0';
     ctx.lineWidth = 2 / S.sc;
     ctx.beginPath();
@@ -1235,10 +1244,15 @@ function onMU(e) {
         const d = Math.sqrt(Math.pow(S.tM.b.x - S.tM.a.x, 2) + Math.pow(S.tM.b.y - S.tM.a.y, 2));
         if (d > 5) {
             if (!S.pxMm) {
-                const mm = prompt('Calibration: taille réelle en mm?');
+                const mm = prompt('Calibration : longueur réelle de ce segment, en mm ?');
                 if (mm && !isNaN(parseFloat(mm))) {
-                    S.pxMm = parseFloat(mm) / d;
-                    upCal();
+                    const c = MET.calibrate(d, parseFloat(mm));
+                    if (c) {
+                        S.pxMm = c.pxMm; S.uRelCal = c.uRel; S.calD = c.dCal; S.calMm = c.mmRef;
+                        const w = MET.calWarn(c.uRel);
+                        if (w) toast(w);
+                        upCal();
+                    }
                 }
             }
             S.meas.push(S.tM);
@@ -1406,7 +1420,7 @@ const MODES = {
     batch: { n: 'Lot', d: 'Examens indépendants — une analyse complète par image.' }
 };
 
-function newAnn() { return { pxMm: null, meas: [], rois: [], drw: [], aiRois: [] }; }
+function newAnn() { return { pxMm: null, uRelCal: null, calD: null, calMm: null, meas: [], rois: [], drw: [], aiRois: [] }; }
 
 let ITEM_SEQ = 0;
 function mkItem(src, name, kind, t) {
@@ -1429,7 +1443,7 @@ function mkItem(src, name, kind, t) {
 function stashAnn() {
     const it = S.series[S.active];
     if (!it) return;
-    it.ann = { pxMm: S.pxMm, meas: S.meas, rois: S.rois, drw: S.drw, aiRois: S.aiRois };
+    it.ann = { pxMm: S.pxMm, uRelCal: S.uRelCal, calD: S.calD, calMm: S.calMm, meas: S.meas, rois: S.rois, drw: S.drw, aiRois: S.aiRois };
 }
 
 // Bascule l'élément actif : chaque image conserve SES annotations
@@ -1441,7 +1455,8 @@ function setActive(i) {
     S.imgA = it.img; S.srcA = it.src; S.w = it.w; S.h = it.h;
     S.pp = it.pp;
     const a = it.ann || newAnn();
-    S.pxMm = a.pxMm; S.meas = a.meas; S.rois = a.rois; S.drw = a.drw; S.aiRois = a.aiRois;
+    S.pxMm = a.pxMm; S.uRelCal = a.uRelCal || null; S.calD = a.calD || null; S.calMm = a.calMm || null;
+    S.meas = a.meas; S.rois = a.rois; S.drw = a.drw; S.aiRois = a.aiRois;
     $('lA').textContent = it.name + ' (' + it.w + '×' + it.h + ')';
     upCal(); fitView(); drw(); showImgStats(); renderStrip();
     if (it.pp) renderPP(it.pp);
@@ -1864,6 +1879,199 @@ function applyForce() {
 }
 
 
+
+
+
+// ============================================================
+//  INSPECTION AGENTIQUE — l'agent demande ses propres zooms
+// ============================================================
+// On envoie l'examen à 1540 px alors que la source fait souvent 4000 px :
+// 85 % des pixels sont perdus avant que le modèle ne regarde. Un trait de
+// fracture fin ou une microcalcification vit précisément là. L'outil ci-dessous
+// permet à l'agent de réclamer un recadrage à la RÉSOLUTION NATIVE.
+const MAX_ZOOM = 3;          // inspections par lecture
+const ZOOM_MAXSIDE = 1400;
+
+const TOOL_ZOOM = {
+    type: 'function',
+    function: {
+        name: 'inspecter_zone',
+        description: "Demande un agrandissement d'une zone à la résolution native de l'acquisition, " +
+            "avec rehaussement de contraste local. À utiliser dès qu'un détail est trop petit ou trop " +
+            "peu contrasté pour être tranché sur la vue d'ensemble : trait de fracture, microcalcification, " +
+            "contour de nodule, réseau pigmentaire. Coordonnées normalisées entre 0 et 1.",
+        parameters: {
+            type: 'object', additionalProperties: false,
+            required: ['image', 'x1', 'y1', 'x2', 'y2', 'motif'],
+            properties: {
+                image: { type: 'integer', description: "Numéro de l'image à agrandir, tel qu'annoncé dans la légende." },
+                x1: { type: 'number' }, y1: { type: 'number' },
+                x2: { type: 'number' }, y2: { type: 'number' },
+                motif: { type: 'string', description: 'Ce que tu cherches à vérifier dans cette zone.' }
+            }
+        }
+    }
+};
+
+// Recadrage à la résolution native + CLAHE sur le crop.
+function cropZone(elIdx, x1, y1, x2, y2) {
+    const it = S.series[elIdx];
+    if (!it || !it.img) return null;
+    const W = it.img.naturalWidth || it.img.width, Hh = it.img.naturalHeight || it.img.height;
+    const cl = v => Math.max(0, Math.min(1, Number(v) || 0));
+    let ax = cl(x1), ay = cl(y1), bx = cl(x2), by = cl(y2);
+    if (bx < ax) { const t = ax; ax = bx; bx = t; }
+    if (by < ay) { const t = ay; ay = by; by = t; }
+    // Une zone trop étroite n'apporte rien : on impose un minimum de 4 %.
+    if (bx - ax < 0.04) { const c = (ax + bx) / 2; ax = cl(c - 0.02); bx = cl(c + 0.02); }
+    if (by - ay < 0.04) { const c = (ay + by) / 2; ay = cl(c - 0.02); by = cl(c + 0.02); }
+    const sx = Math.round(ax * W), sy = Math.round(ay * Hh);
+    const sw = Math.max(8, Math.round((bx - ax) * W)), sh = Math.max(8, Math.round((by - ay) * Hh));
+
+    const sc = Math.min(1, ZOOM_MAXSIDE / Math.max(sw, sh));
+    const dw = Math.max(8, Math.round(sw * (sc < 1 ? sc : 1))),
+          dh = Math.max(8, Math.round(sh * (sc < 1 ? sc : 1)));
+    const c = document.createElement('canvas'); c.width = dw; c.height = dh;
+    const x = c.getContext('2d', { willReadFrequently: true });
+    x.imageSmoothingQuality = 'high';
+    x.drawImage(it.img, sx, sy, sw, sh, 0, 0, dw, dh);
+
+    // Rehaussement local sur le recadrage
+    let url;
+    try {
+        const g = PP.lum(x.getImageData(0, 0, dw, dh).data);
+        const lut = PP.stretch(g, 0.005, 0.995);
+        const gN = new Uint8ClampedArray(g.length);
+        for (let i = 0; i < g.length; i++) gN[i] = lut[g[i]];
+        const gC = PP.clahe(gN, dw, dh, 8, 8, 2.5);
+        url = PP.toCanvas(gC, dw, dh).toDataURL('image/jpeg', 0.94);
+    } catch (e) { url = c.toDataURL('image/jpeg', 0.94); }
+
+    const nat = Math.round(sw) + '×' + Math.round(sh);
+    return { url: url, natif: nat, rendu: dw + '×' + dh,
+             gain: (sw / Math.max(1, dw) < 1 ? (dw / sw).toFixed(1) : '1.0'),
+             zone: [ax, ay, bx, by] };
+}
+
+// Boucle d'inspection : appels successifs tant que l'agent réclame des zooms.
+function inspectRounds(model, messages, set, opts, onZoom) {
+    let round = 0;
+    const msgs = messages.slice();
+
+    function step() {
+        if (round >= MAX_ZOOM) return Promise.resolve(msgs);
+        const body = {
+            model: model, messages: msgs, temperature: 0.15,
+            max_tokens: 900, tools: [TOOL_ZOOM], tool_choice: 'auto'
+        };
+        if (opts.effort && REASONING_OK.test(model)) body.reasoning_effort = opts.effort;
+
+        return mcall({ body: body, timeout: opts.timeout || 90000 })
+            .then(d => {
+                const m = d && d.choices && d.choices[0] && d.choices[0].message;
+                const calls = (m && m.tool_calls) || [];
+                if (!calls.length) return msgs;          // l'agent n'a plus besoin de zoom
+                round++;
+                msgs.push({ role: 'assistant', content: m.content || '', tool_calls: calls });
+
+                const imgs = [];
+                calls.forEach(tc => {
+                    let a = {};
+                    try { a = JSON.parse(tc.function.arguments || '{}'); } catch (e) {}
+                    const gi = set.map[(a.image | 0) - 1];
+                    const el = gi != null ? gi : (set.sent[0] || 0);
+                    const cz = cropZone(el, a.x1, a.y1, a.x2, a.y2);
+                    if (!cz) {
+                        msgs.push({ role: 'tool', tool_call_id: tc.id, name: 'inspecter_zone',
+                                    content: 'Zone indisponible pour cette image.' });
+                        return;
+                    }
+                    if (onZoom) onZoom(round, a.motif || '');
+                    msgs.push({ role: 'tool', tool_call_id: tc.id, name: 'inspecter_zone',
+                        content: 'Agrandissement fourni. Zone [' + cz.zone.map(v => v.toFixed(2)).join(', ') +
+                                 '] de l\'image ' + (a.image | 0) + '. Recadrage natif ' + cz.natif +
+                                 ' px, rendu ' + cz.rendu + ' px, contraste local rehaussé. ' +
+                                 'Motif : ' + (a.motif || '—') });
+                    imgs.push({ type: 'image_url', image_url: cz.url });
+                });
+                if (!imgs.length) return msgs;
+                msgs.push({ role: 'user', content: [{ type: 'text',
+                    text: 'Voici le ou les agrandissements demandés, à la résolution native. ' +
+                          'Ils servent UNIQUEMENT à trancher le détail : exprime toujours tes ROI ' +
+                          'dans le repère des images d\'origine.' }].concat(imgs) });
+                return step();
+            })
+            .catch(() => msgs);   // toute panne de l'outil : on poursuit sans zoom
+    }
+    return step();
+}
+
+// ============================================================
+//  MÉTROLOGIE — calibration, propagation d'incertitude (GUM)
+// ============================================================
+// CONVENTION D'UNITÉ, à ne jamais inverser :
+//   S.pxMm  = MILLIMÈTRES PAR PIXEL  (mm/px)
+//   longueur_mm = longueur_px * S.pxMm
+// L'inverse (1/S.pxMm) donne des pixels par millimètre et n'a rien à faire
+// dans un calcul de longueur.
+const MET = {
+    CLICK_PX: 2,        // écart-type de pointage, en pixels
+    K: 2,               // facteur d'élargissement (≈ 95 %)
+
+    // Incertitude-type sur une distance entre deux points pointés :
+    // les deux extrémités contribuent, d'où le facteur racine de 2.
+    uDist() { return Math.SQRT2 * this.CLICK_PX; },
+
+    // Calibration : d_px pixels correspondent à mm_ref millimètres.
+    calibrate(d_px, mm_ref) {
+        if (!(d_px > 0) || !(mm_ref > 0)) return null;
+        return { pxMm: mm_ref / d_px, dCal: d_px, mmRef: mm_ref,
+                 uRel: this.uDist() / d_px };   // incertitude relative de l'échelle
+    },
+
+    // Mesure d'une longueur : L = d_px * pxMm
+    // u(L)/L = sqrt( (u(d)/d)^2 + (u(pxMm)/pxMm)^2 )   — sources indépendantes
+    length(d_px, pxMm, uRelCal) {
+        if (!pxMm || !(d_px > 0)) return null;
+        const L = d_px * pxMm;
+        const rel = Math.sqrt(Math.pow(this.uDist() / d_px, 2) + Math.pow(uRelCal || 0, 2));
+        return { mm: L, u: L * rel, U: L * rel * this.K, relPct: rel * 100, px: d_px };
+    },
+
+    // Surface d'un rectangle : A = w*h*pxMm^2, incertitudes combinées.
+    area(w_px, h_px, pxMm, uRelCal) {
+        if (!pxMm || !(w_px > 0) || !(h_px > 0)) return null;
+        const A = w_px * h_px * pxMm * pxMm;
+        const rw = this.uDist() / w_px, rh = this.uDist() / h_px, rc = uRelCal || 0;
+        const rel = Math.sqrt(rw * rw + rh * rh + 4 * rc * rc);   // pxMm intervient au carré
+        return { mm2: A, U: A * rel * this.K, relPct: rel * 100 };
+    },
+
+    // Rapport de deux longueurs (index cardio-thoracique, cup/disc…).
+    // L'échelle se simplifie : elle n'intervient PAS dans l'incertitude.
+    ratio(a_px, b_px) {
+        if (!(a_px > 0) || !(b_px > 0)) return null;
+        const r = a_px / b_px;
+        const rel = Math.sqrt(Math.pow(this.uDist() / a_px, 2) + Math.pow(this.uDist() / b_px, 2));
+        return { r: r, U: r * rel * this.K, relPct: rel * 100 };
+    },
+
+    fmt(m, unit) {
+        if (!m) return '—';
+        const v = m.mm != null ? m.mm : (m.mm2 != null ? m.mm2 : m.r);
+        const dec = v < 10 ? 2 : (v < 100 ? 1 : 0);
+        return v.toFixed(dec) + ' ± ' + m.U.toFixed(Math.max(dec, 1)) + ' ' + (unit || 'mm') + ' (k=2)';
+    },
+
+    // Une calibration sur un segment court est mécaniquement imprécise.
+    calWarn(uRel) {
+        if (uRel == null) return null;
+        const pct = uRel * this.K * 100;
+        if (pct > 10) return 'Calibration peu fiable : ±' + pct.toFixed(0) + ' % sur l\'échelle. Tracez un segment de référence plus long.';
+        if (pct > 4) return 'Calibration moyenne : ±' + pct.toFixed(1) + ' % sur l\'échelle.';
+        return null;
+    }
+};
 
 // ============================================================
 //  ROUTAGE AUTOMATIQUE DES SPÉCIALISTES
@@ -2459,12 +2667,18 @@ function clinCtx() {
     if (sx) L.push('Sexe : ' + sx);
     if (ind) L.push('Indication / motif : ' + ind);
     if (notes) L.push('Notes cliniques : ' + notes);
-    if (S.pxMm) L.push('Calibration : 1 px = ' + (1 / S.pxMm).toFixed(4) + ' mm — les mesures en mm sont exploitables.');
+    if (S.pxMm) {
+        const w = MET.calWarn(S.uRelCal);
+        L.push('Calibration : 1 pixel = ' + S.pxMm.toFixed(4) + ' mm' +
+               (S.uRelCal ? ' (±' + (S.uRelCal * MET.K * 100).toFixed(1) + ' % sur l\'échelle, k=2)' : '') +
+               '. Les longueurs en mm sont exploitables.' + (w ? ' ' + w : ''));
+    }
     else L.push('Image NON calibrée : ne donne aucune mesure absolue en mm, uniquement des rapports relatifs.');
     if (S.meas && S.meas.length) {
         L.push('Mesures posées par le clinicien : ' + S.meas.map((m, i) => {
             const d = Math.hypot(m.x2 - m.x1, m.y2 - m.y1);
-            return '#' + (i + 1) + ' = ' + (S.pxMm ? (d / S.pxMm).toFixed(1) + ' mm' : d.toFixed(0) + ' px');
+            const L1 = S.pxMm ? MET.length(d, S.pxMm, S.uRelCal) : null;
+            return '#' + (i + 1) + ' = ' + (L1 ? MET.fmt(L1) : d.toFixed(0) + ' px');
         }).join(' · '));
     }
     if (S.rois && S.rois.length) {
@@ -2588,9 +2802,15 @@ function analyzeWithAI(auto) {
 
                     const jobs = [];
                     roster.forEach(grp => CH.forEach((set, ci) => {
+                        const base = lectureMsg(grp, tri, grille, set);
                         jobs.push(
-                            mchat(S.mdlVision, lectureMsg(grp, tri, grille, set), SCH_LECTURE,
-                                  { effort: 'high', max_tokens: panel ? 2500 : 3500, timeout: 150000 })
+                            (S.zoomOff
+                                ? Promise.resolve(base)
+                                : inspectRounds(S.mdlVision, base, set,
+                                    { effort: 'medium', timeout: 90000 },
+                                    (r, motif) => updPipe(3, 'active', done + '/' + total + ' · zoom ' + r))
+                              ).then(msgs => mchat(S.mdlVision, msgs, SCH_LECTURE,
+                                  { effort: 'high', max_tokens: panel ? 2500 : 3500, timeout: 150000 }))
                                 .then(r => { updPipe(3, 'active', (++done) + '/' + total); return { k: grp[0], grp: grp, ci: ci, r: remapImages(r, set) }; })
                                 .catch(e => { updPipe(3, 'active', (++done) + '/' + total); return { k: grp[0], grp: grp, ci: ci, err: e }; })
                         );
@@ -2708,7 +2928,8 @@ function lectureMsg(agents, tri, grille, set) {
             : "6. Renseigne `image` à 1 pour toutes les observations et ROI.",
         "7. Si l'image ne permet pas de conclure sur un point, dis-le plutôt que de spéculer.",
         "8. Reste dans ton périmètre : signale ce qui relève d'un autre spécialiste plutôt que de trancher à sa place.",
-        "9. Calibration de la confiance — une confiance de 0,8 signifie que sur dix images comparables, tu aurais raison huit fois. Ne surestime pas : une confiance mal calibrée est plus nuisible qu'une observation manquante.",
+        "9. Tu disposes de l'outil `inspecter_zone` : si un détail est trop petit ou trop peu contrasté pour être tranché sur la vue d'ensemble, RÉCLAME un agrandissement à la résolution native plutôt que de spéculer. Tu peux le faire jusqu'à " + MAX_ZOOM + " fois.",
+        "10. Calibration de la confiance — une confiance de 0,8 signifie que sur dix images comparables, tu aurais raison huit fois. Ne surestime pas : une confiance mal calibrée est plus nuisible qu'une observation manquante.",
         "",
         "Langue : français. Terminologie médicale exacte."
     ].join('\n');
@@ -2742,7 +2963,8 @@ function finish(rep, agents, tri, t0, annStep) {
         variante: S.ppSel || 'clahe',
         elements_total: S.series.length,
         elements_analyses: S.chunks ? S.chunks.reduce((a, c) => a + c.sent.length, 0) : 1,
-        lots: S.chunks ? S.chunks.length : 1, duree_ms: Date.now() - t0, horodatage: new Date().toISOString()
+        lots: S.chunks ? S.chunks.length : 1,
+        inspection_zoom: !S.zoomOff, duree_ms: Date.now() - t0, horodatage: new Date().toISOString()
     };
     // Les ROI portent un numéro d'image de la REQUÊTE ; on le remappe vers la série.
     const map = (S.imgSet && S.imgSet.map) || [0];
@@ -3085,7 +3307,8 @@ window.exportPDF = function() {
         doc.setFontSize(9); doc.setTextColor(80);
         S.meas.forEach((mm, i) => {
             const d = Math.sqrt(Math.pow(mm.b.x - mm.a.x, 2) + Math.pow(mm.b.y - mm.a.y, 2));
-            const v = S.pxMm ? (d * S.pxMm).toFixed(1) + ' mm' : Math.round(d) + ' px';
+            const _mm = S.pxMm ? MET.length(d, S.pxMm, S.uRelCal) : null;
+            const v = _mm ? MET.fmt(_mm) : Math.round(d) + ' px';
             doc.text('Mesure ' + (i + 1) + ' : ' + v, m, y); y += 5;
         });
     }
