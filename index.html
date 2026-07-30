@@ -267,15 +267,15 @@ canvas{display:block;touch-action:none;}
 .crs{margin:10px 0;}
 .crs>b{display:block;font-size:.66rem;text-transform:uppercase;letter-spacing:.7px;color:var(--txd);margin-bottom:3px;}
 .crs>p{margin:0;font-size:.84rem;line-height:1.6;}
+.pbg{display:inline-block;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:3px 8px;border-radius:4px;}
+.pbg-tp{background:var(--ac);color:#04241c;}
+.pbg-p{background:rgba(6,214,160,.22);color:var(--ac);}
+.pbg-po{background:rgba(245,158,11,.2);color:var(--wn);}
+.pbg-pp{background:rgba(156,163,175,.16);color:var(--txd);}
+.pbg-i{background:var(--sf2);color:var(--txd);}
 .dxp{background:var(--sf2);border:1px solid var(--ac);border-radius:10px;padding:12px 14px;margin:14px 0;}
 .dxp-h{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:8px;}
 .dxp-h b{font-size:.95rem;color:var(--tx);}
-.pb{display:inline-block;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:3px 8px;border-radius:4px;}
-.pb-tp{background:var(--ac);color:#04241c;}
-.pb-p{background:rgba(6,214,160,.22);color:var(--ac);}
-.pb-po{background:rgba(245,158,11,.2);color:var(--wn);}
-.pb-pp{background:rgba(156,163,175,.16);color:var(--txd);}
-.pb-i{background:var(--sf2);color:var(--txd);}
 .dxa{margin-top:6px;}
 .dxa>span{font-size:.64rem;text-transform:uppercase;letter-spacing:.5px;color:var(--ac);}
 .dxa-c>span{color:var(--wn);}
@@ -304,12 +304,6 @@ canvas{display:block;touch-action:none;}
 .dxp{background:var(--sf2);border:1px solid var(--ac);border-radius:10px;padding:12px 14px;margin:14px 0;}
 .dxp-h{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:8px;}
 .dxp-h b{font-size:.95rem;color:var(--tx);}
-.pb{display:inline-block;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:3px 8px;border-radius:4px;}
-.pb-tp{background:var(--ac);color:#04241c;}
-.pb-p{background:rgba(6,214,160,.22);color:var(--ac);}
-.pb-po{background:rgba(245,158,11,.2);color:var(--wn);}
-.pb-pp{background:rgba(156,163,175,.16);color:var(--txd);}
-.pb-i{background:var(--sf2);color:var(--txd);}
 .dxa{margin-top:6px;}
 .dxa>span{font-size:.64rem;text-transform:uppercase;letter-spacing:.5px;color:var(--ac);}
 .dxa-c>span{color:var(--wn);}
@@ -637,7 +631,7 @@ const store = (() => {
     };
 })();
 
-const APP_VERSION = 'v14.0';
+const APP_VERSION = 'v14.1';
 
 const AG = {
     radio: {
@@ -963,7 +957,7 @@ function rDots() {
     while (cont.children.length < need) { const e = document.createElement('span'); e.className = 'pdot'; cont.appendChild(e); }
     while (cont.children.length > Math.max(6, S.pin.length)) cont.removeChild(cont.lastChild);
     const d = cont.children;
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < d.length; i++) {
         d[i].className = 'pdot' + (i < S.pin.length ? ' f' : '');
     }
 }
@@ -3946,9 +3940,9 @@ function renderReport(r, agents, tri) {
 
     if (r.diagnostic_principal && r.diagnostic_principal.libelle) {
         const dp = r.diagnostic_principal;
-        const PBC = { tres_probable: 'pb-tp', probable: 'pb-p', possible: 'pb-po', peu_probable: 'pb-pp', indetermine: 'pb-i' };
+        const PBC = { tres_probable: 'pbg-tp', probable: 'pbg-p', possible: 'pbg-po', peu_probable: 'pbg-pp', indetermine: 'pbg-i' };
         const pk = PBC[dp.probabilite] ? dp.probabilite : 'indetermine';
-        h += '<div class="dxp"><div class="dxp-h"><span class="pb ' + PBC[pk] + '">' + t('prob.' + pk) + '</span>' +
+        h += '<div class="dxp"><div class="dxp-h"><span class="pbg ' + PBC[pk] + '">' + t('prob.' + pk) + '</span>' +
              '<b>' + escapeHtml(dp.libelle) + '</b></div>';
         if ((dp.arguments_pour || []).length) {
             h += '<div class="dxa"><span>' + t('rep.for') + '</span><ul>';
