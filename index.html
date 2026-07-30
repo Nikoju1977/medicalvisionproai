@@ -620,7 +620,7 @@ const store = (() => {
     };
 })();
 
-const APP_VERSION = 'v14.1';
+const APP_VERSION = 'v14.2';
 
 const AG = {
     radio: {
@@ -812,7 +812,7 @@ const S = {
     // --- moteur d'analyse v11 ---
     pp: null, ppSel: 'clahe', busy: false, triage: null, lastMeta: null,
     mdlPool: null, mdlVision: null, mdlFast: null, mdlSynth: null, mdlForce: '',
-    only: null, onDone: null, batch: null, vFrames: 6, chunks: null, autoRoute: false,
+    only: null, onDone: null, batch: null, vFrames: 6, chunks: null, autoRoute: false, step: 0,
     uRelCal: null, calD: null, calMm: null, zoomOff: false, pinNew: null, pinBusy: false, lang: 'fr',
     swReg: null, instEvt: null,
     // --- série multi-images / vidéo v12 ---
@@ -1974,11 +1974,14 @@ function mchat(model, messages, schema, opts) {
     S.caps = S.caps || {};
     const wantEffort = !!(opts.effort && REASONING_OK.test(model));
 
+    let budget = opts.max_tokens || 3000;
+    const BUDGET_MAX = opts.max_tokens_max || Math.max(16000, budget * 4);
+
     function build(level) {
         const b = {
             model: model, messages: messages,
             temperature: opts.temperature != null ? opts.temperature : 0.15,
-            max_tokens: opts.max_tokens || 3000
+            max_tokens: budget
         };
         if (wantEffort && level < 3) b.reasoning_effort = opts.effort;
         if (level === 0) b.response_format = { type: 'json_schema', json_schema: { name: schema.name, schema: schema.def, strict: true } };
@@ -2001,16 +2004,40 @@ function mchat(model, messages, schema, opts) {
         if (level > MAXL) throw lastErr || { status: 0 };
         return mcall({ body: build(level), timeout: opts.timeout })
             .then(d => {
-                const txt = (d && d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content) || '';
+                const ch = d && d.choices && d.choices[0];
+                const txt = (ch && ch.message && ch.message.content) || '';
                 if (!txt) throw { status: 200, body: { message: 'réponse vide du modèle' } };
-                const parsed = JSON.parse(String(txt).replace(/```json/gi, '').replace(/```/g, '').trim());
+                // Une réponse coupée par max_tokens produit un JSON invalide. Ce n'est
+                // pas un défaut de format : dégrader le schéma n'y changerait rien,
+                // il faut relancer avec un budget de sortie plus large.
+                if (ch.finish_reason === 'length') {
+                    throw { truncated: true, status: 200, used: budget,
+                            body: { message: 'réponse tronquée à ' + budget + ' tokens' } };
+                }
+                const clean = String(txt).replace(/```json/gi, '').replace(/```/g, '').trim();
+                let parsed;
+                try { parsed = JSON.parse(clean); }
+                catch (pe) { pe._raw = clean; throw pe; }
                 S.caps[model] = level;
                 return parsed;
             })
             .catch(e => {
                 if (e && (e.status === 401 || e.status === 403 || e.status === 429)) throw e;
+                // Troncature : on double le budget et on reprend au MÊME palier.
+                if (e && e.truncated) {
+                    if (budget >= BUDGET_MAX) throw { status: 200, body: {
+                        message: 'réponse tronquée même à ' + budget + ' tokens — réduisez le nombre d\'experts ou d\'images' } };
+                    budget = Math.min(BUDGET_MAX, budget * 2);
+                    if (opts.onBudget) opts.onBudget(budget);
+                    return attempt(level, e);
+                }
                 if (e instanceof SyntaxError) {
-                    if (level >= MAXL) throw { status: 200, body: { message: 'JSON illisible renvoyé par le modèle' } };
+                    // Dernier recours : tenter de récupérer l'objet JSON le plus large.
+                    if (level >= MAXL) {
+                        const sal = salvageJSON(e._raw);
+                        if (sal) { S.caps[model] = level; return sal; }
+                        throw { status: 200, body: { message: 'JSON illisible renvoyé par le modèle' } };
+                    }
                     return attempt(level + 1, e);
                 }
                 if (e && (e.status === 400 || e.status === 422 || e.status === 404)) return attempt(level + 1, e);
@@ -2019,6 +2046,39 @@ function mchat(model, messages, schema, opts) {
     }
     const start = S.caps[model] != null ? S.caps[model] : 0;
     return Promise.resolve().then(() => attempt(start, null));
+}
+
+// Récupération d'un JSON incomplet : on referme les structures ouvertes.
+// Mieux vaut un compte rendu partiel signalé comme tel qu'aucun compte rendu.
+function salvageJSON(raw) {
+    if (!raw || typeof raw !== 'string') return null;
+    const st = raw.indexOf('{');
+    if (st < 0) return null;
+    let s2 = raw.slice(st);
+    // On tronque après la dernière virgule de premier niveau exploitable,
+    // puis on referme accolades et crochets restés ouverts.
+    for (let cut = s2.length; cut > 20; cut = s2.lastIndexOf(',', cut - 1)) {
+        let frag = s2.slice(0, cut).replace(/,\s*$/, '');
+        let depth = 0, inStr = false, esc = false;
+        const stack = [];
+        for (let i = 0; i < frag.length; i++) {
+            const c = frag[i];
+            if (esc) { esc = false; continue; }
+            if (c === '\\') { esc = true; continue; }
+            if (c === '"') { inStr = !inStr; continue; }
+            if (inStr) continue;
+            if (c === '{' || c === '[') stack.push(c);
+            else if (c === '}' || c === ']') stack.pop();
+        }
+        if (inStr) frag += '"';
+        while (stack.length) frag += (stack.pop() === '{' ? '}' : ']');
+        try {
+            const o = JSON.parse(frag);
+            if (o && typeof o === 'object') { o._partiel = true; return o; }
+        } catch (e) { /* on remonte d'un cran */ }
+        if (cut <= 0) break;
+    }
+    return null;
 }
 
 // ---------- Découverte dynamique des modèles ----------
@@ -3579,6 +3639,10 @@ function analyzeWithAI(auto) {
     $('aiO').innerHTML = '<p><span class="sp"></span>&nbsp; Analyse en cours…</p>';
 
     const t0 = Date.now();
+    // L'étape en cours est suivie explicitement : le gestionnaire d'erreur
+    // accusait le triage quel que soit l'endroit réel de la panne.
+    S.step = 0;
+    const at = i => { S.step = i; updPipe(i, 'active'); };
     const fail = (i, lbl, msg) => {
         updPipe(i, 'err', lbl);
         $('aiO').innerHTML = '<h3>Analyse interrompue</h3><p>' + escapeHtml(msg) + '</p>';
@@ -3587,7 +3651,7 @@ function analyzeWithAI(auto) {
     };
 
     // --- Étape 0 : pré-traitement local de TOUS les éléments de la série ---
-    updPipe(0, 'active');
+    at(0);
     const preprocAll = (k) => new Promise((res, rej) => {
         if (k >= S.series.length) return res();
         const it = S.series[k];
@@ -3613,7 +3677,7 @@ function analyzeWithAI(auto) {
                 (S.chunks.length > 1 ? ' · ' + S.chunks.length + ' lots' : ''));
 
         // --- Étape 1 : découverte des modèles ---
-        updPipe(1, 'active');
+        at(1);
         const mdlReady = S.mdlPool ? Promise.resolve(S.mdlPool) : discoverModels();
         mdlReady.then(models => {
             assignRoles(models);
@@ -3621,7 +3685,7 @@ function analyzeWithAI(auto) {
             updPipe(1, 'done', S.mdlVision);
 
             // --- Étape 2 : triage modalité/région ---
-            updPipe(2, 'active');
+            at(2);
             const triSys = "Tu es un technicien en imagerie médicale. Identifie la nature technique de l'image fournie. " +
                 "Ne pose aucun diagnostic. Sois factuel et concis. Réponds en " + reportLang() + ".";
             const triMsg = [
@@ -3654,7 +3718,7 @@ function analyzeWithAI(auto) {
                     // --- Étape 3 : lecture de CHAQUE lot d'images ---
                     // Aucun élément n'est écarté : chaque lot reçoit ses propres
                     // lectures, fusionnées ensuite par expert.
-                    updPipe(3, 'active');
+                    at(3);
                     const CH = S.chunks;
                     const roster = panel ? agents.map(k => [k]) : [agents];
                     const total = roster.length * CH.length;
@@ -3670,7 +3734,8 @@ function analyzeWithAI(auto) {
                                     { effort: 'medium', timeout: 90000 },
                                     (r, motif) => updPipe(3, 'active', done + '/' + total + ' · zoom ' + r))
                               ).then(msgs => mchat(S.mdlVision, msgs, SCH_LECTURE,
-                                  { effort: 'high', max_tokens: panel ? 2500 : 3500, timeout: 150000 }))
+                                  { effort: 'high', max_tokens: panel ? 4000 : 6000, max_tokens_max: 16000, timeout: 180000,
+                                    onBudget: bg => updPipe(3, 'active', done + '/' + total + ' · budget ' + bg) }))
                                 .then(r => { updPipe(3, 'active', (++done) + '/' + total); return { k: grp[0], grp: grp, ci: ci, r: remapImages(r, set) }; })
                                 .catch(e => { updPipe(3, 'active', (++done) + '/' + total); return { k: grp[0], grp: grp, ci: ci, err: e }; })
                         );
@@ -3706,7 +3771,7 @@ function analyzeWithAI(auto) {
                     updPipe(3, 'done', ok.length + '/' + agents.length);
 
                     // --- Étape 4 : consensus ---
-                    updPipe(4, 'active');
+                    at(4);
                     const dossier = ok.map(l => '### ' + AG[l.k].n + '\n' + JSON.stringify(l.r)).join('\n\n');
                     const synSys = [
                         "Tu présides une réunion de concertation pluridisciplinaire en imagerie médicale.",
@@ -3745,7 +3810,8 @@ function analyzeWithAI(auto) {
                             (S.chunks ? S.chunks.length : 1) + ' lot(s). Les numéros d\'image cités par les experts ' +
                             'sont les indices GLOBAUX de la série (1 à ' + S.series.length + ').\n\n' +
                             'Contexte clinique :\n' + clinCtx() + '\n\nLectures des experts :\n\n' + dossier }
-                    ], SCH_CONSENSUS, { effort: 'high', max_tokens: 4500, timeout: 150000 })
+                    ], SCH_CONSENSUS, { effort: 'high', max_tokens: 10000, max_tokens_max: 32000, timeout: 240000,
+                             onBudget: bg => updPipe(4, 'active', 'budget ' + bg) })
                         .then(rep => {
                             updPipe(4, 'done', 'accord ' + Math.round((rep.accord || 0) * 100) + '%');
                             rep._lectures = ok;
@@ -3757,7 +3823,7 @@ function analyzeWithAI(auto) {
                     let m = apiErr(e);
                     if (e && e.status === 401) m += ' · vérifiez la clé API';
                     else if (e && e.status === 0 && originIssue()) m += ' — page ouverte en ' + originIssue() + ', origine opaque : servez l\'app en https://';
-                    fail(2, 'erreur', m);
+                    fail(S.step, 'erreur', m);
                 });
         }).catch(e => fail(1, 'erreur', apiErr(e)));
     }).catch(e => fail(0, 'erreur', e.message || String(e)));
@@ -3828,6 +3894,7 @@ function toConsensus(r, agents, tri) {
 }
 
 function finish(rep, agents, tri, t0, annStep) {
+    S.step = annStep;
     updPipe(annStep, 'active');
     S.lastReport = rep;
     S.lastMeta = {
@@ -3922,6 +3989,7 @@ function renderReport(r, agents, tri) {
         h += '</ul></div>';
     }
 
+    if (r._partiel) h += '<p class="cov cov-part">⚠️ Compte rendu incomplet : la réponse du modèle a été tronquée et partiellement récupérée. Relancez l\'analyse avec moins d\'experts ou d\'images.</p>';
     if (r.synthese) h += '<p>' + escapeHtml(r.synthese) + '</p>';
     if (r.indication) h += '<div class="crs"><b>' + t('rep.indication') + '</b><p>' + escapeHtml(r.indication) + '</p></div>';
     if (r.technique) h += '<div class="crs"><b>' + t('rep.technique') + '</b><p>' + escapeHtml(r.technique) + '</p></div>';
