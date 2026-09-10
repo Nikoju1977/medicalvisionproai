@@ -620,7 +620,7 @@ const store = (() => {
     };
 })();
 
-const APP_VERSION = 'v14.7';
+const APP_VERSION = 'v14.8';
 
 const AG = {
     radio: {
@@ -1935,6 +1935,14 @@ const MDL_FALLBACK = [
 ];
 const REASONING_OK = /small-260|medium-3-5|magistral|large-251/;
 
+// Determinisme. temperature 0.15 sans graine faisait varier la reponse d'un
+// appel a l'autre sur la MEME image : le triage annoncait tantot une modalite,
+// tantot une autre. Sur un dispositif d'aide au diagnostic, deux comptes rendus
+// differents pour un meme examen sont un defaut, pas une variation acceptable.
+// Graine fixe et constante : meme entree -> meme sortie, et la graine est
+// consignee dans la tracabilite du compte rendu.
+const RUN_SEED = 20260911;
+
 // Mois absolu extrait du suffixe date des identifiants Mistral (-AAMM).
 function mdlEpoch(id) {
     const m = String(id).match(/-(\d{2})(\d{2})(?:\d{2})?$/);
@@ -2083,7 +2091,8 @@ function mchat(model, messages, schema, opts) {
     function build(level) {
         const b = {
             model: model, messages: messages,
-            temperature: opts.temperature != null ? opts.temperature : 0.15,
+            temperature: opts.temperature != null ? opts.temperature : 0,
+            random_seed: opts.seed != null ? opts.seed : RUN_SEED,
             max_tokens: budget
         };
         if (wantEffort && level < 3) b.reasoning_effort = opts.effort;
@@ -2974,7 +2983,7 @@ function inspectRounds(model, messages, set, opts, onZoom) {
     function step() {
         if (round >= MAX_ZOOM) return Promise.resolve(msgs);
         const body = {
-            model: model, messages: msgs, temperature: 0.15,
+            model: model, messages: msgs, temperature: 0, random_seed: RUN_SEED,
             max_tokens: 900, tools: [TOOL_ZOOM], tool_choice: 'auto'
         };
         if (opts.effort && REASONING_OK.test(model)) body.reasoning_effort = opts.effort;
@@ -3804,8 +3813,11 @@ function analyzeWithAI(auto) {
                 try {
                     const it = S.series[S.active] || S.series[0];
                     if (!it || !it.img) return S.imgSet.parts[0];
-                    const d = PP.draw(it.img, 768);
-                    return { type: 'image_url', image_url: d.c.toDataURL('image/jpeg', 0.72) };
+                    // 896 px q0.82 : ~856 tokens contre ~2530 en pleine resolution.
+                    // Toujours trois fois moins couteux, mais assez de detail pour
+                    // que la modalite et l'incidence se lisent sans ambiguite.
+                    const d = PP.draw(it.img, 896);
+                    return { type: 'image_url', image_url: d.c.toDataURL('image/jpeg', 0.82) };
                 } catch (e) { return S.imgSet.parts[0]; }
             })();
             const triSys = "Tu es un technicien en imagerie médicale. Identifie la nature technique de l'image fournie. " +
@@ -4042,6 +4054,7 @@ function finish(rep, agents, tri, t0, annStep) {
         mode: S.mode, elements: S.series.length,
         images_envoyees: S.imgSet ? S.imgSet.parts.length : 1,
         variante: S.ppSel || 'clahe',
+        graine: RUN_SEED, temperature: 0,
         elements_total: S.series.length,
         // Auparavant : total PLANIFIE. Un lot en echec affichait quand meme
         // « 12/12 elements analyses » avec une coche verte -- fausse reassurance.
