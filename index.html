@@ -620,7 +620,7 @@ const store = (() => {
     };
 })();
 
-const APP_VERSION = 'v14.6';
+const APP_VERSION = 'v14.7';
 
 const AG = {
     radio: {
@@ -4768,6 +4768,46 @@ if (document.readyState === 'loading')
     document.addEventListener('DOMContentLoaded', init);
 else
     init();
+
+// ---------- Service worker ----------
+// sw.js existait depuis v12 mais n'a JAMAIS ete enregistre : la coquille
+// n'etait pas mise en cache, l'app n'etait pas installable, ne fonctionnait
+// pas hors ligne, et le bump de BUILD n'avait aucun effet. On le branche ici.
+// Chemin relatif : la portee suit le sous-dossier GitHub Pages.
+function registerSW() {
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+    // Contexte non securise (file://, http:// hors localhost) : l'API existe
+    // mais register() rejette. On n'essaie pas, pour ne pas polluer la console.
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost') return;
+    navigator.serviceWorker.register('./sw.js', { scope: './' })
+        .then(function (reg) {
+            S.sw = reg;
+            // Une mise a jour publiee pendant que l'onglet est ouvert doit etre vue.
+            try { reg.update(); } catch (e) {}
+            document.addEventListener('visibilitychange', function () {
+                if (!document.hidden) { try { reg.update(); } catch (e) {} }
+            });
+            reg.addEventListener('updatefound', function () {
+                const nw = reg.installing;
+                if (!nw) return;
+                nw.addEventListener('statechange', function () {
+                    // Nouvelle version prete ALORS QU'UNE version tournait deja.
+                    if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+                        S.swUpdate = true;
+                        // Jamais de rechargement automatique : une analyse peut etre
+                        // en cours. L'utilisateur decide du moment.
+                        toast('Nouvelle version installee — rechargez la page');
+                    }
+                });
+            });
+        })
+        .catch(function (e) {
+            try { console.warn('service worker non enregistre : ' + (e && e.message)); } catch (e2) {}
+        });
+}
+
+if (document.readyState === 'complete') registerSW();
+else window.addEventListener('load', registerSW);
 
 })();
 </script>
