@@ -620,7 +620,7 @@ const store = (() => {
     };
 })();
 
-const APP_VERSION = 'v14.4';
+const APP_VERSION = 'v14.5';
 
 const AG = {
     radio: {
@@ -829,14 +829,19 @@ function toast(msg) {
     setTimeout(() => el.classList.remove('show'), 3000);
 }
 
+// Un sous-systeme en echec ne doit jamais empecher l'installation des suivants.
+function safeInit(label, fn) {
+    try { fn(); } catch (e) { try { console.error('init ' + label + ' : ' + (e && e.message)); } catch (e2) {} }
+}
+
 function init() {
-    initPin();
-    renderAg();
-    initDB();
-    rsz();
+    safeInit('pin', initPin);
+    safeInit('agents', renderAg);
+    safeInit('db', initDB);
+    safeInit('resize', rsz);
     $('fIn').addEventListener('change', function() { hFile(this); });
     $('vIn').addEventListener('change', function() { hVideo(this); });
-    setMode();
+    safeInit('mode', setMode);
     window.addEventListener('resize', () => setTimeout(rsz, 120));
     window.addEventListener('orientationchange', () => setTimeout(rsz, 350));
     
@@ -952,7 +957,23 @@ function rDots() {
 }
 
 function initDB() {
-    const r = indexedDB.open('MedVPro2', 2);
+    // indexedDB.open() peut lever (navigation privee Safari, WebView d'entreprise,
+    // stockage bloque). L'exception remontait alors hors de init(), et TOUT ce qui
+    // suit -- listeners fichier, setMode, resize, clavier -- n'etait jamais installe :
+    // l'app demarrait sur une interface morte. Le meme reflexe defensif existait
+    // deja pour localStorage (window.safeStorage), pas pour IndexedDB.
+    if (typeof indexedDB === 'undefined' || !indexedDB) {
+        const el = $('dbS'); if (el) el.textContent = 'DB: indisponible';
+        toast('IndexedDB non disponible — dossiers patients desactives');
+        return;
+    }
+    let r;
+    try { r = indexedDB.open('MedVPro2', 2); }
+    catch (e) {
+        const el = $('dbS'); if (el) el.textContent = 'DB: indisponible';
+        toast('IndexedDB inaccessible — dossiers patients desactives');
+        return;
+    }
     r.onupgradeneeded = e => {
         const db = e.target.result;
         if (!db.objectStoreNames.contains('p')) db.createObjectStore('p', {keyPath: 'id', autoIncrement: true});
