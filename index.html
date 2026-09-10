@@ -620,7 +620,7 @@ const store = (() => {
     };
 })();
 
-const APP_VERSION = 'v14.3';
+const APP_VERSION = 'v14.4';
 
 const AG = {
     radio: {
@@ -1914,6 +1914,16 @@ const MDL_FALLBACK = [
 ];
 const REASONING_OK = /small-260|medium-3-5|magistral|large-251/;
 
+// Mois absolu extrait du suffixe date des identifiants Mistral (-AAMM).
+function mdlEpoch(id) {
+    const m = String(id).match(/-(\d{2})(\d{2})(?:\d{2})?$/);
+    if (!m) return 0;
+    const mo = parseInt(m[2], 10);
+    if (mo < 1 || mo > 12) return 0;
+    return (2000 + parseInt(m[1], 10)) * 12 + mo;
+}
+const EPOCH_REF = 2026 * 12 + 7;   // juillet 2026 : fraicheur du catalogue de repli
+
 function rankModel(id) {
     const f = MDL_FALLBACK.find(m => m.id === id);
     if (f) return f.rank;
@@ -1922,7 +1932,20 @@ function rankModel(id) {
     if (/small-260|small-26/.test(id)) return 78;
     if (/ministral-3/.test(id)) return 60;
     if (/pixtral/.test(id)) return 40;
-    return 20;
+    // Un identifiant inconnu tombait a 20, sous Pixtral legacy (40) : toute
+    // nouveaute Mistral etait donc enterree par l'auto-decouverte censee ne
+    // jamais se perimer. On le situe desormais par famille et par fraicheur.
+    let base = 50;
+    if (/large/.test(id)) base = 88;
+    else if (/medium/.test(id)) base = 86;
+    else if (/magistral/.test(id)) base = 74;
+    else if (/small/.test(id)) base = 72;
+    else if (/ministral/.test(id)) base = 56;
+    const e = mdlEpoch(id);
+    // Plafond 98 : un modele inconnu remonte tres haut et devient selectionnable,
+    // mais ne remplace pas tout seul le modele valide sur ce pipeline. Le choix
+    // d'un nouveau modele reste une decision humaine tracable.
+    return Math.min(98, base + (e > EPOCH_REF ? Math.min(10, e - EPOCH_REF) : 0));
 }
 
 // ---------- Transport (XHR only — règle Studio Niko) ----------
@@ -2150,7 +2173,11 @@ function discoverModels() {
                 return c.vision === true && c.completion_chat !== false && !m.deprecation;
             });
             // Certaines réponses n'exposent pas `capabilities.vision` : repli par famille.
-            if (!vis.length) vis = list.filter(m => /medium|large-25|large-26|small-26|ministral-3|pixtral|magistral/.test(m.id) && !m.deprecation);
+            // Repli : liste blanche figee -> aveugle a toute famille future.
+            // On exclut plutot les familles notoirement non-vision.
+            if (!vis.length) vis = list.filter(m =>
+                !/codestral|devstral|voxtral|ocr|embed|moderation|nemo|mixtral|^open-|guardrail|rerank/i.test(m.id) &&
+                !m.deprecation);
             vis = vis.map(m => ({ id: m.id, rank: rankModel(m.id), lbl: m.description || m.name || m.id }));
             if (!vis.length) throw new Error('aucun modèle vision');
             vis.sort((a, b) => b.rank - a.rank);
@@ -3701,6 +3728,7 @@ function analyzeWithAI(auto) {
     // L'étape en cours est suivie explicitement : le gestionnaire d'erreur
     // accusait le triage quel que soit l'endroit réel de la panne.
     S.step = 0;
+    S.cov = null;   // couverture reelle, recalculee a chaque analyse
     const at = i => { S.step = i; updPipe(i, 'active'); };
     const fail = (i, lbl, msg) => {
         updPipe(i, 'err', lbl);
@@ -3803,18 +3831,35 @@ function analyzeWithAI(auto) {
                     return Promise.all(jobs).then(res => {
                         // Fusion des lots : un expert = une lecture consolidée.
                         const byExp = {};
-                        res.filter(x => !x.err).forEach(x => {
-                            const e = byExp[x.k] || (byExp[x.k] = { k: x.k, grp: x.grp, r: {
+                        const good = res.filter(x => !x.err);
+                        good.forEach(x => {
+                            const e = byExp[x.k] || (byExp[x.k] = { k: x.k, grp: x.grp, lots: [], trunc: false, r: {
                                 findings: [], signes_negatifs: [], differentiel: [],
                                 recommandations: [], rois: [], severite: 'norm' } });
                             const r = x.r;
+                            // Un lot perdu ou une reponse tronquee retiraient des findings
+                            // sans laisser de trace : un finding absent devenait
+                            // indiscernable d'un finding ecarte. On trace les deux.
+                            e.lots.push(x.ci);
+                            if (r && r._partiel) e.trunc = true;
                             ['findings', 'signes_negatifs', 'differentiel', 'recommandations', 'rois']
                                 .forEach(f => { if (Array.isArray(r[f])) e.r[f] = e.r[f].concat(r[f]); });
                             if (SEVRANK[r.severite] < SEVRANK[e.r.severite]) e.r.severite = r.severite;
                         });
                         const lectures = Object.keys(byExp).map(k => byExp[k]);
+                        // Un lot n'est repute analyse que si au moins une lecture y a abouti.
+                        const lotOK = {};
+                        good.forEach(x => { lotOK[x.ci] = true; });
+                        S.cov = {
+                            lots: CH.length,
+                            lots_lus: CH.filter((c, ci) => lotOK[ci]).length,
+                            elements_lus: CH.reduce((a, c, ci) => a + (lotOK[ci] ? c.sent.length : 0), 0),
+                            incompletes: lectures.filter(l => l.lots.length < CH.length).map(l => AG[l.k].n),
+                            tronquees: lectures.filter(l => l.trunc).map(l => AG[l.k].n),
+                            echouees: res.length - good.length
+                        };
                         return { lectures: lectures, tri: tri, single: (!panel && lectures[0]) ? lectures[0].r : null,
-                                 chunks: CH.length, failed: res.filter(x => x.err).length };
+                                 chunks: CH.length, failed: res.length - good.length };
                     });
                 })
                 .then(out => {
@@ -3963,8 +4008,15 @@ function finish(rep, agents, tri, t0, annStep) {
         images_envoyees: S.imgSet ? S.imgSet.parts.length : 1,
         variante: S.ppSel || 'clahe',
         elements_total: S.series.length,
-        elements_analyses: S.chunks ? S.chunks.reduce((a, c) => a + c.sent.length, 0) : 1,
+        // Auparavant : total PLANIFIE. Un lot en echec affichait quand meme
+        // « 12/12 elements analyses » avec une coche verte -- fausse reassurance.
+        elements_analyses: S.cov ? S.cov.elements_lus
+                                 : (S.chunks ? S.chunks.reduce((a, c) => a + c.sent.length, 0) : 1),
         lots: S.chunks ? S.chunks.length : 1,
+        lots_lus: S.cov ? S.cov.lots_lus : (S.chunks ? S.chunks.length : 1),
+        lectures_incompletes: S.cov ? S.cov.incompletes : [],
+        lectures_tronquees: S.cov ? S.cov.tronquees : [],
+        lectures_echouees: S.cov ? S.cov.echouees : 0,
         inspection_zoom: !S.zoomOff && S.chunks && S.chunks.some(zoomUseful), duree_ms: Date.now() - t0, horodatage: new Date().toISOString()
     };
     // Les ROI portent un numéro d'image de la REQUÊTE ; on le remappe vers la série.
@@ -4049,6 +4101,18 @@ function renderReport(r, agents, tri) {
     }
 
     if (r._partiel) h += '<p class="cov cov-part">⚠️ Compte rendu incomplet : la réponse du modèle a été tronquée et partiellement récupérée. Relancez l\'analyse avec moins d\'experts ou d\'images.</p>';
+    // Perte de matiere en amont du consensus : jusqu'ici invisible dans le rendu.
+    if (M0.lectures_tronquees && M0.lectures_tronquees.length)
+        h += '<p class="cov cov-part">⚠️ Lecture(s) tronquée(s) puis récupérées partiellement : ' +
+             escapeHtml(M0.lectures_tronquees.join(', ')) +
+             ' — des findings ont pu être perdus. Un finding absent n\'est pas un finding écarté.</p>';
+    if (M0.lectures_incompletes && M0.lectures_incompletes.length)
+        h += '<p class="cov cov-part">⚠️ Lecture(s) ne portant que sur une partie de la série : ' +
+             escapeHtml(M0.lectures_incompletes.join(', ')) +
+             ' — un ou plusieurs lots n\'ont pas abouti pour cet expert.</p>';
+    if (M0.lectures_echouees)
+        h += '<p class="cov cov-part">⚠️ ' + M0.lectures_echouees +
+             ' lecture(s) en échec, non incluses dans le consensus.</p>';
     if (r.synthese) h += '<p>' + escapeHtml(r.synthese) + '</p>';
     if (r.indication) h += '<div class="crs"><b>' + t('rep.indication') + '</b><p>' + escapeHtml(r.indication) + '</p></div>';
     if (r.technique) h += '<div class="crs"><b>' + t('rep.technique') + '</b><p>' + escapeHtml(r.technique) + '</p></div>';
@@ -4384,6 +4448,19 @@ window.exportPDF = function() {
         [t('pdf.date'), stamp.toLocaleString(S.lang)],
         [t('pdf.exam'), examId],
         [t('pdf.elements'), (M0.elements_analyses != null ? M0.elements_analyses + ' / ' + M0.elements_total : '1')]]);
+
+    // Le PDF est la piece qui quitte l'application : toute couverture degradee
+    // doit y figurer, sinon le lecteur suppose une lecture complete.
+    const _deg = [];
+    if (M0.elements_total && M0.elements_analyses < M0.elements_total)
+        _deg.push('couverture partielle : ' + M0.elements_analyses + ' / ' + M0.elements_total + ' élément(s) réellement analysés');
+    if (M0.lectures_tronquees && M0.lectures_tronquees.length)
+        _deg.push('lecture(s) tronquée(s) et récupérées partiellement : ' + M0.lectures_tronquees.join(', '));
+    if (M0.lectures_incompletes && M0.lectures_incompletes.length)
+        _deg.push('lecture(s) portant sur une partie seulement de la série : ' + M0.lectures_incompletes.join(', '));
+    if (M0.lectures_echouees) _deg.push(M0.lectures_echouees + ' lecture(s) en échec, exclues du consensus');
+    if (_deg.length) para('⚠️ Couverture dégradée — ' + _deg.join(' ; ') +
+        '. Une anomalie non mentionnée ne peut pas être considérée comme écartée.', 7.6, WN);
 
     section(t('rep.indication'));
     para((r && r.indication) || ($('ctxInd') && $('ctxInd').value) || 'Non renseignée');
