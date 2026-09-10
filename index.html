@@ -620,7 +620,7 @@ const store = (() => {
     };
 })();
 
-const APP_VERSION = 'v14.5';
+const APP_VERSION = 'v14.6';
 
 const AG = {
     radio: {
@@ -3794,11 +3794,25 @@ function analyzeWithAI(auto) {
 
             // --- Étape 2 : triage modalité/région ---
             at(2);
+            // Le triage n'identifie que modalité, région, incidence et qualité.
+            // Il recevait pourtant l'image pleine résolution (1540 px, q0.92,
+            // ~2500 tokens d'image). Sur un palier à quota de tokens par minute,
+            // ce seul appel — et ses reprises — suffit à maintenir la fenêtre
+            // fermée en permanence. Une vignette 768 px suffit à la tâche et
+            // divise la charge par environ quatre.
+            const triPart = (function () {
+                try {
+                    const it = S.series[S.active] || S.series[0];
+                    if (!it || !it.img) return S.imgSet.parts[0];
+                    const d = PP.draw(it.img, 768);
+                    return { type: 'image_url', image_url: d.c.toDataURL('image/jpeg', 0.72) };
+                } catch (e) { return S.imgSet.parts[0]; }
+            })();
             const triSys = "Tu es un technicien en imagerie médicale. Identifie la nature technique de l'image fournie. " +
                 "Ne pose aucun diagnostic. Sois factuel et concis. Réponds en " + reportLang() + ".";
             const triMsg = [
                 { role: 'system', content: triSys },
-                { role: 'user', content: [{ type: 'text', text: 'Identifie modalité, région anatomique, incidence, qualité diagnostique et artefacts.' }].concat([S.imgSet.parts[0]]) }
+                { role: 'user', content: [{ type: 'text', text: 'Identifie modalité, région anatomique, incidence, qualité diagnostique et artefacts.' }].concat([triPart]) }
             ];
             return mchat(S.mdlFast, triMsg, SCH_TRIAGE, { effort: 'low', max_tokens: 600, timeout: 45000 })
                 .then(tri => {
