@@ -620,7 +620,7 @@ const store = (() => {
     };
 })();
 
-const APP_VERSION = 'v14.2';
+const APP_VERSION = 'v14.3';
 
 const AG = {
     radio: {
@@ -1926,23 +1926,80 @@ function rankModel(id) {
 }
 
 // ---------- Transport (XHR only — règle Studio Niko) ----------
-function mcall(o) {
-    return new Promise((res, rej) => {
+// ===== Gouverneur de debit =====
+// Cause reelle du 429 au triage : l'etape 3 lance tous les couples
+// (expert x lot) en parallele via Promise.all, sature le seau de jetons
+// Mistral, et la fenetre encore fermee fait echouer le PREMIER appel de
+// l'analyse suivante -- le triage. Rien dans le fichier ne gerait le 429.
+const RL = {
+    max: 2,          // appels simultanes
+    minGap: 1100,    // ms minimum entre deux departs
+    active: 0, last: 0, until: 0, q: [], t: null,
+    acquire: function () { return new Promise(function (r) { RL.q.push(r); RL.pump(); }); },
+    pump: function () {
+        if (!RL.q.length || RL.active >= RL.max) return;
+        const now = Date.now();
+        const wait = Math.max(RL.until - now, RL.last + RL.minGap - now, 0);
+        if (wait > 0) { clearTimeout(RL.t); RL.t = setTimeout(RL.pump, wait + 10); return; }
+        RL.active++; RL.last = Date.now(); RL.q.shift()();
+    },
+    release: function () { RL.active = Math.max(0, RL.active - 1); RL.pump(); },
+    penalise: function (ms) { RL.until = Math.max(RL.until, Date.now() + ms); }
+};
+
+function rawCall(o) {
+    return new Promise(function (res, rej) {
         const x = new XMLHttpRequest();
         x.open(o.method || 'POST', API_BASE + (o.path || '/chat/completions'), true);
         x.setRequestHeader('Authorization', 'Bearer ' + S.ak);
         if (o.body) x.setRequestHeader('Content-Type', 'application/json');
         x.timeout = o.timeout || 90000;
-        x.onload = () => {
+        x.onload = function () {
             let d = null;
             try { d = JSON.parse(x.responseText); } catch (e) {}
             if (x.status >= 200 && x.status < 300) return res(d);
-            rej({ status: x.status, body: d, raw: x.responseText });
+            let ra = 0;
+            try { ra = parseFloat(x.getResponseHeader('Retry-After') || x.getResponseHeader('retry-after') || '0') || 0; } catch (e) {}
+            rej({ status: x.status, body: d, raw: x.responseText, retryAfter: ra });
         };
-        x.onerror = () => rej({ status: 0, msg: 'réseau' });
-        x.ontimeout = () => rej({ status: -1, msg: 'timeout' });
+        x.onerror = function () { rej({ status: 0, msg: 'reseau' }); };
+        x.ontimeout = function () { rej({ status: -1, msg: 'timeout' }); };
         x.send(o.body ? JSON.stringify(o.body) : null);
     });
+}
+
+// Tout appel passe par la file, et un 429 est repris avec repli
+// exponentiel + jitter, en respectant Retry-After quand il est fourni.
+const RETRIABLE = { 429: 1, 500: 1, 502: 1, 503: 1, 504: 1 };
+
+function mcall(o) {
+    const maxTry = (o.retries != null ? o.retries : 5);
+    let n = 0;
+    function run() {
+        return RL.acquire()
+            .then(function () {
+                return rawCall(o).then(
+                    function (d) { RL.release(); return d; },
+                    function (e) { RL.release(); throw e; }
+                );
+            })
+            .catch(function (e) {
+                if (!e || !RETRIABLE[e.status] || n >= maxTry) throw e;
+                n++;
+                let wait = e.retryAfter > 0 ? e.retryAfter * 1000 : Math.min(32000, 1000 * Math.pow(2, n));
+                wait += Math.floor(Math.random() * 500);
+                if (e.status === 429) RL.penalise(wait);
+                try {
+                    const secs = Math.ceil(wait / 1000);
+                    if (typeof updPipe === 'function' && S && S.step != null) {
+                        updPipe(S.step, 'active', (e.status === 429 ? 'debit limite' : 'HTTP ' + e.status) +
+                            ' · reprise dans ' + secs + 's (' + n + '/' + maxTry + ')');
+                    }
+                } catch (ue) {}
+                return new Promise(function (r) { setTimeout(r, wait); }).then(run);
+            });
+    }
+    return run();
 }
 
 // Extraction du message d'erreur réel renvoyé par l'API
@@ -1960,6 +2017,8 @@ function apiErr(e) {
         else if (b.error && b.error.message) m = b.error.message;
     }
     if (!m && e.raw) m = String(e.raw).slice(0, 300);
+    if (e.status === 429 && !m) m = 'limite de debit atteinte (aucun quota restant sur la fenetre courante)';
+    if (e.status === 429) m += ' — reessais automatiques epuises : attendez une minute ou reduisez experts/lots';
     return 'HTTP ' + e.status + (m ? ' — ' + m : '');
 }
 
