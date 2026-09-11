@@ -368,16 +368,16 @@ canvas{display:block;touch-action:none;}
 .trace{margin-top:14px;font-size:.66rem;color:var(--txd);font-family:var(--fmono);border-top:1px solid var(--bd);padding-top:8px;line-height:1.6;}
 .trace code{color:var(--ac);}
 </style>
-<meta name="description" content="MedVision AI Pro — Plateforme d'analyse médicale IA avec 13 agents spécialisés. Radiologie, ECG, dermatologie.">
+<meta name="description" content="MedVision AI Pro — Prototype d'aide à la lecture d'images médicales par IA multimodale. Usage de recherche/professionnel, non certifié comme dispositif médical.">
 <meta name="author" content="Nicolas Julienne — Studio Niko Design">
 <meta name="theme-color" content="#00ff9d">
 <meta property="og:title" content="MedVision AI Pro | Studio Niko Design">
-<meta property="og:description" content="Analyse médicale par intelligence artificielle — 13 agents spécialisés, EU MDR 2017/745 IIa">
+<meta property="og:description" content="Prototype d'aide à la lecture d'images médicales par IA multimodale — non certifié comme dispositif médical">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://nikoju1977.github.io/medicalvisionproai/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="MedVision AI Pro | Studio Niko Design">
-<meta name="twitter:description" content="Analyse médicale par intelligence artificielle — 13 agents spécialisés, EU MDR 2017/745 IIa">
+<meta name="twitter:description" content="Prototype d’aide à la lecture d’images médicales par IA multimodale — non certifié comme dispositif médical">
 
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
@@ -512,7 +512,7 @@ canvas{display:block;touch-action:none;}
 
 <!-- AGENTS & AI -->
     <div class="cd">
-        <div class="agh"><span data-i18n="sec.experts">Experts IA Mistral</span>
+        <div class="agh"><span data-i18n="sec.experts">Experts IA multimodaux</span>
             <button class="bt bmini agauto" onclick="applyRoute()" title="Composer le panel d'après la modalité détectée au triage">⚡ Auto</button>
         </div>
         <div class="agr" id="aG"></div>
@@ -546,7 +546,7 @@ canvas{display:block;touch-action:none;}
 
         <!-- Analysis Buttons -->
         <div class="fr fw" style="margin-bottom:8px">
-            <button class="bt bp" style="flex:1" onclick="runAutoAI()">🤖 AUTO-DIAGNOSTIC</button>
+            <button class="bt bp" style="flex:1" onclick="runAutoAI()">🤖 ANALYSE ASSISTÉE</button>
             <button class="bt" style="flex:1" onclick="runAI()">🧠 Analyse manuelle</button>
         </div>
 
@@ -559,46 +559,49 @@ canvas{display:block;touch-action:none;}
     </div>
 </div>
 
-<!-- API MODAL -->
+<!-- API / IA MODAL -->
 <div id="apiM" class="mdl">
     <div class="mbox">
-        <h3 style="margin-bottom:8px">⚙️ Configuration API Mistral</h3>
-        <p style="color:var(--txd);font-size:.82rem;margin-bottom:12px">Clé Mistral AI stockée localement sur votre appareil.</p>
-        <input type="password" id="akIn" placeholder="Clé API Mistral..." style="margin-bottom:6px" autocomplete="off">
-        <div id="akStat" style="font-size:.7rem;color:var(--txd);margin-bottom:12px;font-family:var(--fmono)"></div>
+        <h3 style="margin-bottom:8px">⚙️ Moteur IA</h3>
+        <p style="color:var(--txd);font-size:.82rem;margin-bottom:12px">Choisis un moteur. Les secrets restent stockés localement dans ce navigateur.</p>
 
-        <div style="font-size:.72rem;font-weight:700;color:var(--txd);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Point d'accès</div>
-        <input type="text" id="baseIn" placeholder="Vide = Mistral (https://api.mistral.ai/v1)" style="margin-bottom:6px" autocomplete="off" spellcheck="false">
-        <div style="font-size:.68rem;color:var(--txd);margin-bottom:12px;line-height:1.45">
-            Laissez vide pour Mistral. Pour un serveur compatible OpenAI en local —
-            Ollama, vLLM, LM Studio — indiquez son adresse, par exemple
-            <code>http://localhost:11434/v1</code>, et saisissez le nom du modèle
-            dans la liste ci-dessous. La clé devient facultative et les images ne
-            quittent pas l'appareil.
-        </div>
-        
-        <div style="font-size:.72rem;font-weight:700;color:var(--txd);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Modèle IA pour l'analyse</div>
-        <input type="text" id="mdlIn" placeholder="Nom du modèle (obligatoire hors Mistral, ex. medgemma:4b)" style="margin-bottom:6px" autocomplete="off" spellcheck="false">
-        <select id="mdlSel" style="margin-bottom:6px">
-            <optgroup label="🤖 Automatique (recommandé)">
-                <option value="" selected>Auto — interroge /v1/models et prend le meilleur modèle vision</option>
-            </optgroup>
-            <optgroup label="🚀 Frontier">
-                <option value="mistral-medium-3-5">Mistral Medium 3.5 — frontier multimodal, 256k</option>
-                <option value="mistral-large-2512">Mistral Large 3 — 675B multimodal</option>
-            </optgroup>
-            <optgroup label="⚡ Rapide &amp; économique">
-                <option value="mistral-small-2603">Mistral Small 4 — hybride 119B/6,5B actifs</option>
-                <option value="ministral-3-14b-2512">Ministral 3 14B — edge vision</option>
-            </optgroup>
-            <optgroup label="🗄️ Legacy">
-                <option value="pixtral-large-2411">Pixtral Large — déprécié</option>
-            </optgroup>
+        <div style="font-size:.72rem;font-weight:700;color:var(--txd);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Fournisseur</div>
+        <select id="providerSel" style="margin-bottom:8px" onchange="providerChanged()">
+            <option value="mistral" selected>Mistral API — mode Free / vision</option>
+            <option value="medgemma">MedGemma 1.5 — endpoint privé compatible OpenAI</option>
         </select>
-        <div id="mdlInfo" style="font-size:.7rem;color:var(--ac);margin-bottom:12px;min-height:16px"></div>
-        
+
+        <div id="mistralCfg">
+            <input type="password" id="akIn" placeholder="Clé API Mistral..." style="margin-bottom:6px" autocomplete="off">
+            <div style="font-size:.7rem;color:var(--txd);margin-bottom:8px">Le plan API Free de Mistral permet de créer une clé avec des limites d'usage. Le mode Auto Éco n'emploie que les modèles vision accessibles à ta clé. <b>N'envoie que des images anonymisées/désidentifiées en mode gratuit.</b></div>
+            <div style="font-size:.72rem;font-weight:700;color:var(--txd);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Modèle Mistral</div>
+            <select id="mdlSel" style="margin-bottom:6px">
+                <optgroup label="✅ Gratuit / économique">
+                    <option value="" selected>Auto Éco — modèle vision accessible le plus adapté</option>
+                    <option value="ministral-14b-2512">Ministral 3 14B — vision, recommandé</option>
+                    <option value="ministral-8b-2512">Ministral 3 8B — vision, plus léger</option>
+                    <option value="ministral-3b-2512">Ministral 3 3B — vision, quota minimal</option>
+                    <option value="mistral-small-2603">Mistral Small 4 — multimodal</option>
+                </optgroup>
+                <optgroup label="🚀 Plus puissants si accessibles">
+                    <option value="mistral-medium-3-5">Mistral Medium 3.5 — multimodal</option>
+                    <option value="mistral-large-2512">Mistral Large 3 — multimodal</option>
+                </optgroup>
+            </select>
+        </div>
+
+        <div id="medgemmaCfg" style="display:none">
+            <input id="customBaseIn" placeholder="https://ton-serveur.exemple/v1" style="margin-bottom:6px" autocomplete="off">
+            <input type="password" id="customKeyIn" placeholder="Token endpoint (optionnel)" style="margin-bottom:6px" autocomplete="off">
+            <input id="customModelIn" value="google/medgemma-1.5-4b-it" placeholder="Nom du modèle" style="margin-bottom:6px" autocomplete="off">
+            <div style="font-size:.7rem;color:var(--txd);margin-bottom:8px">MedGemma 1.5 4B est open-weight et spécialisé en compréhension d'images médicales. Il faut toutefois le servir sur ton propre endpoint : il n'existe pas actuellement de fournisseur Hugging Face gratuit permanent pour ce modèle.</div>
+        </div>
+
+        <div id="mdlInfo" style="font-size:.7rem;color:var(--ac);margin-bottom:8px;min-height:16px"></div>
+        <div id="akStat" style="font-size:.7rem;color:var(--txd);margin-bottom:12px;font-family:var(--fmono)"></div>
+        <div class="orgwarn" style="margin-top:8px"><b>Prototype non certifié</b><span>Ne pas utiliser seul pour poser ou exclure un diagnostic. Les images peuvent être envoyées au fournisseur IA configuré.</span></div>
         <div id="diagOut" class="diag" style="display:none"></div>
-        <div class="fr fsb fnw"><button class="bt" onclick="clM('apiM')">Fermer</button><button class="bt" onclick="diagAPI()" id="diagBtn">🩺 Diagnostic</button><button class="bt bp" onclick="saveKey()">✓ Enregistrer</button></div>
+        <div class="fr fsb fnw"><button class="bt" onclick="clM('apiM')">Fermer</button><button class="bt" onclick="diagAPI()" id="diagBtn">🩺 Tester</button><button class="bt bp" onclick="saveKey()">✓ Enregistrer</button></div>
     </div>
 </div>
 
@@ -631,7 +634,7 @@ const store = (() => {
     };
 })();
 
-const APP_VERSION = 'v14.11';
+const APP_VERSION = 'v15.1';
 
 const AG = {
     radio: {
@@ -816,13 +819,14 @@ const S = {
     pin: "", db: null, imgA: null, imgB: null, srcA: null, srcB: null,
     w: 0, h: 0, ox: 0, oy: 0, sc: 1, tool: 'pan',
     drw: [], rois: [], meas: [], aiRois: [],
-    pxMm: null, comp: false, ak: '', base: '', mdl: 'pixtral-large-latest',
+    pxMm: null, comp: false, ak: '', mdl: 'pixtral-large-latest',
     pd: 0, ps: 1, ip: false, dn: false, lP: null, sP: null, tM: null,
     videoStream: null, camActive: false,
     facing: 'environment', torch: false, q: 'high', recog: null, recActive: false, lastReport: null,
     // --- moteur d'analyse v11 ---
     pp: null, ppSel: 'clahe', busy: false, triage: null, lastMeta: null,
     mdlPool: null, mdlVision: null, mdlFast: null, mdlSynth: null, mdlForce: '',
+    provider: 'mistral', customBase: '', customKey: '', customModel: 'google/medgemma-1.5-4b-it',
     only: null, onDone: null, batch: null, vFrames: 6, chunks: null, autoRoute: false, step: 0,
     uRelCal: null, calD: null, calMm: null, zoomOff: false, pinNew: null, pinBusy: false, lang: 'fr',
     swReg: null, instEvt: null,
@@ -1550,26 +1554,44 @@ function togAg(k) {
 
 window.openApiM = function() {
     $('apiM').classList.add('open');
+    $('providerSel').value = S.provider || 'mistral';
     $('akIn').value = S.ak || '';
+    $('customBaseIn').value = S.customBase || '';
+    $('customKeyIn').value = S.customKey || '';
+    $('customModelIn').value = S.customModel || 'google/medgemma-1.5-4b-it';
+    providerChanged();
     upMdlInfo();
-    $('akStat').textContent = S.ak ? '✓ Configuré' : '✗ Vide';
 };
 
-function clM(id) {
-    $(id).classList.remove('open');
-}
+function clM(id) { $(id).classList.remove('open'); }
 window.clM = clM;
 
 const MDL_INFO = {
-    '': 'Interroge /v1/models à chaque session et sélectionne le meilleur modèle vision disponible. Ne se périme jamais.',
-    'mistral-medium-3-5': 'Frontier multimodal (v26.04). 256k contexte. 1,5 $ / 7,5 $ par M tokens.',
-    'mistral-large-2512': 'Mistral Large 3 (v25.12). 675B MoE open-weight, multimodal. Débit plus lent.',
-    'mistral-small-2603': 'Mistral Small 4 (v26.03). 119B MoE, 6,5B actifs. 0,15 $ / 0,60 $ par M. reasoning_effort réglable.',
-    'ministral-3-14b-2512': 'Ministral 3 14B (v25.12). Vision compacte, latence minimale.',
-    'pixtral-large-2411': 'Déprécié par Mistral. Conservé pour compatibilité uniquement.'
+    '': 'Auto Éco : découvre les modèles accessibles à ta clé et privilégie les modèles vision compacts avant les modèles frontier.',
+    'mistral-medium-3-5': 'Mistral Medium 3.5 — généraliste multimodal. Plus coûteux en quota que Ministral.',
+    'mistral-large-2512': 'Mistral Large 3 — généraliste multimodal open-weight.',
+    'mistral-small-2603': 'Mistral Small 4 — généraliste multimodal, compromis vitesse/qualité.',
+    'ministral-14b-2512': 'Ministral 3 14B — vision compacte. Bon choix par défaut sur le niveau gratuit quand il est accessible.',
+    'ministral-8b-2512': 'Ministral 3 8B — vision, plus léger et moins gourmand.',
+    'ministral-3b-2512': 'Ministral 3 3B — vision, très compact ; à réserver au triage ou aux quotas serrés.'
 };
 
+function providerChanged() {
+    const p = $('providerSel').value || 'mistral';
+    $('mistralCfg').style.display = p === 'mistral' ? 'block' : 'none';
+    $('medgemmaCfg').style.display = p === 'medgemma' ? 'block' : 'none';
+    upMdlInfo();
+    if (p === 'mistral') $('akStat').textContent = (S.ak || $('akIn').value) ? '✓ Clé Mistral configurée' : '✗ Clé Mistral requise';
+    else $('akStat').textContent = (S.customBase || $('customBaseIn').value) ? '✓ Endpoint MedGemma renseigné' : '✗ Endpoint MedGemma requis';
+}
+window.providerChanged = providerChanged;
+
 function upMdlInfo() {
+    const p = $('providerSel') ? $('providerSel').value : (S.provider || 'mistral');
+    if (p === 'medgemma') {
+        $('mdlInfo').textContent = 'MedGemma est médicalement spécialisé, mais reste un modèle de recherche : validation clinique indépendante obligatoire.';
+        return;
+    }
     const v = $('mdlSel').value;
     $('mdlInfo').textContent = MDL_INFO[v] || '';
 }
@@ -1577,22 +1599,30 @@ function upMdlInfo() {
 if ($('mdlSel')) $('mdlSel').addEventListener('change', upMdlInfo);
 
 window.saveKey = function() {
-    const raw = $('akIn').value || '';
-    S.ak = raw.replace(/[\x00-\x1f\x7f\s]/g, '');
-    S.base = ($('baseIn') ? $('baseIn').value : '').trim();
-    if (!S.ak && isMistral()) { toast('Clé vide!'); return; }
-    if (!S.ak) S.ak = 'local';   // Ollama et consorts ignorent l'en-tete
-    // Un nom saisi a la main prime : la liste deroulante ne connait que Mistral.
-    S.mdlForce = (($('mdlIn') ? $('mdlIn').value : '') || '').trim() || $('mdlSel').value || '';
-    S.mdl = S.mdlForce || 'auto';
+    S.provider = $('providerSel').value || 'mistral';
+    if (S.provider === 'mistral') {
+        const raw = $('akIn').value || '';
+        S.ak = raw.replace(/[\x00-\x1f\x7f\s]/g, '');
+        if (!S.ak) { toast('Clé Mistral requise'); return; }
+        S.mdlForce = $('mdlSel').value || '';
+        S.mdl = S.mdlForce || 'auto-eco';
+        store.set('mv_key', S.ak);
+        store.set('mv_mdl', S.mdlForce);
+    } else {
+        S.customBase = String($('customBaseIn').value || '').trim().replace(/\/+$/, '');
+        S.customKey = String($('customKeyIn').value || '').trim();
+        S.customModel = String($('customModelIn').value || 'google/medgemma-1.5-4b-it').trim();
+        if (!/^https?:\/\//i.test(S.customBase)) { toast('Endpoint MedGemma invalide : http(s):// requis'); return; }
+        S.mdlForce = S.customModel;
+        S.mdl = S.customModel;
+        store.set('mv_custom_base', S.customBase);
+        store.set('mv_custom_key', S.customKey);
+        store.set('mv_custom_model', S.customModel);
+    }
+    store.set('mv_provider', S.provider);
     S.mdlPool = null;
-    store.set('mv_key', S.ak);
-    store.set('mv_mdl', S.mdlForce);
-    store.set('mv_base', S.base);
-    store.set('mv_mdlfree', ($('mdlIn') ? $('mdlIn').value : '').trim());
     clM('apiM');
-    toast('Config sauvée : ' + (isMistral() ? 'Mistral' : apiBase()) + ' · ' +
-          (S.mdlForce || 'sélection automatique'));
+    toast('Moteur IA enregistré : ' + (S.provider === 'mistral' ? (S.mdlForce || 'Mistral Auto Éco') : 'MedGemma 1.5'));
 };
 
 // ---------- Socle : pipeline visuel, agents, échappement ----------
@@ -1940,36 +1970,28 @@ function buildImageSet(from, to) {
 //  MOTEUR D'ANALYSE IMAGERIE v11 — Studio Niko Design
 //  Mistral Studio API : /v1/models · Structured Outputs · reasoning_effort
 // ============================================================
-const MISTRAL_BASE = 'https://api.mistral.ai/v1';
-
-// Point d'acces configurable. L'application etait soudee a api.mistral.ai :
-// un quota epuise cote fournisseur la rendait entierement inutilisable, sans
-// recours. Tout point d'acces compatible OpenAI convient desormais (Ollama,
-// vLLM, LM Studio, llama.cpp), ce qui permet notamment de servir un modele
-// d'imagerie medicale en local, sans quota et sans que l'image sorte du poste.
-function apiBase() {
-    const b = (S.base || '').trim().replace(/\/+$/, '');
-    return b || MISTRAL_BASE;
-}
-function isMistral() { return apiBase() === MISTRAL_BASE; }
+const MISTRAL_API_BASE = 'https://api.mistral.ai/v1';
 
 // Catalogue de repli si /v1/models est indisponible (juillet 2026)
 const MDL_FALLBACK = [
-    { id: 'mistral-medium-3-5', vision: true, rank: 100, lbl: 'Mistral Medium 3.5 — frontier multimodal' },
-    { id: 'mistral-large-2512', vision: true, rank: 92, lbl: 'Mistral Large 3 — 675B multimodal' },
-    { id: 'mistral-small-2603', vision: true, rank: 78, lbl: 'Mistral Small 4 — hybride rapide' },
-    { id: 'ministral-3-14b-2512', vision: true, rank: 60, lbl: 'Ministral 3 14B — edge vision' },
-    { id: 'pixtral-large-2411', vision: true, rank: 40, lbl: 'Pixtral Large — legacy' }
+    { id: 'ministral-14b-2512', vision: true, rank: 100, lbl: 'Ministral 3 14B — vision / éco' },
+    { id: 'ministral-8b-2512', vision: true, rank: 96, lbl: 'Ministral 3 8B — vision / éco' },
+    { id: 'mistral-small-2603', vision: true, rank: 92, lbl: 'Mistral Small 4 — multimodal' },
+    { id: 'ministral-3b-2512', vision: true, rank: 88, lbl: 'Ministral 3 3B — vision / ultra-éco' },
+    { id: 'mistral-medium-3-5', vision: true, rank: 74, lbl: 'Mistral Medium 3.5 — frontier multimodal' },
+    { id: 'mistral-large-2512', vision: true, rank: 70, lbl: 'Mistral Large 3 — multimodal' }
 ];
 const REASONING_OK = /small-260|medium-3-5|magistral|large-251/;
 
-// Determinisme. temperature 0.15 sans graine faisait varier la reponse d'un
-// appel a l'autre sur la MEME image : le triage annoncait tantot une modalite,
-// tantot une autre. Sur un dispositif d'aide au diagnostic, deux comptes rendus
-// differents pour un meme examen sont un defaut, pas une variation acceptable.
-// Graine fixe et constante : meme entree -> meme sortie, et la graine est
-// consignee dans la tracabilite du compte rendu.
+// Determinisme (v14.8). temperature 0.15 sans graine faisait varier la reponse
+// d'un appel a l'autre sur la MEME image : le triage annoncait tantot une
+// modalite, tantot une autre. Graine fixe consignee dans la tracabilite.
 const RUN_SEED = 20260911;
+// Chaque moteur a ses propres prerequis : cle pour Mistral, endpoint pour MedGemma.
+function moteurPret() {
+    return (S.provider || 'mistral') === 'mistral' ? !!S.ak : !!String(S.customBase || '').trim();
+}
+function seedKey() { return (S.provider || 'mistral') === 'mistral' ? 'random_seed' : 'seed'; }
 
 // Mois absolu extrait du suffixe date des identifiants Mistral (-AAMM).
 function mdlEpoch(id) {
@@ -1984,15 +2006,16 @@ const EPOCH_REF = 2026 * 12 + 7;   // juillet 2026 : fraicheur du catalogue de r
 function rankModel(id) {
     const f = MDL_FALLBACK.find(m => m.id === id);
     if (f) return f.rank;
-    if (/medium-3-5|medium-26/.test(id)) return 100;
-    if (/large-3|large-251/.test(id)) return 92;
-    if (/small-260|small-26/.test(id)) return 78;
-    if (/ministral-3/.test(id)) return 60;
+    if (/ministral-14b/.test(id)) return 100;
+    if (/ministral-8b/.test(id)) return 96;
+    if (/small-260|small-26/.test(id)) return 92;
+    if (/ministral-3b/.test(id)) return 88;
+    if (/medium-3-5|medium-26/.test(id)) return 74;
+    if (/large-3|large-251/.test(id)) return 70;
     if (/pixtral/.test(id)) return 40;
-    // Familles notoirement hors imagerie : jamais candidates a la lecture.
-    // Le compte de test exposait labs-leanstral-1-5 (preuve formelle Lean 4) et
-    // mistral-vibe-cli-fast (agent CLI) ; sans ce garde-fou, un repli sans
-    // capabilities.vision pouvait les classer devant Pixtral.
+    // Familles hors imagerie vues sur le compte reel : labs-leanstral (preuve
+    // formelle Lean 4) et mistral-vibe-cli-fast (agent CLI). Sans ce garde-fou,
+    // un repli sans capabilities.vision pouvait les classer devant Pixtral.
     if (/leanstral|vibe-cli|codestral|devstral|voxtral|ocr|embed|moderation|mathstral|saba|agentic|tts|transcribe/i.test(id)) return 5;
     // Un identifiant inconnu tombait a 20, sous Pixtral legacy (40) : toute
     // nouveaute Mistral etait donc enterree par l'auto-decouverte censee ne
@@ -2002,7 +2025,7 @@ function rankModel(id) {
     else if (/medium/.test(id)) base = 86;
     else if (/magistral/.test(id)) base = 74;
     else if (/small/.test(id)) base = 72;
-    else if (/ministral/.test(id)) base = 56;
+    else if (/ministral/.test(id)) base = 84;
     const e = mdlEpoch(id);
     // Plafond 98 : un modele inconnu remonte tres haut et devient selectionnable,
     // mais ne remplace pas tout seul le modele valide sur ce pipeline. Le choix
@@ -2029,21 +2052,39 @@ const RL = {
         RL.active++; RL.last = Date.now(); RL.q.shift()();
     },
     release: function () { RL.active = Math.max(0, RL.active - 1); RL.pump(); },
-    // Un 429 de cadence se resorbe en quelques secondes ; un quota epuise ne se
-    // resorbe jamais. Sans ce compteur, chaque appel de la chaine refaisait ses
-    // 5 tentatives : l'analyse moulinait plusieurs minutes avant d'echouer.
-    // ok ne compte QUE les generations : /v1/models repond meme sur un compte
-    // a sec, et le compter aurait desactive ce garde-fou en permanence.
+    // Un 429 de cadence se resorbe en quelques secondes ; un quota epuise jamais.
+    // ok ne compte QUE les generations : /v1/models repond meme sur un compte a sec.
     ko429: 0, ok: 0,
     epuise: function () { return RL.ko429 >= 3 && RL.ok === 0; },
     penalise: function (ms) { RL.until = Math.max(RL.until, Date.now() + ms); }
 };
 
+function normalizeOpenAIImages(body) {
+    // Mistral accepte image_url comme chaîne data: ; l'API OpenAI-compatible
+    // standard utilise {url:"..."}. On clone sans modifier les messages source.
+    const b = JSON.parse(JSON.stringify(body));
+    (b.messages || []).forEach(m => {
+        if (!Array.isArray(m.content)) return;
+        m.content.forEach(part => {
+            if (part && part.type === 'image_url' && typeof part.image_url === 'string') {
+                part.image_url = { url: part.image_url };
+            }
+        });
+    });
+    // reasoning_effort et tools Mistral ne sont pas supposés disponibles.
+    delete b.reasoning_effort;
+    return b;
+}
+
 function rawCall(o) {
     return new Promise(function (res, rej) {
         const x = new XMLHttpRequest();
-        x.open(o.method || 'POST', apiBase() + (o.path || '/chat/completions'), true);
-        x.setRequestHeader('Authorization', 'Bearer ' + S.ak);
+        const isMistral = (S.provider || 'mistral') === 'mistral';
+        const base = isMistral ? MISTRAL_API_BASE : String(S.customBase || '').replace(/\/+$/, '');
+        if (!base) return rej({ status: 0, msg: 'endpoint IA non configuré' });
+        x.open(o.method || 'POST', base + (o.path || '/chat/completions'), true);
+        const token = isMistral ? S.ak : S.customKey;
+        if (token) x.setRequestHeader('Authorization', 'Bearer ' + token);
         if (o.body) x.setRequestHeader('Content-Type', 'application/json');
         x.timeout = o.timeout || 90000;
         x.onload = function () {
@@ -2056,7 +2097,9 @@ function rawCall(o) {
         };
         x.onerror = function () { rej({ status: 0, msg: 'reseau' }); };
         x.ontimeout = function () { rej({ status: -1, msg: 'timeout' }); };
-        x.send(o.body ? JSON.stringify(o.body) : null);
+        let payload = o.body || null;
+        if (payload && !isMistral) payload = normalizeOpenAIImages(payload);
+        x.send(payload ? JSON.stringify(payload) : null);
     });
 }
 
@@ -2078,9 +2121,8 @@ function mcall(o) {
             })
             .catch(function (e) {
                 if (!e || !RETRIABLE[e.status] || n >= maxTry) throw e;
-                // Aucun appel n'a jamais abouti et les refus s'enchainent :
+                // Aucune generation n'a jamais abouti et les refus s'enchainent :
                 // ce n'est pas de la cadence, c'est un compte qui ne delivre rien.
-                // On arrete tout de suite au lieu de moudre pendant des minutes.
                 if (e.status === 429 && RL.epuise()) { e.quota = true; throw e; }
                 n++;
                 let wait = e.retryAfter > 0 ? e.retryAfter * 1000 : Math.min(32000, 1000 * Math.pow(2, n));
@@ -2116,8 +2158,8 @@ function apiErr(e) {
     if (!m && e.raw) m = String(e.raw).slice(0, 300);
     if (e.status === 429 && !m) m = 'limite de debit atteinte';
     if (e.status === 429 && e.quota)
-        m += ' — aucun appel n\'a abouti de toute la session : quota epuise ou plan inactif. ' +
-             'Verifiez le workspace de la cle sur console.mistral.ai, ou basculez sur un point d\'acces local dans la configuration API.';
+        m += ' — aucune generation n\'a abouti de toute la session : quota epuise ou plan inactif. ' +
+             'Verifiez le workspace de la cle, ou basculez le moteur IA sur MedGemma dans la configuration.';
     else if (e.status === 429)
         m += ' — reessais automatiques epuises : attendez une minute ou reduisez experts/lots';
     return 'HTTP ' + e.status + (m ? ' — ' + m : '');
@@ -2132,7 +2174,8 @@ function apiErr(e) {
 function mchat(model, messages, schema, opts) {
     opts = opts || {};
     S.caps = S.caps || {};
-    const wantEffort = !!(opts.effort && REASONING_OK.test(model));
+    const isMistral = (S.provider || 'mistral') === 'mistral';
+    const wantEffort = !!(isMistral && opts.effort && REASONING_OK.test(model));
 
     let budget = opts.max_tokens || 3000;
     const BUDGET_MAX = opts.max_tokens_max || Math.max(16000, budget * 4);
@@ -2141,15 +2184,14 @@ function mchat(model, messages, schema, opts) {
         const b = {
             model: model, messages: messages,
             temperature: opts.temperature != null ? opts.temperature : 0,
-            // Mistral attend random_seed, les points d'acces compatibles OpenAI seed.
-            [isMistral() ? 'random_seed' : 'seed']: opts.seed != null ? opts.seed : RUN_SEED,
             max_tokens: budget
         };
+        b[seedKey()] = opts.seed != null ? opts.seed : RUN_SEED;
         if (wantEffort && level < 3) b.reasoning_effort = opts.effort;
-        if (level === 0) b.response_format = { type: 'json_schema', json_schema: { name: schema.name, schema: schema.def, strict: true } };
-        else if (level === 1) b.response_format = { type: 'json_schema', json_schema: { name: schema.name, schema_definition: schema.def, strict: true } };
+        if (isMistral && level === 0) b.response_format = { type: 'json_schema', json_schema: { name: schema.name, schema: schema.def, strict: true } };
+        else if (isMistral && level === 1) b.response_format = { type: 'json_schema', json_schema: { name: schema.name, schema_definition: schema.def, strict: true } };
         else {
-            b.response_format = { type: 'json_object' };
+            if (isMistral || level === 2) b.response_format = { type: 'json_object' };
             b.messages = messages.slice();
             b.messages[0] = {
                 role: 'system',
@@ -2206,7 +2248,7 @@ function mchat(model, messages, schema, opts) {
                 throw e;
             });
     }
-    const start = S.caps[model] != null ? S.caps[model] : 0;
+    const start = S.caps[model] != null ? S.caps[model] : (isMistral ? 0 : 2);
     return Promise.resolve().then(() => attempt(start, null));
 }
 
@@ -2245,6 +2287,10 @@ function salvageJSON(raw) {
 
 // ---------- Découverte dynamique des modèles ----------
 function discoverModels() {
+    if ((S.provider || 'mistral') === 'medgemma') {
+        const id = S.customModel || 'google/medgemma-1.5-4b-it';
+        return Promise.resolve([{ id: id, rank: 100, lbl: 'MedGemma 1.5 — médical multimodal' }]);
+    }
     return mcall({ method: 'GET', path: '/models', timeout: 15000 })
         .then(d => {
             const list = (d && d.data) || [];
@@ -2268,7 +2314,7 @@ function discoverModels() {
 
 function assignRoles(models) {
     S.mdlPool = models;
-    S.mdlVision = (models[0] || {}).id || 'mistral-medium-3-5';
+    S.mdlVision = (models[0] || {}).id || ((S.provider === 'medgemma') ? (S.customModel || 'google/medgemma-1.5-4b-it') : 'ministral-14b-2512');
     const fast = models.filter(m => /small|ministral/.test(m.id));
     S.mdlFast = (fast[0] || models[models.length - 1] || {}).id || S.mdlVision;
     S.mdlSynth = S.mdlVision;
@@ -2762,7 +2808,7 @@ const DESTINATION = {
         "Aucune performance diagnostique (sensibilité, spécificité) n'est établie à ce stade de développement.",
         "La qualité de l'analyse dépend directement de la qualité d'acquisition de l'image.",
         "Les mesures ne sont valides qu'après calibration, et sont fournies avec leur incertitude.",
-        "Les images sont transmises à l'API Mistral AI (France, hébergement UE) pour analyse."
+        "Les images sont transmises au fournisseur IA configuré pour analyse. En mode API gratuite, utilisez uniquement des images anonymisées/désidentifiées ; vérifiez l’hébergement, la rétention, le DPA et la conformité avant toute donnée de santé réelle."
     ],
     validation: "Toute conclusion doit être confirmée par le praticien avant toute décision clinique."
 };
@@ -3027,14 +3073,14 @@ function zoomUseful(set) {
 
 // Boucle d'inspection : appels successifs tant que l'agent réclame des zooms.
 function inspectRounds(model, messages, set, opts, onZoom) {
+    if ((S.provider || 'mistral') !== 'mistral') return Promise.resolve(messages.slice());
     let round = 0;
     const msgs = messages.slice();
 
     function step() {
         if (round >= MAX_ZOOM) return Promise.resolve(msgs);
         const body = {
-            model: model, messages: msgs, temperature: 0,
-            [isMistral() ? 'random_seed' : 'seed']: RUN_SEED,
+            model: model, messages: msgs, temperature: 0, [seedKey()]: RUN_SEED,
             max_tokens: 900, tools: [TOOL_ZOOM], tool_choice: 'auto'
         };
         if (opts.effort && REASONING_OK.test(model)) body.reasoning_effort = opts.effort;
@@ -3279,87 +3325,51 @@ function pxImg() {
 }
 
 window.diagAPI = function() {
-    const raw = ($('akIn').value || S.ak || '');
-    const k = raw.replace(/[\x00-\x1f\x7f\s]/g, '');
-    if (!k) { toast('Entrez une clé API'); return; }
-    const prev = S.ak; S.ak = k;
+    const p = $('providerSel').value || S.provider || 'mistral';
     const box = $('diagOut');
     box.style.display = 'block';
-    box.innerHTML = '<div class="dg-l"><span class="sp"></span> Diagnostic en cours…</div>';
+    box.innerHTML = '<div class="dg-l"><span class="sp"></span> Test en cours…</div>';
     const L = [];
     const put = (st, t, d) => {
         L.push('<div class="dg-l dg-' + st + '"><b>' + t + '</b>' + (d ? '<span>' + escapeHtml(String(d)) + '</span>' : '') + '</div>');
         box.innerHTML = L.join('');
     };
-
-    let fast = 'mistral-small-2603', vis = 'mistral-medium-3-5';
-
-    // 0 — origine de la page : cause n°1 des « connexion impossible » en série
-    const oi = originIssue();
-    if (oi) {
-        put('err', '0. Origine de la page : ' + oi,
-            "Le navigateur bloque toutes les requêtes réseau depuis une page à origine opaque. " +
-            "Aucun appel Mistral ne peut aboutir, quelle que soit la clé. " +
-            "Servez l'application depuis une origine https:// (GitHub Pages, Vercel, ou un serveur local) puis relancez ce diagnostic.");
-        put('info', 'Diagnostic interrompu', 'les étapes 1 à 7 échoueraient toutes pour la même raison');
-        return;
+    const old = { provider:S.provider, ak:S.ak, customBase:S.customBase, customKey:S.customKey, customModel:S.customModel };
+    S.provider = p;
+    if (p === 'mistral') {
+        S.ak = String($('akIn').value || S.ak || '').replace(/[\x00-\x1f\x7f\s]/g, '');
+        if (!S.ak) { put('err','Configuration','Clé Mistral requise'); return; }
+    } else {
+        S.customBase = String($('customBaseIn').value || S.customBase || '').trim().replace(/\/+$/, '');
+        S.customKey = String($('customKeyIn').value || S.customKey || '').trim();
+        S.customModel = String($('customModelIn').value || S.customModel || 'google/medgemma-1.5-4b-it').trim();
+        if (!/^https?:\/\//i.test(S.customBase)) { put('err','Configuration','Endpoint http(s):// requis'); return; }
     }
-    put('ok', '0. Origine de la page', location.origin);
+    const restore = () => Object.assign(S, old);
+    const oi = originIssue();
+    if (oi && p === 'mistral') put('warn','Origine de la page : ' + oi,'Une page file:// peut bloquer les requêtes CORS. Préférer GitHub Pages ou Vercel en HTTPS.');
+    else put('ok','Origine',location.origin || location.protocol);
 
-    // 1 — authentification + catalogue
-    mcall({ method: 'GET', path: '/models', timeout: 20000 })
-        .then(d => {
-            const list = (d && d.data) || [];
-            put('ok', '1. Authentification + /v1/models', list.length + ' modèles accessibles');
-            const vm = list.filter(m => (m.capabilities || {}).vision === true);
-            const guess = list.filter(m => /medium|large-25|large-26|small-26|ministral-3|pixtral|magistral/.test(m.id));
-            if (vm.length) { put('ok', '2. Modèles vision déclarés', vm.slice(0, 6).map(m => m.id).join(', ')); }
-            else if (guess.length) { put('warn', '2. capabilities.vision absent', 'repli par famille : ' + guess.slice(0, 6).map(m => m.id).join(', ')); }
-            else { put('err', '2. Aucun modèle vision', 'ta clé n\'a peut-être pas accès aux modèles multimodaux'); }
-            const pool = (vm.length ? vm : guess).map(m => ({ id: m.id, rank: rankModel(m.id) })).sort((a, b) => b.rank - a.rank);
-            if (pool.length) {
-                vis = pool[0].id;
-                const f = pool.filter(m => /small|ministral/.test(m.id));
-                fast = (f[0] || pool[pool.length - 1]).id;
-            }
-            put('info', '3. Rôles retenus', 'lecture ' + vis + ' · triage ' + fast);
-        })
-        .catch(e => { put('err', '1. /v1/models', apiErr(e)); })
-
-        // 4 — appel texte simple
-        .then(() => mcall({ body: { model: fast, messages: [{ role: 'user', content: 'Réponds exactement: OK' }], max_tokens: 10 }, timeout: 30000 })
-            .then(() => put('ok', '4. Chat texte (' + fast + ')', 'réponse reçue'))
-            .catch(e => put('err', '4. Chat texte (' + fast + ')', apiErr(e))))
-
-        // 5 — appel vision
-        .then(() => mcall({
-            body: {
-                model: fast, max_tokens: 30,
-                messages: [{ role: 'user', content: [{ type: 'text', text: 'Quelle forme vois-tu ?' }, { type: 'image_url', image_url: pxImg() }] }]
-            }, timeout: 45000
-        })
-            .then(() => put('ok', '5. Vision (' + fast + ')', 'image acceptée'))
-            .catch(e => put('err', '5. Vision (' + fast + ')', apiErr(e) + ' — ce modèle ne prend probablement pas les images')))
-
-        // 6 — niveau de structured output supporté
-        .then(() => {
-            S.caps = {};
-            const sch = { name: 'sonde', def: { type: 'object', additionalProperties: false, required: ['ok'], properties: { ok: { type: 'boolean' } } } };
-            return mchat(fast, [{ role: 'system', content: 'Réponds ok=true.' }, { role: 'user', content: 'ok ?' }], sch, { max_tokens: 60, timeout: 40000 })
-                .then(() => {
-                    const lv = S.caps[fast];
-                    const names = ['json_schema.schema (optimal)', 'json_schema.schema_definition', 'json_object + schéma injecté', 'json_object sans reasoning_effort'];
-                    put(lv === 0 ? 'ok' : 'warn', '6. Sortie structurée', 'niveau ' + lv + ' — ' + names[lv]);
-                })
-                .catch(e => put('err', '6. Sortie structurée', apiErr(e)));
-        })
-
-        // 7 — reasoning_effort
-        .then(() => mcall({ body: { model: fast, messages: [{ role: 'user', content: 'ok' }], max_tokens: 10, reasoning_effort: 'low' }, timeout: 30000 })
-            .then(() => put('ok', '7. reasoning_effort', 'accepté par ' + fast))
-            .catch(e => put('warn', '7. reasoning_effort', 'refusé — ' + apiErr(e) + ' (dégradation automatique active)')))
-
-        .then(() => { put('info', 'Diagnostic terminé', new Date().toLocaleTimeString('fr-FR')); S.ak = prev || k; });
+    if (p === 'mistral') {
+        mcall({ method:'GET', path:'/models', timeout:20000 })
+          .then(d => {
+              const list=(d&&d.data)||[];
+              const vm=list.filter(m => (m.capabilities||{}).vision === true || /mistral-(?:medium|large|small)|ministral-(?:14b|8b|3b)/i.test(m.id));
+              put('ok','Catalogue Mistral',list.length + ' modèles accessibles');
+              put(vm.length?'ok':'warn','Vision',vm.length ? vm.slice(0,8).map(m=>m.id).join(', ') : 'aucun modèle vision détecté');
+              const pick = ($('mdlSel').value || (vm.sort((a,b)=>rankModel(b.id)-rankModel(a.id))[0]||{}).id || 'ministral-14b-2512');
+              return mcall({ body:{ model:pick, messages:[{role:'user',content:[{type:'text',text:'Décris seulement la forme géométrique visible.'},{type:'image_url',image_url:pxImg()}]}], max_tokens:50 }, timeout:45000 })
+                .then(()=>put('ok','Vision ' + pick,'image acceptée'));
+          })
+          .catch(e=>put('err','API Mistral',apiErr(e)))
+          .then(()=>{ put('info','Test terminé','Le mode Free reste soumis aux limites de compte Mistral.'); restore(); });
+    } else {
+        const model=S.customModel;
+        mcall({ body:{ model:model, messages:[{role:'user',content:[{type:'text',text:'Réponds uniquement : TEST_OK si tu peux lire cette image.'},{type:'image_url',image_url:{url:pxImg()}}]}], max_tokens:30 }, timeout:60000 })
+          .then(()=>put('ok','Endpoint MedGemma','chat multimodal accepté par ' + model))
+          .catch(e=>put('err','Endpoint MedGemma',apiErr(e)))
+          .then(()=>{ put('info','Test terminé','Le backend doit être compatible OpenAI /chat/completions et accepter les images data: URL.'); restore(); });
+    }
 };
 
 // ============================================================
@@ -3809,8 +3819,8 @@ function analyzeWithAI(auto) {
     // L'étape en cours est suivie explicitement : le gestionnaire d'erreur
     // accusait le triage quel que soit l'endroit réel de la panne.
     S.step = 0;
-    S.cov = null;   // couverture reelle, recalculee a chaque analyse
-    RL.ko429 = 0; RL.ok = 0; RL.until = 0;
+    S.cov = null;
+    RL.ko429 = 0; RL.ok = 0; RL.until = 0;   // couverture reelle, recalculee a chaque analyse
     const at = i => { S.step = i; updPipe(i, 'active'); };
     const fail = (i, lbl, msg) => {
         updPipe(i, 'err', lbl);
@@ -3865,11 +3875,8 @@ function analyzeWithAI(auto) {
                 try {
                     const it = S.series[S.active] || S.series[0];
                     if (!it || !it.img) return S.imgSet.parts[0];
-                    // 896 px q0.82 : ~856 tokens contre ~2530 en pleine resolution.
-                    // Toujours trois fois moins couteux, mais assez de detail pour
-                    // que la modalite et l'incidence se lisent sans ambiguite.
-                    const d = PP.draw(it.img, 896);
-                    return { type: 'image_url', image_url: d.c.toDataURL('image/jpeg', 0.82) };
+                    const d = PP.draw(it.img, 768);
+                    return { type: 'image_url', image_url: d.c.toDataURL('image/jpeg', 0.72) };
                 } catch (e) { return S.imgSet.parts[0]; }
             })();
             const triSys = "Tu es un technicien en imagerie médicale. Identifie la nature technique de l'image fournie. " +
@@ -4101,7 +4108,7 @@ function finish(rep, agents, tri, t0, annStep) {
     updPipe(annStep, 'active');
     S.lastReport = rep;
     S.lastMeta = {
-        modele_vision: S.mdlVision, modele_triage: S.mdlFast, modele_synthese: S.mdlSynth,
+        fournisseur_ia: S.provider || 'mistral', modele_vision: S.mdlVision, modele_triage: S.mdlFast, modele_synthese: S.mdlSynth,
         experts: agents.map(k => AG[k].n), triage: tri,
         mode: S.mode, elements: S.series.length,
         images_envoyees: S.imgSet ? S.imgSet.parts.length : 1,
@@ -4350,12 +4357,16 @@ function showImgStats() {
 window.runAutoAI = function() {
     // Le mode Lot exécute une analyse complète et indépendante par élément.
     if (S.mode === 'batch' && S.series.length > 1) return window.runBatch();
-    if (!S.ak) { openApiM(); return toast('Configurez la clé API'); }
+    // Le garde-fou exigeait la cle Mistral quel que soit le moteur : en mode
+    // MedGemma, l'analyse ne demarrait jamais alors que tout etait configure.
+    if (!moteurPret()) { openApiM(); return toast('Configurez le moteur IA'); }
     if (!S.imgA) return toast('Chargez une image d\'abord');
     analyzeWithAI(true);
 };
 window.runAI = function() {
-    if (!S.ak) { openApiM(); return toast('Configurez la clé API'); }
+    // Le garde-fou exigeait la cle Mistral quel que soit le moteur : en mode
+    // MedGemma, l'analyse ne demarrait jamais alors que tout etait configure.
+    if (!moteurPret()) { openApiM(); return toast('Configurez le moteur IA'); }
     if (!S.imgA) return toast('Chargez une image d\'abord');
     analyzeWithAI(false);
 };
@@ -4825,12 +4836,15 @@ S.lang = detectLang();
 // Load saved API key
 const rk = store.get('mv_key') || '';
 S.ak = rk.replace(/[\x00-\x1f\x7f\s]/g, '');
-const rb = store.get('mv_base');
-if (rb != null) { S.base = rb; const bi = $('baseIn'); if (bi) bi.value = rb; }
-const rmi = store.get('mv_mdlfree');
-if (rmi != null) { const mi = $('mdlIn'); if (mi) mi.value = rmi; }
+S.provider = store.get('mv_provider') || 'mistral';
+S.customBase = store.get('mv_custom_base') || '';
+S.customKey = store.get('mv_custom_key') || '';
+S.customModel = store.get('mv_custom_model') || 'google/medgemma-1.5-4b-it';
 const rm = store.get('mv_mdl');
-if (rm != null) { S.mdlForce = rm; S.mdl = rm || 'auto'; const sel = $('mdlSel'); if (sel) sel.value = rm; }
+if (rm != null) { S.mdlForce = rm; S.mdl = rm || 'auto-eco'; const sel = $('mdlSel'); if (sel && Array.from(sel.options).some(o => o.value === rm)) sel.value = rm; }
+if (S.provider === 'medgemma') S.mdlForce = S.customModel;
+if ($('providerSel')) $('providerSel').value = S.provider;
+providerChanged();
 upMdlInfo();
 
 if (document.readyState === 'loading')
@@ -4838,20 +4852,15 @@ if (document.readyState === 'loading')
 else
     init();
 
-// ---------- Service worker ----------
-// sw.js existait depuis v12 mais n'a JAMAIS ete enregistre : la coquille
-// n'etait pas mise en cache, l'app n'etait pas installable, ne fonctionnait
-// pas hors ligne, et le bump de BUILD n'avait aucun effet. On le branche ici.
-// Chemin relatif : la portee suit le sous-dossier GitHub Pages.
+// ---------- Service worker (v14.7) ----------
+// sw.js existait depuis v12 sans jamais etre enregistre : pas de cache coquille,
+// pas installable, pas de hors-ligne, et tout bump de BUILD sans effet.
 function registerSW() {
     if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
-    // Contexte non securise (file://, http:// hors localhost) : l'API existe
-    // mais register() rejette. On n'essaie pas, pour ne pas polluer la console.
     if (location.protocol !== 'https:' && location.hostname !== 'localhost') return;
     navigator.serviceWorker.register('./sw.js', { scope: './' })
         .then(function (reg) {
             S.sw = reg;
-            // Une mise a jour publiee pendant que l'onglet est ouvert doit etre vue.
             try { reg.update(); } catch (e) {}
             document.addEventListener('visibilitychange', function () {
                 if (!document.hidden) { try { reg.update(); } catch (e) {} }
@@ -4860,11 +4869,8 @@ function registerSW() {
                 const nw = reg.installing;
                 if (!nw) return;
                 nw.addEventListener('statechange', function () {
-                    // Nouvelle version prete ALORS QU'UNE version tournait deja.
                     if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-                        S.swUpdate = true;
-                        // Jamais de rechargement automatique : une analyse peut etre
-                        // en cours. L'utilisateur decide du moment.
+                        // Jamais de rechargement automatique : une analyse peut tourner.
                         toast('Nouvelle version installee — rechargez la page');
                     }
                 });
@@ -4874,7 +4880,6 @@ function registerSW() {
             try { console.warn('service worker non enregistre : ' + (e && e.message)); } catch (e2) {}
         });
 }
-
 if (document.readyState === 'complete') registerSW();
 else window.addEventListener('load', registerSW);
 
