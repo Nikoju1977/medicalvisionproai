@@ -78,6 +78,13 @@ function installMockXHR() {
             const kind = bodyKind(body);
             calls[kind]++;
 
+            // Tout est refuse : quota epuise. L'analyse doit s'arreter vite.
+            if (SCENARIO === 'quota') {
+                calls.refus429++;
+                self.status = 429; self.respHeaders = {};
+                self.responseText = JSON.stringify({ message: 'Rate limit exceeded' });
+                return self.onload();
+            }
             // 429 sur le premier triage : verifie le gouverneur de debit
             if (SCENARIO === 'rate-limit' && kind === 'triage' && calls.triage === 1) {
                 calls.refus429++;
@@ -168,14 +175,24 @@ const t = (ms) => new Promise(r => setTimeout(r, ms));
     check('erreurs JS bloquantes', errs.length === 0, errs.length ? errs[0].slice(0, 120) : 'aucune');
     check('/v1/models interroge', calls.models >= 1, calls.models + ' appel(s)');
     check('triage effectue', calls.triage >= 1, calls.triage + ' appel(s)');
-    check('lecture experte effectuee', calls.lecture >= 1, calls.lecture + ' appel(s)');
-    check('compte rendu rendu a l ecran', !/Analyse interrompue/.test(html) && html.length > 400, html.length + ' caracteres');
-    check('conclusion presente', /pneumopathie/i.test(html), '');
+    if (SCENARIO !== 'quota') {
+        // Le scenario quota doit precisement NE PAS produire de compte rendu.
+        check('lecture experte effectuee', calls.lecture >= 1, calls.lecture + ' appel(s)');
+        check('compte rendu rendu a l ecran', !/Analyse interrompue/.test(html) && html.length > 400, html.length + ' caracteres');
+        check('conclusion presente', /pneumopathie/i.test(html), '');
+    }
 
     if (SCENARIO === 'rate-limit') {
         check('429 emis par le simulateur', calls.refus429 === 1, '');
         check('reprise apres 429 (gouverneur)', calls.triage >= 2, calls.triage + ' tentatives de triage');
         check('analyse aboutie malgre le 429', !/Analyse interrompue/.test(html), '');
+    }
+    if (SCENARIO === 'quota') {
+        check('analyse arretee (pas de boucle interminable)', /Analyse interrompue/.test(html), '');
+        check('arret rapide, sous 90 s', dur < 90000, dur + ' ms');
+        check('message designe le quota', /quota|plan inactif/i.test(html),
+              (html.match(/quota[^<]{0,60}/i) || [''])[0]);
+        check('tentatives bornees', calls.refus429 <= 12, calls.refus429 + ' appels refuses');
     }
     if (SCENARIO === 'lot-perdu') {
         check('perte signalee a l utilisateur',
