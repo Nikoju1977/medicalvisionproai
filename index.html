@@ -634,7 +634,7 @@ const store = (() => {
     };
 })();
 
-const APP_VERSION = 'v15.1';
+const APP_VERSION = 'v15.2';
 
 const AG = {
     radio: {
@@ -3790,7 +3790,14 @@ function clinCtx() {
 // ============================================================
 //  PIPELINE D'ANALYSE
 // ============================================================
+window.forceAnalyse = function () {
+    if (S.busy) return;
+    S.forceTri = true;
+    analyzeWithAI(S.lastAuto);
+};
+
 function analyzeWithAI(auto) {
+    S.lastAuto = auto;
     // Aucun expert choisi : on laisse le triage composer le panel lui-même.
     S.autoRoute = selectedAgents().length === 0;
     if (S.autoRoute) ['gen', 'radio'].forEach(k => togAg(k));
@@ -3880,6 +3887,11 @@ function analyzeWithAI(auto) {
                 } catch (e) { return S.imgSet.parts[0]; }
             })();
             const triSys = "Tu es un technicien en imagerie médicale. Identifie la nature technique de l'image fournie. " +
+                "L'imagerie médicale ne se limite pas à la radiologie : une photographie clinique est une modalité " +
+                "légitime — photographie dermatologique, intra-orale, de plaie, ophtalmologique, endoscopique, " +
+                "lame d'anatomopathologie, tracé ECG. Nomme-la comme telle plutôt que de la déclarer non identifiable. " +
+                "`incidence` peut valoir 'sans objet' pour une photographie. Ne mets `analysable` à false que si " +
+                "l'image est réellement inexploitable (floue, surexposée, hors sujet), pas parce qu'elle n'est pas une radiographie. " +
                 "Ne pose aucun diagnostic. Sois factuel et concis. Réponds en " + reportLang() + ".";
             const triMsg = [
                 { role: 'system', content: triSys },
@@ -3900,12 +3912,22 @@ function analyzeWithAI(auto) {
                     } else {
                         updPipe(2, 'done', tri.modalite);
                     }
-                    if (tri.analysable === false) {
-                        $('aiO').innerHTML = '<h3>Image non analysable</h3><p>Qualité : ' + escapeHtml(tri.qualite) +
-                            '</p><p>Artefacts : ' + escapeHtml((tri.artefacts || []).join(', ') || '—') +
-                            '</p><p style="color:var(--txd)">Reprenez l\'acquisition avant analyse.</p>';
+                    // Un verdict « non analysable » fermait la porte sans recours.
+                    // Le lecteur reste seul juge : on lui laisse forcer la lecture,
+                    // a condition que la reserve figure dans le compte rendu et le PDF.
+                    if (tri.analysable === false && !S.forceTri) {
+                        $('aiO').innerHTML = '<h3>Image non analysable</h3>' +
+                            '<p>Modalité : ' + escapeHtml(tri.modalite || '—') + '</p>' +
+                            '<p>Qualité : ' + escapeHtml(tri.qualite) + '</p>' +
+                            '<p>Artefacts : ' + escapeHtml((tri.artefacts || []).join(', ') || '—') + '</p>' +
+                            '<p style="color:var(--txd)">Reprenez l\'acquisition avant analyse.</p>' +
+                            '<button class="bt" onclick="forceAnalyse()" style="margin-top:8px">' +
+                            'Analyser malgré tout</button>' +
+                            '<p style="color:var(--txd);font-size:.72rem;margin-top:6px">' +
+                            'La réserve sera portée dans le compte rendu et dans le PDF.</p>';
                         S.busy = false; throw 'stop';
                     }
+                    S.triForce = !!S.forceTri; S.forceTri = false;
                     const grille = grilleFor(tri.modalite + ' ' + tri.region);
 
                     // --- Étape 3 : lecture de CHAQUE lot d'images ---
@@ -4114,6 +4136,7 @@ function finish(rep, agents, tri, t0, annStep) {
         images_envoyees: S.imgSet ? S.imgSet.parts.length : 1,
         variante: S.ppSel || 'clahe',
         graine: RUN_SEED, temperature: 0,
+        triage_force: !!S.triForce,
         elements_total: S.series.length,
         // Auparavant : total PLANIFIE. Un lot en echec affichait quand meme
         // « 12/12 elements analyses » avec une coche verte -- fausse reassurance.
@@ -4217,6 +4240,10 @@ function renderReport(r, agents, tri) {
         h += '<p class="cov cov-part">⚠️ Lecture(s) ne portant que sur une partie de la série : ' +
              escapeHtml(M0.lectures_incompletes.join(', ')) +
              ' — un ou plusieurs lots n\'ont pas abouti pour cet expert.</p>';
+    if (M0.triage_force)
+        h += '<p class="cov cov-part">⚠️ Le triage a jugé cet examen non analysable ' +
+             '(qualité insuffisante ou artefacts). La lecture a été forcée par l\'utilisateur : ' +
+             'la fiabilité de ce compte rendu est réduite d\'autant.</p>';
     if (M0.lectures_echouees)
         h += '<p class="cov cov-part">⚠️ ' + M0.lectures_echouees +
              ' lecture(s) en échec, non incluses dans le consensus.</p>';
@@ -4570,6 +4597,7 @@ window.exportPDF = function() {
     if (M0.lectures_incompletes && M0.lectures_incompletes.length)
         _deg.push('lecture(s) portant sur une partie seulement de la série : ' + M0.lectures_incompletes.join(', '));
     if (M0.lectures_echouees) _deg.push(M0.lectures_echouees + ' lecture(s) en échec, exclues du consensus');
+    if (M0.triage_force) _deg.push('examen jugé NON ANALYSABLE au triage, lecture forcée par l\'utilisateur');
     if (_deg.length) para('⚠️ Couverture dégradée — ' + _deg.join(' ; ') +
         '. Une anomalie non mentionnée ne peut pas être considérée comme écartée.', 7.6, WN);
 
