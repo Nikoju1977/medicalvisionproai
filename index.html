@@ -566,8 +566,19 @@ canvas{display:block;touch-action:none;}
         <p style="color:var(--txd);font-size:.82rem;margin-bottom:12px">Clé Mistral AI stockée localement sur votre appareil.</p>
         <input type="password" id="akIn" placeholder="Clé API Mistral..." style="margin-bottom:6px" autocomplete="off">
         <div id="akStat" style="font-size:.7rem;color:var(--txd);margin-bottom:12px;font-family:var(--fmono)"></div>
+
+        <div style="font-size:.72rem;font-weight:700;color:var(--txd);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Point d'accès</div>
+        <input type="text" id="baseIn" placeholder="Vide = Mistral (https://api.mistral.ai/v1)" style="margin-bottom:6px" autocomplete="off" spellcheck="false">
+        <div style="font-size:.68rem;color:var(--txd);margin-bottom:12px;line-height:1.45">
+            Laissez vide pour Mistral. Pour un serveur compatible OpenAI en local —
+            Ollama, vLLM, LM Studio — indiquez son adresse, par exemple
+            <code>http://localhost:11434/v1</code>, et saisissez le nom du modèle
+            dans la liste ci-dessous. La clé devient facultative et les images ne
+            quittent pas l'appareil.
+        </div>
         
         <div style="font-size:.72rem;font-weight:700;color:var(--txd);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Modèle IA pour l'analyse</div>
+        <input type="text" id="mdlIn" placeholder="Nom du modèle (obligatoire hors Mistral, ex. medgemma:4b)" style="margin-bottom:6px" autocomplete="off" spellcheck="false">
         <select id="mdlSel" style="margin-bottom:6px">
             <optgroup label="🤖 Automatique (recommandé)">
                 <option value="" selected>Auto — interroge /v1/models et prend le meilleur modèle vision</option>
@@ -620,7 +631,7 @@ const store = (() => {
     };
 })();
 
-const APP_VERSION = 'v14.8';
+const APP_VERSION = 'v14.9';
 
 const AG = {
     radio: {
@@ -805,7 +816,7 @@ const S = {
     pin: "", db: null, imgA: null, imgB: null, srcA: null, srcB: null,
     w: 0, h: 0, ox: 0, oy: 0, sc: 1, tool: 'pan',
     drw: [], rois: [], meas: [], aiRois: [],
-    pxMm: null, comp: false, ak: '', mdl: 'pixtral-large-latest',
+    pxMm: null, comp: false, ak: '', base: '', mdl: 'pixtral-large-latest',
     pd: 0, ps: 1, ip: false, dn: false, lP: null, sP: null, tM: null,
     videoStream: null, camActive: false,
     facing: 'environment', torch: false, q: 'high', recog: null, recActive: false, lastReport: null,
@@ -1568,14 +1579,20 @@ if ($('mdlSel')) $('mdlSel').addEventListener('change', upMdlInfo);
 window.saveKey = function() {
     const raw = $('akIn').value || '';
     S.ak = raw.replace(/[\x00-\x1f\x7f\s]/g, '');
-    if (!S.ak) { toast('Clé vide!'); return; }
-    S.mdlForce = $('mdlSel').value || '';
+    S.base = ($('baseIn') ? $('baseIn').value : '').trim();
+    if (!S.ak && isMistral()) { toast('Clé vide!'); return; }
+    if (!S.ak) S.ak = 'local';   // Ollama et consorts ignorent l'en-tete
+    // Un nom saisi a la main prime : la liste deroulante ne connait que Mistral.
+    S.mdlForce = (($('mdlIn') ? $('mdlIn').value : '') || '').trim() || $('mdlSel').value || '';
     S.mdl = S.mdlForce || 'auto';
     S.mdlPool = null;
     store.set('mv_key', S.ak);
     store.set('mv_mdl', S.mdlForce);
+    store.set('mv_base', S.base);
+    store.set('mv_mdlfree', ($('mdlIn') ? $('mdlIn').value : '').trim());
     clM('apiM');
-    toast('Config sauvée : ' + (S.mdlForce || 'sélection automatique') + ' (' + S.ak.length + ' car.)');
+    toast('Config sauvée : ' + (isMistral() ? 'Mistral' : apiBase()) + ' · ' +
+          (S.mdlForce || 'sélection automatique'));
 };
 
 // ---------- Socle : pipeline visuel, agents, échappement ----------
@@ -1923,7 +1940,18 @@ function buildImageSet(from, to) {
 //  MOTEUR D'ANALYSE IMAGERIE v11 — Studio Niko Design
 //  Mistral Studio API : /v1/models · Structured Outputs · reasoning_effort
 // ============================================================
-const API_BASE = 'https://api.mistral.ai/v1';
+const MISTRAL_BASE = 'https://api.mistral.ai/v1';
+
+// Point d'acces configurable. L'application etait soudee a api.mistral.ai :
+// un quota epuise cote fournisseur la rendait entierement inutilisable, sans
+// recours. Tout point d'acces compatible OpenAI convient desormais (Ollama,
+// vLLM, LM Studio, llama.cpp), ce qui permet notamment de servir un modele
+// d'imagerie medicale en local, sans quota et sans que l'image sorte du poste.
+function apiBase() {
+    const b = (S.base || '').trim().replace(/\/+$/, '');
+    return b || MISTRAL_BASE;
+}
+function isMistral() { return apiBase() === MISTRAL_BASE; }
 
 // Catalogue de repli si /v1/models est indisponible (juillet 2026)
 const MDL_FALLBACK = [
@@ -2002,7 +2030,7 @@ const RL = {
 function rawCall(o) {
     return new Promise(function (res, rej) {
         const x = new XMLHttpRequest();
-        x.open(o.method || 'POST', API_BASE + (o.path || '/chat/completions'), true);
+        x.open(o.method || 'POST', apiBase() + (o.path || '/chat/completions'), true);
         x.setRequestHeader('Authorization', 'Bearer ' + S.ak);
         if (o.body) x.setRequestHeader('Content-Type', 'application/json');
         x.timeout = o.timeout || 90000;
@@ -2092,7 +2120,8 @@ function mchat(model, messages, schema, opts) {
         const b = {
             model: model, messages: messages,
             temperature: opts.temperature != null ? opts.temperature : 0,
-            random_seed: opts.seed != null ? opts.seed : RUN_SEED,
+            // Mistral attend random_seed, les points d'acces compatibles OpenAI seed.
+            [isMistral() ? 'random_seed' : 'seed']: opts.seed != null ? opts.seed : RUN_SEED,
             max_tokens: budget
         };
         if (wantEffort && level < 3) b.reasoning_effort = opts.effort;
@@ -2983,7 +3012,8 @@ function inspectRounds(model, messages, set, opts, onZoom) {
     function step() {
         if (round >= MAX_ZOOM) return Promise.resolve(msgs);
         const body = {
-            model: model, messages: msgs, temperature: 0, random_seed: RUN_SEED,
+            model: model, messages: msgs, temperature: 0,
+            [isMistral() ? 'random_seed' : 'seed']: RUN_SEED,
             max_tokens: 900, tools: [TOOL_ZOOM], tool_choice: 'auto'
         };
         if (opts.effort && REASONING_OK.test(model)) body.reasoning_effort = opts.effort;
@@ -4773,6 +4803,10 @@ S.lang = detectLang();
 // Load saved API key
 const rk = store.get('mv_key') || '';
 S.ak = rk.replace(/[\x00-\x1f\x7f\s]/g, '');
+const rb = store.get('mv_base');
+if (rb != null) { S.base = rb; const bi = $('baseIn'); if (bi) bi.value = rb; }
+const rmi = store.get('mv_mdlfree');
+if (rmi != null) { const mi = $('mdlIn'); if (mi) mi.value = rmi; }
 const rm = store.get('mv_mdl');
 if (rm != null) { S.mdlForce = rm; S.mdl = rm || 'auto'; const sel = $('mdlSel'); if (sel) sel.value = rm; }
 upMdlInfo();
