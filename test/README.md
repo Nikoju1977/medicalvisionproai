@@ -13,6 +13,7 @@ API Mistral simulée. Aucune clé, aucun appel réseau, aucune image patient.
     node test/e2e.js index.html rate-limit
     node test/e2e.js index.html lot-perdu
     node test/e2e.js index.html tronque
+    node test/e2e.js index.html quota
 
 Code de sortie 1 si un contrôle échoue — utilisable en pré-déploiement.
 
@@ -23,6 +24,7 @@ Code de sortie 1 si un contrôle échoue — utilisable en pré-déploiement.
 | `nominal`    | Chaîne complète : clé → image → /v1/models → triage → lectures → consensus → compte rendu rendu à l'écran |
 | `rate-limit` | Un 429 avec `Retry-After` sur le triage est repris par le gouverneur de débit et l'analyse aboutit |
 | `lot-perdu`  | Une lecture experte définitivement perdue (403) est **signalée** au lieu d'être silencieusement absorbée |
+| `quota`      | Tous les appels refusés : l'analyse s'arrête en quelques secondes avec un message désignant le quota, au lieu de mouliner |
 | `tronque`    | Une réponse coupée, récupérée partiellement, est **signalée** dans le compte rendu |
 
 Les deux derniers sont les régressions médicalement critiques : avant v14.4, une
