@@ -635,7 +635,7 @@ const store = (() => {
     };
 })();
 
-const APP_VERSION = 'v15.4';
+const APP_VERSION = 'v15.5';
 
 const AG = {
     radio: {
@@ -648,6 +648,7 @@ const AG = {
                "Tissus mous péri-lésionnels, liseré graisseux, épanchement articulaire",
                "Matériel implanté : position, descellement, liseré péri-prothétique"],
         prio: ["fracture non déplacée ou en cheveu", "lésion lytique ou condensante", "appositions périostées", "luxation"],
+        pieges: ["canal nutritif ou ligne de croissance pris pour un trait de fracture", "os sesamoides et os surnumeraires pris pour des fragments", "effet Mach au bord d\'une corticale simulant une fissure", "superposition de deux structures creant une fausse ligne"],
         limits: "Tu décris l'imagerie. Tu ne prescris pas et ne poses pas d'indication opératoire."
     },
     pulmo: {
@@ -661,6 +662,7 @@ const AG = {
                "Nodules : nombre, contours, taille, calcifications",
                "Hiles et médiastin : élargissement, adénopathies", "Coupoles diaphragmatiques et angles costo-diaphragmatiques"],
         prio: ["pneumothorax compressif", "épanchement abondant", "nodule spiculé", "opacité systématisée"],
+        pieges: ["pli cutane simulant une ligne de pneumothorax", "ombre mamelonnaire ou electrode prise pour un nodule", "rotation du patient faussant l\'asymetrie de transparence", "bord de scapula ou tubulure projete simulant une ligne pleurale"],
         limits: "Tu ne conclus pas sur l'étiologie infectieuse sans contexte biologique."
     },
     neuro: {
@@ -674,6 +676,7 @@ const AG = {
                "Hyperdensités spontanées évoquant une hémorragie", "Hypodensités systématisées à un territoire artériel",
                "Rachis : alignement, canal, disques, moelle"],
         prio: ["hémorragie intracrânienne", "effet de masse", "engagement", "ischémie constituée"],
+        pieges: ["calcifications physiologiques : pineale, plexus choroides, noyaux gris", "espaces de Virchow-Robin pris pour des lacunes", "artefacts de durcissement de faisceau en fosse posterieure", "asymetrie ventriculaire physiologique"],
         limits: "L'examen clinique neurologique prime : tu ne statues pas sur le déficit."
     },
     trauma: {
@@ -686,6 +689,7 @@ const AG = {
                "D — Neurologique : hémorragie, fracture du crâne, atteinte rachidienne",
                "E — Exposition : fractures instables, corps étrangers, emphysème sous-cutané"],
         prio: ["pneumothorax compressif", "hémorragie active", "élargissement médiastinal", "fracture instable du rachis"],
+        pieges: ["materiel d\'immobilisation et planche projetes sur le champ", "distension gastrique aerique simulant un epanchement", "cliche couche majorant la silhouette mediastinale"],
         limits: "Ton rôle est de repérer ce qui engage le pronostic vital, pas d'affiner le diagnostic."
     },
     cardio: {
@@ -698,6 +702,7 @@ const AG = {
                "Vascularisation pulmonaire : redistribution, surcharge, œdème",
                "Calcifications valvulaires, coronaires ou péricardiques", "Matériel : sondes, valves, stents"],
         prio: ["cardiomégalie", "surcharge vasculaire pulmonaire", "élargissement médiastinal", "épanchement péricardique"],
+        pieges: ["cliche en expiration, couche ou en incidence antero-posterieure majorant l\'index cardio-thoracique", "coussinet graisseux pericardique pris pour un epanchement", "lordose et rotation deformant les arcs"],
         limits: "L'imagerie ne remplace pas l'échocardiographie pour la fonction."
     },
     dermato: {
@@ -710,6 +715,7 @@ const AG = {
                "Voile bleu-blanc, structures de régression", "Patron vasculaire : punctiforme, linéaire irrégulier, polymorphe",
                "Peau péri-lésionnelle, signes inflammatoires ou de surinfection"],
         prio: ["asymétrie majeure", "voile bleu-blanc", "patron vasculaire polymorphe", "régression"],
+        pieges: ["bulle de gel ou d\'immersion prise pour une structure", "poil, fibre ou repli cutane simulant une strie", "reflet speculaire du flash pris pour un voile blanc-bleu", "dominante colorimetrique liee a l\'eclairage faussant le nombre de couleurs"],
         limits: "Toute lésion suspecte relève d'un examen dermoscopique direct et d'une histologie."
     },
     ophtalmo: {
@@ -722,6 +728,7 @@ const AG = {
                "Hémorragies : en flammèches, en taches, pré-rétiniennes",
                "Nodules cotonneux, exsudats secs", "Périphérie rétinienne, néovaisseaux, décollement"],
         prio: ["œdème papillaire", "néovaisseaux", "hémorragie maculaire", "décollement de rétine"],
+        pieges: ["reflet du flash et artefacts de la lentille", "croissant myopique peri-papillaire pris pour une atrophie", "excavation physiologique large sur grande papille", "drusen papillaires simulant un oedeme"],
         limits: "Le champ visuel et l'acuité ne se déduisent pas de l'image."
     },
     ortho: {
@@ -733,6 +740,7 @@ const AG = {
                "Interligne articulaire, pincement, ostéophytose", "Matériel : positionnement, rupture, descellement",
                "Cartilage de croissance chez l'enfant"],
         prio: ["fracture articulaire déplacée", "instabilité", "descellement de matériel", "atteinte du cartilage de croissance"],
+        pieges: ["os accessoires et noyaux secondaires pris pour des fragments", "cartilage de conjugaison ou ligne epiphysaire residuelle pris pour un trait", "encoche condylienne physiologique"],
         limits: "Tu décris ce qui conditionne la décision, sans la prendre."
     },
     onco: {
@@ -745,6 +753,7 @@ const AG = {
                "Aires ganglionnaires accessibles sur l'image",
                "Comparaison à l'examen antérieur si fourni : progression, stabilité, régression"],
         prio: ["masse à contours spiculés", "lyse osseuse", "adénopathie", "progression par rapport à l'antérieur"],
+        pieges: ["adenopathie reactionnelle prise pour une atteinte secondaire", "effet de volume partiel creant une fausse lesion", "comparaison a un anterieur d\'incidence ou de fenetre differente"],
         limits: "Aucune classification TNM ni RECIST sans bilan d'extension complet."
     },
     patho: {
@@ -756,6 +765,7 @@ const AG = {
                "Index mitotique, mitoses atypiques", "Nécrose, inflammation, désmoplasie",
                "Invasion : capsule, vaisseaux, nerfs", "Marges d'exérèse si visibles"],
         prio: ["atypies marquées", "mitoses atypiques", "invasion vasculaire", "marge envahie"],
+        pieges: ["artefact de fixation, retraction ou pli de coupe", "coloration heterogene ou surcoloree faussant la cellularite", "artefact d\'ecrasement ou de bistouri electrique"],
         limits: "Le grade définitif exige immunohistochimie et coloration standardisée."
     },
     pedia: {
@@ -767,6 +777,7 @@ const AG = {
                "Variantes de la normale à ne pas confondre avec une lésion",
                "Signes évocateurs de maltraitance : fractures d'âges différents, localisations atypiques"],
         prio: ["décollement épiphysaire", "fractures d'âges différents", "fracture métaphysaire en coin"],
+        pieges: ["variantes du developpement et os wormiens", "encoche metaphysaire physiologique prise pour une lesion", "cartilage de croissance pris pour une fracture", "pseudo-fracture par superposition sur un petit segment"],
         limits: "Toute suspicion de maltraitance impose un protocole dédié et un signalement, hors du champ de cette analyse."
     },
     endo: {
@@ -777,7 +788,113 @@ const AG = {
                "Calcifications, notamment microcalcifications", "Vascularisation intra et péri-nodulaire",
                "Aires ganglionnaires de drainage", "Retentissement local : compression, déviation trachéale"],
         prio: ["microcalcifications", "nodule à contours irréguliers", "adénopathie suspecte", "compression trachéale"],
+        pieges: ["anisotropie et renforcement posterieur en echographie", "oesophage cervical ou trachee pris pour un nodule", "lobe pyramidal et variantes anatomiques"],
         limits: "La classification EU-TIRADS exige une échographie dédiée et normalisée."
+    },
+    seno: {
+        n: "Sénologue", i: "🎗️", s: "Sein, mammographie, microcalcifications.",
+        mods: /\b(mammo\w*|echo\w*|irm|tomosynthese)\b/i, regions: /\b(sein|mammaire|mammo\w*|seno\w*|axillaire|creux axillaire|mamelon|areol\w*)\b/i,
+        role: "radiologue sénologue sénior, lecture mammographique et échographique du sein",
+        grid: ["Densité mammaire globale et comparaison droite/gauche sur les mêmes incidences",
+               "Masse : forme, contours (circonscrits, microlobulés, spiculés), densité",
+               "Microcalcifications : morphologie (rondes, amorphes, pléomorphes, linéaires branchées) et distribution (diffuse, groupée, linéaire, segmentaire)",
+               "Distorsion architecturale, y compris sans masse associée",
+               "Asymétrie de densité, asymétrie focale évolutive",
+               "Signes cutanés et mamelonnaires : épaississement, rétraction",
+               "Creux axillaire : ganglions, perte du hile graisseux"],
+        prio: ["microcalcifications fines linéaires ou branchées", "masse spiculée", "distorsion architecturale", "asymétrie focale nouvelle"],
+        pieges: ["superposition de tissu fibroglandulaire simulant une masse sur une seule incidence",
+                 "calcifications vasculaires, cutanées ou en lait calcique, bénignes",
+                 "pli cutané ou artefact de compression"],
+        limits: "La classification ACR/BI-RADS définitive exige les incidences complémentaires, l\'échographie et le comparatif antérieur. Toute suspicion relève d\'un prélèvement."
+    },
+    digest: {
+        n: "Gastro-entérologue", i: "🍽️", s: "Abdomen, digestif, occlusion.",
+        mods: /\b(radio\w*|rx|asp|scanner|tdm|echo\w*|irm)\b/i, regions: /\b(abdom\w*|digestif|intestin\w*|grele|colon|colique|estomac|gastri\w*|foie|hepat\w*|rate|splen\w*|pancrea\w*|vesicule|biliaire|occlusion|asp)\b/i,
+        role: "hépato-gastro-entérologue sénior, lecture de l\'imagerie abdominale",
+        grid: ["Pneumopéritoine : croissant clair sous-diaphragmatique, signe du double contour pariétal",
+               "Distension digestive : siège grêle ou colique, calibre, valvules conniventes ou haustrations",
+               "Niveaux hydro-aériques : nombre, largeur, répartition",
+               "Opacités calciques : lithiases biliaires, calcifications pancréatiques, stercolithes",
+               "Silhouettes hépatique et splénique : débord, contours",
+               "Aérobilie, gaz porte, gaz pariétal digestif",
+               "Épanchement, infiltration de la graisse mésentérique",
+               "Corps étranger, matériel, stomie"],
+        prio: ["pneumopéritoine", "occlusion avec signes de souffrance", "aérobilie ou gaz porte", "gaz pariétal digestif"],
+        pieges: ["interposition colique entre foie et coupole (Chilaiditi) simulant un pneumopéritoine",
+                 "superposition gazeuse colique simulant un niveau hydro-aérique",
+                 "phléboliths pelviens pris pour des lithiases"],
+        limits: "Le scanner avec injection tranche l\'ischémie et l\'étiologie de l\'occlusion : tu ne conclus pas sur une image standard."
+    },
+    uro: {
+        n: "Urologue", i: "💧", s: "Reins, voies urinaires, vessie.",
+        mods: /\b(radio\w*|rx|asp|scanner|tdm|echo\w*|uro\w*|uiv)\b/i, regions: /\b(rein|renal\w*|uro\w*|uretere|ureteral\w*|vessie|vesical\w*|prostate|prostatique|lithiase|colique nephretique|pyelo\w*|calice)\b/i,
+        role: "urologue sénior, imagerie de l\'appareil urinaire",
+        grid: ["Reins : taille, contours, différenciation cortico-médullaire, symétrie",
+               "Dilatation pyélocalicielle : degré, caractère uni ou bilatéral",
+               "Trajet urétéral : opacité sur le trajet, siège par rapport aux repères osseux",
+               "Vessie : réplétion, épaisseur et régularité de la paroi, contenu",
+               "Prostate ou utérus si visibles : volume, empreinte vésicale",
+               "Espace péri-rénal : infiltration, épanchement, hématome"],
+        prio: ["dilatation obstructive aiguë", "lithiase enclavée", "rupture ou hématome péri-rénal", "rétention vésicale"],
+        pieges: ["phléboliths pelviens confondus avec une lithiase urétérale pelvienne",
+                 "dilatation physiologique de la grossesse, prédominant à droite",
+                 "vessie en réplétion simulant une masse pelvienne"],
+        limits: "Le retentissement fonctionnel rénal ne se lit pas sur l\'image : il exige la biologie."
+    },
+    gyneco: {
+        n: "Gynéco-obstétricien", i: "🤰", s: "Pelvis féminin, grossesse.",
+        mods: /\b(echo\w*|irm|hysterographie|scanner|tdm)\b/i, regions: /\b(pelvis|pelvien\w*|uterus|uterin\w*|ovaire|ovarien\w*|annexe|annexiel\w*|endometre|grossesse|obstetric\w*|foetus|foetal\w*|placenta|douglas|gyneco\w*)\b/i,
+        role: "gynécologue-obstétricien sénior, échographie pelvienne et obstétricale",
+        grid: ["Utérus : taille, position, contours, myomètre, images nodulaires",
+               "Endomètre : épaisseur, régularité, contenu de la cavité",
+               "Annexes : visibilité, masse, contenu liquidien ou tissulaire, cloisons, végétations",
+               "Cul-de-sac de Douglas : épanchement, aspect du contenu",
+               "Grossesse : localisation du sac, activité cardiaque, biométries visibles",
+               "Placenta : insertion, décollement, hématome",
+               "Doppler si disponible : vascularisation d\'une masse, signes de torsion"],
+        prio: ["grossesse extra-utérine", "hématome rétroplacentaire", "absence d\'activité cardiaque attendue", "torsion annexielle", "épanchement de grande abondance"],
+        pieges: ["kyste fonctionnel physiologique pris pour une lésion organique",
+                 "vessie en réplétion déformant l\'utérus",
+                 "corps jaune hypervascularisé pris pour une lésion suspecte"],
+        limits: "La datation, les biométries et le terme exigent une échographie normalisée avec coupes de référence : aucune conclusion sur une image isolée."
+    },
+    dentaire: {
+        n: "Odontologue", i: "🦷", s: "Dents, parodonte, muqueuse buccale.",
+        mods: /\b(panoramique|orthopantomo\w*|retroalveolaire|cone ?beam|cbct|radio\w*|photo\w*|clinique|intra.?oral\w*)\b/i,
+        regions: /\b(dent\w*|dentaire|bucc\w*|buccal\w*|oral\w*|intra.?oral\w*|gencive|gingiv\w*|parodont\w*|maxillaire|mandibul\w*|alveol\w*|apical\w*|atm|sinus maxillaire|langue|palais|levre|couronne|carie)\b/i,
+        role: "chirurgien-dentiste sénior, lecture radiologique dentaire et examen de la muqueuse buccale sur photographie",
+        grid: ["Formule dentaire visible : dents présentes, absentes, incluses, en désinclusion",
+               "Restaurations et prothèses : intégrité, étanchéité marginale, reprise de carie sous-jacente",
+               "Lésions carieuses : siège (occlusal, proximal, cervical), profondeur apparente par rapport à la pulpe",
+               "Région péri-apicale : élargissement desmodontal, image radioclaire apicale, condensation",
+               "Niveau osseux alvéolaire, lyse horizontale ou verticale, atteinte de furcation",
+               "Traitements endodontiques : longueur, densité, dépassement",
+               "Sinus maxillaires, canal mandibulaire, articulation temporo-mandibulaire si visibles",
+               "Sur photographie : muqueuse, gencive, langue, palais — couleur, relief, ulcération, saignement"],
+        prio: ["lésion péri-apicale étendue", "fracture dentaire ou alvéolaire", "lésion muqueuse ulcérée persistante", "résorption radiculaire", "dent incluse en rapport avec une image kystique"],
+        pieges: ["superpositions et images fantômes propres au panoramique dentaire",
+                 "foramen mentonnier ou canal incisif pris pour une lésion apicale",
+                 "rachis cervical projeté sur les secteurs postérieurs",
+                 "reflet du flash ou salive simulant une lésion blanche sur photographie"],
+        limits: "Le cliché rétroalvéolaire, le sondage parodontal et les tests de vitalité restent indispensables. Toute lésion muqueuse persistant au-delà de quinze jours relève d\'une biopsie, sans exception."
+    },
+    vasc: {
+        n: "Médecin vasculaire", i: "🩸", s: "Artères, veines, doppler.",
+        mods: /\b(echo\w*|doppler|angio\w*|scanner|tdm|irm|arterio\w*)\b/i, regions: /\b(vasculaire|arter\w*|veine|veineux|doppler|aorte|aortique|carotide|femoral\w*|thrombose|phlebite|anevr\w*|dissection|stent|pontage)\b/i,
+        role: "médecin vasculaire sénior, imagerie artérielle et veineuse",
+        grid: ["Calibre des axes visibles, comparaison aux segments d\'amont et d\'aval",
+               "Sténose : siège, caractère régulier ou irrégulier, retentissement d\'aval",
+               "Dilatation anévrismale : diamètre maximal, thrombus mural",
+               "Contenu endoluminal : thrombus, flap intimal, défaut de remplissage",
+               "Calcifications pariétales : étendue, caractère circonférentiel",
+               "Matériel : stent, pontage, perméabilité apparente",
+               "Tissus péri-vasculaires : hématome, infiltration"],
+        prio: ["dissection", "anévrisme de grand diamètre ou fissuré", "thrombose occlusive", "ischémie aiguë de membre"],
+        pieges: ["artefact de mouvement simulant un flap intimal",
+                 "effet de volume partiel sur une bifurcation",
+                 "artefact de durcissement au contact de calcifications denses"],
+        limits: "Le caractère hémodynamiquement significatif d\'une sténose exige un doppler avec mesure des vitesses."
     },
     gen: {
         n: "Généraliste", i: "🏥", s: "Synthèse clinique, orientation, cohérence.",
@@ -787,6 +904,7 @@ const AG = {
                "Éléments imposant une prise en charge urgente", "Ce que l'examen ne permet pas de trancher",
                "Examen complémentaire le plus contributif en pratique", "Éléments rassurants explicitement vérifiés"],
         prio: ["discordance clinico-radiologique", "élément justifiant une orientation urgente"],
+        pieges: ["surinterpretation d\'une variante de la normale", "conclusion tiree d\'une seule incidence"],
         limits: "Tu ne te substitues pas au spécialiste sur les points techniques."
     }
 };
@@ -4216,7 +4334,14 @@ function lectureMsg(agents, tri, grille, set) {
                 a.grid.map((g, i) => '  ' + (i + 1) + '. ' + g).join('\n'),
                 '',
                 'À NE JAMAIS MANQUER dans ton domaine : ' + a.prio.join(' · ') + '.',
-                'PÉRIMÈTRE : ' + a.limits].join('\n');
+                // Nommer les faux positifs classiques de la specialite reduit la
+                // sur-interpretation, qui est le mode d'echec dominant d'un modele
+                // a qui on demande de trouver quelque chose.
+                (a.pieges && a.pieges.length
+                    ? 'PIÈGES DE TA SPÉCIALITÉ — ne rapporte pas ceci comme une anomalie sans argument formel : ' +
+                      a.pieges.join(' · ') + '.'
+                    : ''),
+                'PÉRIMÈTRE : ' + a.limits].filter(Boolean).join('\n');
     }
     const sys = [
         agents.length === 1
