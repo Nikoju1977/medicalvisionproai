@@ -115,6 +115,7 @@ canvas{display:block;touch-action:none;}
 .sev-high{background:rgba(249,115,22,.2);color:#f97316;border:1px solid rgba(249,115,22,.4);}
 .sev-mod{background:rgba(245,158,11,.2);color:#f59e0b;border:1px solid rgba(245,158,11,.4);}
 .sev-low{background:rgba(6,214,160,.15);color:#06d6a0;border:1px solid rgba(6,214,160,.3);}
+.sev-nonev{background:rgba(217,164,65,.16);color:#d9a441;border-color:rgba(217,164,65,.45)}
 .sev-norm{background:rgba(59,130,246,.15);color:#3b82f6;border:1px solid rgba(59,130,246,.3);}
 
 .imgstats{display:flex;flex-wrap:wrap;font-size:.65rem;color:var(--txd);font-family:var(--fmono);padding:6px 0;gap:12px;}
@@ -635,7 +636,7 @@ const store = (() => {
     };
 })();
 
-const APP_VERSION = 'v15.6';
+const APP_VERSION = 'v15.7';
 
 const AG = {
     radio: {
@@ -2583,7 +2584,7 @@ fr: {
     'rep.disclaimer': 'Aide à la décision destinée à un professionnel de santé qualifié. Hypothèses non validées cliniquement — confirmation par le praticien requise avant toute décision.',
     'prob.tres_probable': 'Très probable', 'prob.probable': 'Probable', 'prob.possible': 'Possible',
     'prob.peu_probable': 'Peu probable', 'prob.indetermine': 'Indéterminé',
-    'sev.crit': 'Critique', 'sev.high': 'Élevé', 'sev.mod': 'Modéré', 'sev.low': 'Faible', 'sev.norm': 'Normal',
+    'sev.crit': 'Critique', 'sev.high': 'Élevé', 'sev.mod': 'Modéré', 'sev.low': 'Faible', 'sev.norm': 'Normal', 'sev.nonev': 'Non évaluable',
     'urg.immediate': 'Immédiat', 'urg.rapide': 'Rapide', 'urg.programmee': 'Programmé', 'urg.aucune': 'Différable',
     'pipe.pre': 'Pré-traitement', 'pipe.models': 'Modèles', 'pipe.triage': 'Triage modalité',
     'pipe.read': 'Lecture experte', 'pipe.reads': 'Lectures', 'pipe.consensus': 'Consensus', 'pipe.annot': 'Annotations',
@@ -2638,7 +2639,7 @@ I18N.en = {
     'rep.disclaimer': 'Decision support intended for a qualified healthcare professional. Hypotheses not clinically validated — confirmation by the practitioner required before any decision.',
     'prob.tres_probable': 'Highly likely', 'prob.probable': 'Likely', 'prob.possible': 'Possible',
     'prob.peu_probable': 'Unlikely', 'prob.indetermine': 'Indeterminate',
-    'sev.crit': 'Critical', 'sev.high': 'High', 'sev.mod': 'Moderate', 'sev.low': 'Low', 'sev.norm': 'Normal',
+    'sev.crit': 'Critical', 'sev.high': 'High', 'sev.mod': 'Moderate', 'sev.low': 'Low', 'sev.norm': 'Normal', 'sev.nonev': 'Not assessable',
     'urg.immediate': 'Immediate', 'urg.rapide': 'Prompt', 'urg.programmee': 'Scheduled', 'urg.aucune': 'Deferrable',
     'pipe.pre': 'Pre-processing', 'pipe.models': 'Models', 'pipe.triage': 'Modality triage',
     'pipe.read': 'Expert reading', 'pipe.reads': 'Readings', 'pipe.consensus': 'Consensus', 'pipe.annot': 'Annotations',
@@ -2690,7 +2691,7 @@ I18N.de = {
     'rep.disclaimer': 'Entscheidungsunterstützung für qualifiziertes medizinisches Fachpersonal. Hypothesen klinisch nicht validiert — Bestätigung durch den Arzt vor jeder Entscheidung erforderlich.',
     'prob.tres_probable': 'Sehr wahrscheinlich', 'prob.probable': 'Wahrscheinlich', 'prob.possible': 'Möglich',
     'prob.peu_probable': 'Unwahrscheinlich', 'prob.indetermine': 'Unbestimmt',
-    'sev.crit': 'Kritisch', 'sev.high': 'Hoch', 'sev.mod': 'Mittel', 'sev.low': 'Gering', 'sev.norm': 'Normal',
+    'sev.crit': 'Kritisch', 'sev.high': 'Hoch', 'sev.mod': 'Mittel', 'sev.low': 'Gering', 'sev.norm': 'Normal', 'sev.nonev': 'Nicht beurteilbar',
     'urg.immediate': 'Sofort', 'urg.rapide': 'Zeitnah', 'urg.programmee': 'Geplant', 'urg.aucune': 'Aufschiebbar',
     'pipe.pre': 'Vorverarbeitung', 'pipe.models': 'Modelle', 'pipe.triage': 'Modalitäts-Triage',
     'pipe.read': 'Expertenbefundung', 'pipe.reads': 'Befundungen', 'pipe.consensus': 'Konsens', 'pipe.annot': 'Annotationen',
@@ -2742,7 +2743,7 @@ I18N.cs = {
     'rep.disclaimer': 'Podpora rozhodování určená kvalifikovanému zdravotnickému pracovníkovi. Hypotézy nejsou klinicky validovány — před jakýmkoli rozhodnutím je nutné potvrzení lékařem.',
     'prob.tres_probable': 'Velmi pravděpodobné', 'prob.probable': 'Pravděpodobné', 'prob.possible': 'Možné',
     'prob.peu_probable': 'Málo pravděpodobné', 'prob.indetermine': 'Neurčeno',
-    'sev.crit': 'Kritické', 'sev.high': 'Vysoké', 'sev.mod': 'Střední', 'sev.low': 'Nízké', 'sev.norm': 'Normální',
+    'sev.crit': 'Kritické', 'sev.high': 'Vysoké', 'sev.mod': 'Střední', 'sev.low': 'Nízké', 'sev.norm': 'Normální', 'sev.nonev': 'Nehodnotitelné',
     'urg.immediate': 'Okamžitě', 'urg.rapide': 'Urychleně', 'urg.programmee': 'Plánovaně', 'urg.aucune': 'Odložitelné',
     'pipe.pre': 'Předzpracování', 'pipe.models': 'Modely', 'pipe.triage': 'Triáž modality',
     'pipe.read': 'Expertní čtení', 'pipe.reads': 'Čtení', 'pipe.consensus': 'Konsenzus', 'pipe.annot': 'Anotace',
@@ -2794,7 +2795,7 @@ I18N.it = {
     'rep.disclaimer': 'Supporto alle decisioni destinato a un professionista sanitario qualificato. Ipotesi non validate clinicamente — conferma da parte del medico necessaria prima di ogni decisione.',
     'prob.tres_probable': 'Molto probabile', 'prob.probable': 'Probabile', 'prob.possible': 'Possibile',
     'prob.peu_probable': 'Poco probabile', 'prob.indetermine': 'Indeterminato',
-    'sev.crit': 'Critico', 'sev.high': 'Elevato', 'sev.mod': 'Moderato', 'sev.low': 'Basso', 'sev.norm': 'Normale',
+    'sev.crit': 'Critico', 'sev.high': 'Elevato', 'sev.mod': 'Moderato', 'sev.low': 'Basso', 'sev.norm': 'Normale', 'sev.nonev': 'Non valutabile',
     'urg.immediate': 'Immediato', 'urg.rapide': 'Rapido', 'urg.programmee': 'Programmato', 'urg.aucune': 'Differibile',
     'pipe.pre': 'Pre-elaborazione', 'pipe.models': 'Modelli', 'pipe.triage': 'Triage modalità',
     'pipe.read': 'Lettura esperta', 'pipe.reads': 'Letture', 'pipe.consensus': 'Consenso', 'pipe.annot': 'Annotazioni',
@@ -2846,7 +2847,7 @@ I18N.es = {
     'rep.disclaimer': 'Ayuda a la decisión destinada a un profesional sanitario cualificado. Hipótesis no validadas clínicamente — confirmación por el médico requerida antes de cualquier decisión.',
     'prob.tres_probable': 'Muy probable', 'prob.probable': 'Probable', 'prob.possible': 'Posible',
     'prob.peu_probable': 'Poco probable', 'prob.indetermine': 'Indeterminado',
-    'sev.crit': 'Crítico', 'sev.high': 'Elevado', 'sev.mod': 'Moderado', 'sev.low': 'Bajo', 'sev.norm': 'Normal',
+    'sev.crit': 'Crítico', 'sev.high': 'Elevado', 'sev.mod': 'Moderado', 'sev.low': 'Bajo', 'sev.norm': 'Normal', 'sev.nonev': 'No evaluable',
     'urg.immediate': 'Inmediato', 'urg.rapide': 'Rápido', 'urg.programmee': 'Programado', 'urg.aucune': 'Diferible',
     'pipe.pre': 'Preprocesamiento', 'pipe.models': 'Modelos', 'pipe.triage': 'Triaje de modalidad',
     'pipe.read': 'Lectura experta', 'pipe.reads': 'Lecturas', 'pipe.consensus': 'Consenso', 'pipe.annot': 'Anotaciones',
@@ -2898,7 +2899,7 @@ I18N.pt = {
     'rep.disclaimer': 'Apoio à decisão destinado a um profissional de saúde qualificado. Hipóteses não validadas clinicamente — confirmação pelo médico necessária antes de qualquer decisão.',
     'prob.tres_probable': 'Muito provável', 'prob.probable': 'Provável', 'prob.possible': 'Possível',
     'prob.peu_probable': 'Pouco provável', 'prob.indetermine': 'Indeterminado',
-    'sev.crit': 'Crítico', 'sev.high': 'Elevado', 'sev.mod': 'Moderado', 'sev.low': 'Baixo', 'sev.norm': 'Normal',
+    'sev.crit': 'Crítico', 'sev.high': 'Elevado', 'sev.mod': 'Moderado', 'sev.low': 'Baixo', 'sev.norm': 'Normal', 'sev.nonev': 'Não avaliável',
     'urg.immediate': 'Imediato', 'urg.rapide': 'Rápido', 'urg.programmee': 'Programado', 'urg.aucune': 'Diferível',
     'pipe.pre': 'Pré-processamento', 'pipe.models': 'Modelos', 'pipe.triage': 'Triagem de modalidade',
     'pipe.read': 'Leitura especializada', 'pipe.reads': 'Leituras', 'pipe.consensus': 'Consenso', 'pipe.annot': 'Anotações',
@@ -3790,8 +3791,13 @@ function grilleFor(mod) {
 // ============================================================
 //  SCHÉMAS STRUCTURÉS (Custom Structured Outputs)
 // ============================================================
-const SEV = ['crit', 'high', 'mod', 'low', 'norm'];
-const SEVRANK = { crit: 0, high: 1, mod: 2, low: 3, norm: 4 };
+// « nonev » : region que l'image ne permet pas d'evaluer. Elle etait jusqu'ici
+// classee `norm`, donc affichee [NORMAL] : un angle mort passait pour un signe
+// rassurant. C'est l'inverse de ce qu'un lecteur doit comprendre.
+const SEV = ['crit', 'high', 'mod', 'low', 'norm', 'nonev'];
+// Rang 5 : moins « severe » que norm, pour qu'une zone non evaluable ne prenne
+// jamais le pas sur une severite reellement constatee lors de la fusion.
+const SEVRANK = { crit: 0, high: 1, mod: 2, low: 3, norm: 4, nonev: 5 };
 
 // Analyse generale : description factuelle d'une image quelconque. Aucun
 // vocabulaire clinique, aucun diagnostic, aucune severite. Chaine volontairement
@@ -4381,7 +4387,8 @@ function lectureMsg(agents, tri, grille, set) {
         "MÉTHODE :",
         "1. Balaye la grille point par point, y compris les régions qui semblent normales.",
         "2. Pour CHAQUE anomalie : localisation anatomique précise, sévérité, et confiance de 0 à 1 (0.9+ = certain, 0.5 = possible, <0.4 = ne rapporte pas).",
-        "3. Renseigne `signes_negatifs` : les éléments que tu as explicitement cherchés et NON trouvés. C'est aussi important que les anomalies.",
+        "3. Renseigne `signes_negatifs` : les éléments que tu as explicitement cherchés et NON trouvés PARCE QUE TU AS PU LES EXAMINER. Une structure que l'image ne montre pas ou ne permet pas d'analyser n'a RIEN à y faire.",
+        "3 bis. Une région que tu ne peux pas évaluer — masquée, floue, hors champ, artefactée — n'est PAS normale : c'est un angle mort. Rapporte-la en `findings` avec `severite: 'nonev'`, et répète-la dans `limites`. Ne lui donne jamais `norm` : un lecteur pressé y lirait une réassurance que tu n'as pas donnée.",
         "4. N'invente aucune mesure absolue si l'image n'est pas calibrée.",
         "5. ROI : coordonnées normalisées 0..1, origine en haut à gauche, dans le repère de l'image ORIGINALE concernée. Une ROI par anomalie localisable.",
         S.imgSet && S.imgSet.parts.length > 1
@@ -4480,7 +4487,8 @@ function renderPP(pp) {
 }
 
 function sevBadge(s) {
-    const cls = { crit: 'sev-crit', high: 'sev-high', mod: 'sev-mod', low: 'sev-low', norm: 'sev-norm' };
+    const cls = { crit: 'sev-crit', high: 'sev-high', mod: 'sev-mod', low: 'sev-low',
+                  norm: 'sev-norm', nonev: 'sev-nonev' };
     const k = cls[s] ? s : 'norm';
     return '<span class="sev ' + cls[k] + '">' + t('sev.' + k) + '</span>';
 }
@@ -4984,10 +4992,12 @@ window.exportPDF = function() {
     para(r.resultats || r.synthese || '—');
 
     if (Array.isArray(r.findings) && r.findings.length) {
-        const SEVL = { crit: 'CRITIQUE', high: 'ÉLEVÉ', mod: 'MODÉRÉ', low: 'FAIBLE', norm: 'NORMAL' };
+        const SEVL = { crit: 'CRITIQUE', high: 'ÉLEVÉ', mod: 'MODÉRÉ', low: 'FAIBLE',
+                       norm: 'NORMAL', nonev: 'NON ÉVALUABLE' };
         r.findings.forEach(f => {
             need(9);
-            const col = f.severite === 'crit' || f.severite === 'high' ? DG : (f.severite === 'mod' ? WN : TX);
+            const col = f.severite === 'crit' || f.severite === 'high' ? DG
+                      : (f.severite === 'mod' || f.severite === 'nonev' ? WN : TX);
             doc.setFont('helvetica', 'bold'); doc.setFontSize(6.8); doc.setTextColor(col[0], col[1], col[2]);
             doc.text('[' + (SEVL[f.severite] || '—') + ']', M, y);
             doc.setFont('helvetica', 'normal'); doc.setFontSize(8.4); doc.setTextColor(TX[0], TX[1], TX[2]);
