@@ -635,7 +635,7 @@ const store = (() => {
     };
 })();
 
-const APP_VERSION = 'v15.3';
+const APP_VERSION = 'v15.4';
 
 const AG = {
     radio: {
@@ -972,6 +972,57 @@ function rDots() {
     }
 }
 
+// ---------- Configuration persistante (IndexedDB) ----------
+const CFG_KEYS = ['mv_key', 'mv_mdl', 'mv_provider', 'mv_custom_base', 'mv_custom_key', 'mv_custom_model'];
+
+function cfgPut(k, v) {
+    if (!S.db) return;
+    try {
+        const tx = S.db.transaction('cfg', 'readwrite');
+        tx.objectStore('cfg').put({ k: k, v: String(v == null ? '' : v) });
+    } catch (e) {}
+}
+
+// Ne remplace que ce qui manque : si localStorage a survecu, il fait foi.
+function cfgRestore() {
+    if (!S.db) return;
+    let tx;
+    try { tx = S.db.transaction('cfg', 'readonly'); } catch (e) { return; }
+    const req = tx.objectStore('cfg').getAll();
+    req.onsuccess = function () {
+        const rows = req.result || [];
+        if (!rows.length) return;
+        const m = {};
+        rows.forEach(function (r) { m[r.k] = r.v; });
+        if (!S.ak && m.mv_key) S.ak = String(m.mv_key).replace(/[\x00-\x1f\x7f\s]/g, '');
+        if (!S.customBase && m.mv_custom_base) S.customBase = m.mv_custom_base;
+        if (!S.customKey && m.mv_custom_key) S.customKey = m.mv_custom_key;
+        if (!S.customModel && m.mv_custom_model) S.customModel = m.mv_custom_model;
+        if (!S.mdlForce && m.mv_mdl) S.mdlForce = m.mv_mdl;
+        if (m.mv_provider && store.get('mv_provider') == null) S.provider = m.mv_provider;
+        if (S.provider === 'medgemma' && S.customModel) S.mdlForce = S.customModel;
+        const ai = $('akIn'); if (ai && !ai.value) ai.value = S.ak || '';
+        const cb = $('customBaseIn'); if (cb && !cb.value) cb.value = S.customBase || '';
+        const ck = $('customKeyIn'); if (ck && !ck.value) ck.value = S.customKey || '';
+        upAkStat();
+    };
+}
+
+// Etat de memorisation, pour que l'utilisateur sache si sa cle survivra.
+function upAkStat(prov) {
+    const el = $('akStat'); if (!el) return;
+    const p = prov || ($('providerSel') ? $('providerSel').value : null) || S.provider || 'mistral';
+    const ok = p === 'mistral'
+        ? !!(S.ak || ($('akIn') && $('akIn').value))
+        : !!(S.customBase || ($('customBaseIn') && $('customBaseIn').value));
+    if (!ok) { el.textContent = p === 'mistral' ? '✗ Clé Mistral requise' : '✗ Endpoint MedGemma requis'; return; }
+    // S.db signale qu'IndexedDB prend le relais si localStorage est bloque.
+    const durable = store.get('mv_key') != null || !!S.db;
+    el.textContent = (p === 'mistral' ? '✓ Clé Mistral configurée' : '✓ Endpoint MedGemma renseigné') +
+        ' — ' + (durable ? 'mémorisée sur cet appareil'
+                         : 'NON mémorisée : stockage bloqué, à ressaisir à chaque ouverture');
+}
+
 function initDB() {
     // indexedDB.open() peut lever (navigation privee Safari, WebView d'entreprise,
     // stockage bloque). L'exception remontait alors hors de init(), et TOUT ce qui
@@ -984,7 +1035,7 @@ function initDB() {
         return;
     }
     let r;
-    try { r = indexedDB.open('MedVPro2', 2); }
+    try { r = indexedDB.open('MedVPro2', 3); }
     catch (e) {
         const el = $('dbS'); if (el) el.textContent = 'DB: indisponible';
         toast('IndexedDB inaccessible — dossiers patients desactives');
@@ -997,11 +1048,16 @@ function initDB() {
             const es = db.createObjectStore('e', {keyPath: 'id', autoIncrement: true});
             es.createIndex('pid', 'pid', {unique: false});
         }
+        // Configuration persistante. localStorage retombe en memoire des qu'il est
+        // bloque (WebView, origine nulle Android, mode prive) : la cle etait alors
+        // perdue a chaque rechargement, sans que rien ne le signale.
+        if (!db.objectStoreNames.contains('cfg')) db.createObjectStore('cfg', {keyPath: 'k'});
     };
     r.onsuccess = e => {
         S.db = e.target.result;
         $('dbS').textContent = 'DB: OK';
         ldPL();
+        cfgRestore();
     };
     r.onerror = () => {
         $('dbS').textContent = 'DB: Erreur';
@@ -1582,8 +1638,8 @@ function providerChanged() {
     $('mistralCfg').style.display = p === 'mistral' ? 'block' : 'none';
     $('medgemmaCfg').style.display = p === 'medgemma' ? 'block' : 'none';
     upMdlInfo();
-    if (p === 'mistral') $('akStat').textContent = (S.ak || $('akIn').value) ? '✓ Clé Mistral configurée' : '✗ Clé Mistral requise';
-    else $('akStat').textContent = (S.customBase || $('customBaseIn').value) ? '✓ Endpoint MedGemma renseigné' : '✗ Endpoint MedGemma requis';
+    // Un seul endroit dit l'etat de configuration ET de memorisation.
+    upAkStat(p);
 }
 window.providerChanged = providerChanged;
 
@@ -1609,6 +1665,7 @@ window.saveKey = function() {
         S.mdl = S.mdlForce || 'auto-eco';
         store.set('mv_key', S.ak);
         store.set('mv_mdl', S.mdlForce);
+        cfgPut('mv_key', S.ak); cfgPut('mv_mdl', S.mdlForce);
     } else {
         S.customBase = String($('customBaseIn').value || '').trim().replace(/\/+$/, '');
         S.customKey = String($('customKeyIn').value || '').trim();
@@ -1619,8 +1676,13 @@ window.saveKey = function() {
         store.set('mv_custom_base', S.customBase);
         store.set('mv_custom_key', S.customKey);
         store.set('mv_custom_model', S.customModel);
+        cfgPut('mv_custom_base', S.customBase);
+        cfgPut('mv_custom_key', S.customKey);
+        cfgPut('mv_custom_model', S.customModel);
     }
     store.set('mv_provider', S.provider);
+    cfgPut('mv_provider', S.provider);
+    upAkStat();
     S.mdlPool = null;
     clM('apiM');
     toast('Moteur IA enregistré : ' + (S.provider === 'mistral' ? (S.mdlForce || 'Mistral Auto Éco') : 'MedGemma 1.5'));
