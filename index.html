@@ -635,7 +635,7 @@ const store = (() => {
     };
 })();
 
-const APP_VERSION = 'v15.5';
+const APP_VERSION = 'v15.6';
 
 const AG = {
     radio: {
@@ -1807,6 +1807,27 @@ window.saveKey = function() {
 };
 
 // ---------- Socle : pipeline visuel, agents, échappement ----------
+// Les modeles emettent du Markdown (**gras**, *italique*, `code`) que le
+// compte rendu affichait tel quel : « **Paupiere superieure droite** » avec les
+// asterisques a l'ecran comme dans le PDF. On convertit le gras et l'italique,
+// apres echappement, et on retire les balises residuelles.
+function mdEsc(x) {
+    let t = escapeHtml(String(x == null ? '' : x));
+    t = t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    t = t.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
+    t = t.replace(/`([^`]+)`/g, '<code>$1</code>');
+    return t.replace(/\*\*/g, '');
+}
+
+// Version texte : pour le PDF, on retire le balisage au lieu de le rendre.
+function mdPlain(x) {
+    return String(x == null ? '' : x)
+        .replace(/\*\*([^*]+)\*\*/g, '$1')
+        .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1$2')
+        .replace(/`([^`]+)`/g, '$1')
+        .replace(/\*\*/g, '');
+}
+
 function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 function setPipe(steps) {
@@ -3001,9 +3022,9 @@ window.showDestination = function() {
          '<br>' + escapeHtml(D.fabricant) + '</p>';
     h += '<p>' + escapeHtml(D.usage) + '</p>';
     h += '<h4>Hors destination</h4><ul>';
-    D.nonUsage.forEach(x => { h += '<li>' + escapeHtml(x) + '</li>'; });
+    D.nonUsage.forEach(x => { h += '<li>' + mdEsc(x) + '</li>'; });
     h += '</ul><h4>Limites connues</h4><ul>';
-    D.limites.forEach(x => { h += '<li>' + escapeHtml(x) + '</li>'; });
+    D.limites.forEach(x => { h += '<li>' + mdEsc(x) + '</li>'; });
     h += '</ul><p class="dst-v">' + escapeHtml(D.validation) + '</p>';
     $('dstBody').innerHTML = h;
     $('dstM').classList.add('open');
@@ -4040,11 +4061,11 @@ function renderGeneral(r) {
     }
     if ((r.texte_visible || []).length)
         h += '<h3>Texte lisible</h3><ul>' + r.texte_visible.map(function (x) {
-            return '<li>' + escapeHtml(x) + '</li>'; }).join('') + '</ul>';
+            return '<li>' + mdEsc(x) + '</li>'; }).join('') + '</ul>';
     if (r.qualite) h += '<h3>Qualité de l\'image</h3><p>' + escapeHtml(r.qualite) + '</p>';
     if ((r.limites || []).length)
         h += '<h3>Limites</h3><ul>' + r.limites.map(function (x) {
-            return '<li>' + escapeHtml(x) + '</li>'; }).join('') + '</ul>';
+            return '<li>' + mdEsc(x) + '</li>'; }).join('') + '</ul>';
     if (r._partiel) h += '<p class="cov cov-part">⚠️ Réponse tronquée, récupérée partiellement.</p>';
     $('aiO').innerHTML = h;
 }
@@ -4495,7 +4516,7 @@ function renderReport(r, agents, tri) {
 
     if (Array.isArray(r.drapeaux_rouges) && r.drapeaux_rouges.length) {
         h += '<div class="redflag"><b>⚠️ Drapeaux rouges</b><ul>';
-        r.drapeaux_rouges.forEach(d => { h += '<li>' + escapeHtml(d) + '</li>'; });
+        r.drapeaux_rouges.forEach(d => { h += '<li>' + mdEsc(d) + '</li>'; });
         h += '</ul></div>';
     }
 
@@ -4516,10 +4537,10 @@ function renderReport(r, agents, tri) {
     if (M0.lectures_echouees)
         h += '<p class="cov cov-part">⚠️ ' + M0.lectures_echouees +
              ' lecture(s) en échec, non incluses dans le consensus.</p>';
-    if (r.synthese) h += '<p>' + escapeHtml(r.synthese) + '</p>';
-    if (r.indication) h += '<div class="crs"><b>' + t('rep.indication') + '</b><p>' + escapeHtml(r.indication) + '</p></div>';
-    if (r.technique) h += '<div class="crs"><b>' + t('rep.technique') + '</b><p>' + escapeHtml(r.technique) + '</p></div>';
-    if (r.resultats) h += '<div class="crs"><b>' + t('rep.results') + '</b><p>' + escapeHtml(r.resultats).replace(/\n/g, '<br>') + '</p></div>';
+    if (r.synthese) h += '<p>' + mdEsc(r.synthese) + '</p>';
+    if (r.indication) h += '<div class="crs"><b>' + t('rep.indication') + '</b><p>' + mdEsc(r.indication) + '</p></div>';
+    if (r.technique) h += '<div class="crs"><b>' + t('rep.technique') + '</b><p>' + mdEsc(r.technique) + '</p></div>';
+    if (r.resultats) h += '<div class="crs"><b>' + t('rep.results') + '</b><p>' + mdEsc(r.resultats).replace(/\n/g, '<br>') + '</p></div>';
 
     if (r.diagnostic_principal && r.diagnostic_principal.libelle) {
         const dp = r.diagnostic_principal;
@@ -4529,22 +4550,22 @@ function renderReport(r, agents, tri) {
              '<b>' + escapeHtml(dp.libelle) + '</b></div>';
         if ((dp.arguments_pour || []).length) {
             h += '<div class="dxa"><span>' + t('rep.for') + '</span><ul>';
-            dp.arguments_pour.forEach(x => { h += '<li>' + escapeHtml(x) + '</li>'; });
+            dp.arguments_pour.forEach(x => { h += '<li>' + mdEsc(x) + '</li>'; });
             h += '</ul></div>';
         }
         if ((dp.arguments_contre || []).length) {
             h += '<div class="dxa dxa-c"><span>' + t('rep.against') + '</span><ul>';
-            dp.arguments_contre.forEach(x => { h += '<li>' + escapeHtml(x) + '</li>'; });
+            dp.arguments_contre.forEach(x => { h += '<li>' + mdEsc(x) + '</li>'; });
             h += '</ul></div>';
         }
         h += '</div>';
     }
 
-    if (r.conclusion) h += '<div class="ccl"><b>' + t('rep.conclusion') + '</b><p>' + escapeHtml(r.conclusion) + '</p></div>';
+    if (r.conclusion) h += '<div class="ccl"><b>' + t('rep.conclusion') + '</b><p>' + mdEsc(r.conclusion) + '</p></div>';
 
     if (Array.isArray(r.elements_discriminants) && r.elements_discriminants.length) {
         h += '<div class="disc"><b>' + t('rep.discr') + '</b><ul>';
-        r.elements_discriminants.forEach(x => { h += '<li>' + escapeHtml(x) + '</li>'; });
+        r.elements_discriminants.forEach(x => { h += '<li>' + mdEsc(x) + '</li>'; });
         h += '</ul></div>';
     }
 
@@ -4592,7 +4613,7 @@ function renderReport(r, agents, tri) {
     if (Array.isArray(r.differentiel) && r.differentiel.length) {
         h += '<h3>' + t('rep.diff') + '</h3><ul class="dd">';
         r.differentiel.forEach(d => {
-            if (typeof d === 'string') { h += '<li>' + escapeHtml(d) + '</li>'; return; }
+            if (typeof d === 'string') { h += '<li>' + mdEsc(d) + '</li>'; return; }
             h += '<li><span class="prob p-' + escapeHtml(d.probabilite || 'faible') + '">' + escapeHtml(d.probabilite || '') + '</span> ' +
                 escapeHtml(d.hypothese || '') +
                 (d.arguments_pour ? '<div class="arg">+ ' + escapeHtml(d.arguments_pour) + '</div>' : '') +
@@ -4604,7 +4625,7 @@ function renderReport(r, agents, tri) {
     if (Array.isArray(r.recommandations) && r.recommandations.length) {
         h += '<h3>' + t('rep.plan') + '</h3><ul class="rc">';
         r.recommandations.forEach(d => {
-            if (typeof d === 'string') { h += '<li>' + escapeHtml(d) + '</li>'; return; }
+            if (typeof d === 'string') { h += '<li>' + mdEsc(d) + '</li>'; return; }
             h += '<li>' + urgBadge(d.urgence) + ' ' + escapeHtml(d.action || '') + '</li>';
         });
         h += '</ul>';
@@ -4612,7 +4633,7 @@ function renderReport(r, agents, tri) {
 
     if (Array.isArray(r.limites) && r.limites.length) {
         h += '<div class="lim"><b>' + t('rep.limits') + '</b><ul>';
-        r.limites.forEach(x => { h += '<li>' + escapeHtml(x) + '</li>'; });
+        r.limites.forEach(x => { h += '<li>' + mdEsc(x) + '</li>'; });
         h += '</ul></div>';
     }
 
@@ -4779,6 +4800,39 @@ window.exportPDF = function() {
     if (!S.imgA) return toast(t('msg.noexam'));
 
     const doc = new ns.jsPDF({ unit: 'mm', format: 'a4' });
+
+    // Les polices standard de jsPDF sont encodees en WinAnsi : les caracteres
+    // hors de ce jeu sortaient en charabia. Le signe moins U+2212 s'affichait
+    // en guillemet et la fleche U+2192 en « !' ». On normalise, et on retire au
+    // passage le balisage Markdown emis par le modele.
+    const WINANSI = [
+        [/[\u2212\u2012\u2013\u2014\u2015]/g, '-'],
+        [/[\u2192\u21D2\u27A4\u279C]/g, '>'],
+        [/[\u2190\u21D0]/g, '<'],
+        [/[\u2713\u2714]/g, 'v'],
+        [/[\u2717\u2718\u2715]/g, 'x'],
+        [/\uFE0F/g, ''], [/[\u26A0]/g, '!'],
+        [/[\u2022\u25CF\u25AA\u25E6]/g, '\u00b7'],
+        [/[\u2018\u2019\u201B]/g, "'"],
+        [/[\u201C\u201D\u201E]/g, '"'],
+        [/[\u2026]/g, '...'],
+        [/[\u00a0\u2007\u202f]/g, ' '],
+        [/[\u2264]/g, '<='], [/[\u2265]/g, '>='],
+        [/[\u2265\u2260]/g, '!='],
+        [/[^\u0000-\u00ff\u0152\u0153\u20ac]/g, '']
+    ];
+    function SAFE(txt) {
+        let t = mdPlain(txt);
+        WINANSI.forEach(function (r) { t = t.replace(r[0], r[1]); });
+        return t;
+    }
+    // Un seul point de passage : tout texte transite par splitTextToSize ou text.
+    const _sts = doc.splitTextToSize.bind(doc);
+    doc.splitTextToSize = function (txt, w, o) { return _sts(SAFE(txt), w, o); };
+    const _txt = doc.text.bind(doc);
+    doc.text = function (txt, x, y, o) {
+        return _txt(typeof txt === 'string' ? SAFE(txt) : txt, x, y, o);
+    };
     const PW = 210, PH = 297, M = 16, W = PW - 2 * M;
     const AC = [6, 120, 100], TX = [28, 32, 40], DIM = [110, 118, 130], WN = [190, 120, 20], DG = [200, 50, 50];
     let y = 0, page = 0;
@@ -4871,6 +4925,10 @@ window.exportPDF = function() {
         _deg.push('lecture(s) portant sur une partie seulement de la série : ' + M0.lectures_incompletes.join(', '));
     if (M0.lectures_echouees) _deg.push(M0.lectures_echouees + ' lecture(s) en échec, exclues du consensus');
     if (M0.triage_force) _deg.push('examen jugé NON ANALYSABLE au triage, lecture forcée par l\'utilisateur');
+    // r._partiel = synthese tronquee puis recuperee partiellement. L'avertissement
+    // existait a l'ecran mais PAS dans le PDF : le texte s'arretait en plein milieu
+    // d'une phrase sans que rien ne le signale au lecteur du document.
+    if (r && r._partiel) _deg.push('SYNTHÈSE TRONQUÉE par le modèle puis récupérée partiellement : ce compte rendu est incomplet');
     if (_deg.length) para('⚠️ Couverture dégradée — ' + _deg.join(' ; ') +
         '. Une anomalie non mentionnée ne peut pas être considérée comme écartée.', 7.6, WN);
 
@@ -4978,7 +5036,7 @@ window.exportPDF = function() {
         if ((dp.arguments_contre || []).length) {
             doc.setFont('helvetica', 'bold'); doc.setFontSize(7.2); doc.setTextColor(WN[0], WN[1], WN[2]);
             need(5); doc.text(t('rep.against').toUpperCase(), M, y); y += 4;
-            bullets(dp.arguments_contre, DIM, '\u2212');
+            bullets(dp.arguments_contre, DIM, '-');
         }
     }
 
@@ -5027,7 +5085,7 @@ window.exportPDF = function() {
     }
 
     if (Array.isArray(r.elements_discriminants) && r.elements_discriminants.length) {
-        section(t('rep.discr')); bullets(r.elements_discriminants, TX, '→');
+        section(t('rep.discr')); bullets(r.elements_discriminants, TX, '>');
     }
 
     if (Array.isArray(r.recommandations) && r.recommandations.length) {
