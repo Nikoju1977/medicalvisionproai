@@ -631,7 +631,7 @@ const store = (() => {
     };
 })();
 
-const APP_VERSION = 'v14.10';
+const APP_VERSION = 'v14.11';
 
 const AG = {
     radio: {
@@ -2029,6 +2029,13 @@ const RL = {
         RL.active++; RL.last = Date.now(); RL.q.shift()();
     },
     release: function () { RL.active = Math.max(0, RL.active - 1); RL.pump(); },
+    // Un 429 de cadence se resorbe en quelques secondes ; un quota epuise ne se
+    // resorbe jamais. Sans ce compteur, chaque appel de la chaine refaisait ses
+    // 5 tentatives : l'analyse moulinait plusieurs minutes avant d'echouer.
+    // ok ne compte QUE les generations : /v1/models repond meme sur un compte
+    // a sec, et le compter aurait desactive ce garde-fou en permanence.
+    ko429: 0, ok: 0,
+    epuise: function () { return RL.ko429 >= 3 && RL.ok === 0; },
     penalise: function (ms) { RL.until = Math.max(RL.until, Date.now() + ms); }
 };
 
@@ -2063,13 +2070,18 @@ function mcall(o) {
     function run() {
         return RL.acquire()
             .then(function () {
+                const gen = !o.path || o.path === '/chat/completions';
                 return rawCall(o).then(
-                    function (d) { RL.release(); return d; },
-                    function (e) { RL.release(); throw e; }
+                    function (d) { if (gen) { RL.ok++; RL.ko429 = 0; } RL.release(); return d; },
+                    function (e) { if (e && e.status === 429 && gen) RL.ko429++; RL.release(); throw e; }
                 );
             })
             .catch(function (e) {
                 if (!e || !RETRIABLE[e.status] || n >= maxTry) throw e;
+                // Aucun appel n'a jamais abouti et les refus s'enchainent :
+                // ce n'est pas de la cadence, c'est un compte qui ne delivre rien.
+                // On arrete tout de suite au lieu de moudre pendant des minutes.
+                if (e.status === 429 && RL.epuise()) { e.quota = true; throw e; }
                 n++;
                 let wait = e.retryAfter > 0 ? e.retryAfter * 1000 : Math.min(32000, 1000 * Math.pow(2, n));
                 wait += Math.floor(Math.random() * 500);
@@ -2102,8 +2114,12 @@ function apiErr(e) {
         else if (b.error && b.error.message) m = b.error.message;
     }
     if (!m && e.raw) m = String(e.raw).slice(0, 300);
-    if (e.status === 429 && !m) m = 'limite de debit atteinte (aucun quota restant sur la fenetre courante)';
-    if (e.status === 429) m += ' — reessais automatiques epuises : attendez une minute ou reduisez experts/lots';
+    if (e.status === 429 && !m) m = 'limite de debit atteinte';
+    if (e.status === 429 && e.quota)
+        m += ' — aucun appel n\'a abouti de toute la session : quota epuise ou plan inactif. ' +
+             'Verifiez le workspace de la cle sur console.mistral.ai, ou basculez sur un point d\'acces local dans la configuration API.';
+    else if (e.status === 429)
+        m += ' — reessais automatiques epuises : attendez une minute ou reduisez experts/lots';
     return 'HTTP ' + e.status + (m ? ' — ' + m : '');
 }
 
@@ -3794,6 +3810,7 @@ function analyzeWithAI(auto) {
     // accusait le triage quel que soit l'endroit réel de la panne.
     S.step = 0;
     S.cov = null;   // couverture reelle, recalculee a chaque analyse
+    RL.ko429 = 0; RL.ok = 0; RL.until = 0;
     const at = i => { S.step = i; updPipe(i, 'active'); };
     const fail = (i, lbl, msg) => {
         updPipe(i, 'err', lbl);
