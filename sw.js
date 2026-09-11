@@ -7,7 +7,7 @@
 
 'use strict';
 
-const BUILD = 'v14.8.0';
+const BUILD = 'v14.9.0';
 const SHELL = 'medvision-shell-' + BUILD;
 const VENDOR = 'medvision-vendor-' + BUILD;
 
@@ -30,6 +30,8 @@ const NEVER_CACHE = [
     'api.groq.com',
     'api.cerebras.ai',
     'api.openai.com',
+    'localhost',
+    '127.0.0.1',
     'api.anthropic.com'
 ];
 
