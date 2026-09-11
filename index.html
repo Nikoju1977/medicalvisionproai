@@ -631,7 +631,7 @@ const store = (() => {
     };
 })();
 
-const APP_VERSION = 'v14.9';
+const APP_VERSION = 'v14.10';
 
 const AG = {
     radio: {
@@ -1989,6 +1989,11 @@ function rankModel(id) {
     if (/small-260|small-26/.test(id)) return 78;
     if (/ministral-3/.test(id)) return 60;
     if (/pixtral/.test(id)) return 40;
+    // Familles notoirement hors imagerie : jamais candidates a la lecture.
+    // Le compte de test exposait labs-leanstral-1-5 (preuve formelle Lean 4) et
+    // mistral-vibe-cli-fast (agent CLI) ; sans ce garde-fou, un repli sans
+    // capabilities.vision pouvait les classer devant Pixtral.
+    if (/leanstral|vibe-cli|codestral|devstral|voxtral|ocr|embed|moderation|mathstral|saba|agentic|tts|transcribe/i.test(id)) return 5;
     // Un identifiant inconnu tombait a 20, sous Pixtral legacy (40) : toute
     // nouveaute Mistral etait donc enterree par l'auto-decouverte censee ne
     // jamais se perimer. On le situe desormais par famille et par fraicheur.
@@ -2235,7 +2240,7 @@ function discoverModels() {
             // Repli : liste blanche figee -> aveugle a toute famille future.
             // On exclut plutot les familles notoirement non-vision.
             if (!vis.length) vis = list.filter(m =>
-                !/codestral|devstral|voxtral|ocr|embed|moderation|nemo|mixtral|^open-|guardrail|rerank/i.test(m.id) &&
+                !/codestral|devstral|voxtral|ocr|embed|moderation|nemo|mixtral|^open-|guardrail|rerank|leanstral|vibe-cli|mathstral|saba|agentic|tts|transcribe/i.test(m.id) &&
                 !m.deprecation);
             vis = vis.map(m => ({ id: m.id, rank: rankModel(m.id), lbl: m.description || m.name || m.id }));
             if (!vis.length) throw new Error('aucun modèle vision');
