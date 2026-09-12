@@ -167,7 +167,12 @@ const t = (ms) => new Promise(r => setTimeout(r, ms));
     // 3 — analyse complete
     const t0 = Date.now();
     w.runAI();
-    for (let i = 0; i < 200 && !/Compte rendu|Synth|severite|Analyse interrompue|Resume|Résumé/i.test($('aiO').innerHTML); i++) await t(100);
+    // Les runners d'integration continue sont nettement plus lents qu'un poste :
+    // 20 s de fenetre suffisaient en local et expiraient en CI. 90 s ici, et on
+    // dit pourquoi on abandonne au lieu de laisser un echec muet.
+    let i = 0;
+    for (; i < 900 && !/Compte rendu|Synth|severite|Analyse interrompue|Resume|Résumé/i.test($('aiO').innerHTML); i++) await t(100);
+    if (i >= 900) out.push('  (fenetre d attente de 90 s expiree : rendu encore vide)');
     const dur = Date.now() - t0;
     const html = $('aiO').innerHTML;
 
