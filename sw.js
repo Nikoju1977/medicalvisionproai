@@ -7,7 +7,7 @@
 
 'use strict';
 
-const BUILD = 'v15.7.0';
+const BUILD = 'v15.8.0';
 const SHELL = 'medvision-shell-' + BUILD;
 const VENDOR = 'medvision-vendor-' + BUILD;
 
