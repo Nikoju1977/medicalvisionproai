@@ -1,0 +1,62 @@
+name: Banc de test
+
+# Aucune fusion vers main sans que les cinq scenarios passent.
+# Corrige la faiblesse relevee au dossier MDR : neuf deploiements directs
+# en production le 11/09/2026, sans etape de verification.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Dependances du banc
+        run: npm install --no-save jsdom canvas
+
+      - name: Syntaxe du fichier unique
+        run: |
+          node -e "
+          const fs=require('fs');
+          const s=fs.readFileSync('index.html','utf8');
+          const b=[...s.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
+          b.forEach((x,i)=>{ if(!x.trim()) return;
+            fs.writeFileSync('/tmp/b'+i+'.js',x); });
+          " 
+          for f in /tmp/b*.js; do node --check "$f"; done
+          echo "syntaxe OK"
+
+      - name: Scenarios bout-en-bout
+        run: |
+          fail=0
+          for sc in nominal rate-limit lot-perdu tronque quota; do
+            echo "──── $sc"
+            node test/e2e.js index.html $sc || fail=1
+          done
+          exit $fail
+
+      - name: Coherence des versions
+        run: |
+          node -e "
+          const fs=require('fs');
+          const app=(fs.readFileSync('index.html','utf8').match(/APP_VERSION = '(v[\d.]+)'/)||[])[1];
+          const sw=(fs.readFileSync('sw.js','utf8').match(/BUILD = '(v[\d.]+)/)||[])[1];
+          const mf='v'+JSON.parse(fs.readFileSync('manifest.json','utf8')).version;
+          console.log('index',app,'| sw',sw,'| manifest',mf);
+          if(!app||!sw||!mf) { console.error('version introuvable'); process.exit(1); }
+          if(sw.indexOf(app)!==0 || mf!==app){
+            console.error('Versions desynchronisees : le cache du service worker servirait un ancien shell.');
+            process.exit(1);
+          }
+          console.log('versions coherentes');
+          "
