@@ -21,8 +21,19 @@ jobs:
         with:
           node-version: '22'
 
+      # node-canvas a besoin de Cairo et Pango quand aucun binaire preconstruit
+      # ne correspond au couple node/plateforme du runner.
+      - name: Bibliotheques natives pour node-canvas
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
+
       - name: Dependances du banc
-        run: npm install --no-save jsdom canvas
+        run: npm install --no-save --foreground-scripts jsdom canvas
+
+      - name: Verification des dependances
+        run: node -e "require('jsdom');require('canvas');console.log('jsdom + canvas OK')"
 
       - name: Syntaxe du fichier unique
         run: |
