@@ -647,7 +647,7 @@ const store = (() => {
     };
 })();
 
-const APP_VERSION = 'v15.9';
+const APP_VERSION = 'v15.10';
 
 const AG = {
     radio: {
@@ -1103,8 +1103,6 @@ function rDots() {
 }
 
 // ---------- Configuration persistante (IndexedDB) ----------
-const CFG_KEYS = ['mv_key', 'mv_mdl', 'mv_provider', 'mv_custom_base', 'mv_custom_key', 'mv_custom_model'];
-
 function cfgPut(k, v) {
     if (!S.db) return;
     try {
@@ -2500,7 +2498,7 @@ function salvageJSON(raw) {
     // puis on referme accolades et crochets restés ouverts.
     for (let cut = s2.length; cut > 20; cut = s2.lastIndexOf(',', cut - 1)) {
         let frag = s2.slice(0, cut).replace(/,\s*$/, '');
-        let depth = 0, inStr = false, esc = false;
+        let inStr = false, esc = false;
         const stack = [];
         for (let i = 0; i < frag.length; i++) {
             const c = frag[i];

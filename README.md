@@ -1,34 +1,69 @@
-![MedVision AI Pro](banner.svg)
-
 # MedVision AI Pro
 
-[![Démo](https://img.shields.io/badge/Démo-en_ligne-00ff9d?style=flat-square&labelColor=050a0d)](https://medvisionproai.vercel.app) [![PWA](https://img.shields.io/badge/PWA-installable-00d4ff?style=flat-square&labelColor=050a0d)](#) [![Licence](https://img.shields.io/badge/Licence-MIT-9fb4ba?style=flat-square&labelColor=050a0d)](LICENSE)
+Application HTML mono-fichier d'aide à la décision en imagerie médicale.
+**Studio Niko Design** — Nicolas Julienne.
 
-Plateforme web d'**imagerie médicale assistée par intelligence artificielle** — application single-file, installable en PWA, données traitées localement.
+> Aide à la décision destinée à un professionnel de santé qualifié.
+> Ne constitue pas un diagnostic. Aucune conclusion n'a de valeur tant
+> qu'elle n'a pas été confirmée par un praticien.
+>
+> Ce logiciel **n'est pas** un dispositif médical marqué CE. Le dossier
+> technique MDR est en cours de constitution ; aucune performance
+> diagnostique n'est mesurée à ce jour.
 
-**Démo** : [medvisionproai.vercel.app](https://medvisionproai.vercel.app) · [Pages](https://nikoju1977.github.io/medicalvisionproai/)
+## En ligne
 
-## Fonctionnalités
+https://nikoju1977.github.io/medicalvisionproai/
 
-- 🧠 Système **multi-agents IA** spécialisés par domaine d'analyse
-- 🩻 **Lecteur DICOM** intégré au navigateur
-- 🔐 Authentification par PIN, stockage local chiffré (IndexedDB)
-- 📊 Export de rapports (PPTX)
-- 📱 PWA mobile-first, fonctionne hors ligne après installation
-- 🛡️ Aucune donnée patient envoyée à un serveur tiers sans action explicite
+## Structure
 
-## Stack
+| Fichier | Rôle |
+| --- | --- |
+| `index.html` | L'application entière : interface, pipeline, rendu, export PDF |
+| `sw.js` | Service worker — coquille en cache, réseau d'abord pour la navigation |
+| `manifest.json` | Manifeste PWA |
+| `test/e2e.js` | Banc bout-en-bout, API simulée, 5 scénarios |
+| `test/bench.js` | Banc de mesure : sensibilité, spécificité, faux positifs |
+| `.github/workflows/tests.yml` | Intégration continue — bloque la fusion vers `main` |
 
-`HTML/CSS/JS single-file` · `IndexedDB` · `Mistral AI / Pixtral (vision)` · `PWA` · `Vercel`
+## Moteurs d'analyse
 
-## Lancer en local
+- **Mistral** — clé API, sélection automatique du meilleur modèle vision.
+- **MedGemma** — tout point d'accès compatible OpenAI (Ollama, vLLM,
+  LM Studio). Aucune image ne quitte l'appareil. En GGUF, la vision exige
+  le fichier `mmproj` du dépôt du modèle.
 
-Ouvrir `index.html` dans un navigateur moderne. Aucun build, aucune dépendance.
+Configuration stockée localement, en double : `localStorage` et IndexedDB,
+le second prenant le relais quand le premier est bloqué.
 
-## ⚠️ Avertissement médical
+## Pipeline
 
-Cette application est un **outil d'information et de suivi personnel**. Elle ne constitue pas un dispositif médical certifié, ne fournit ni diagnostic ni prescription, et ne remplace en aucun cas l'avis d'un professionnel de santé. En cas d'urgence : **15 (SAMU)** ou **112**.
+Pré-traitement → triage de modalité → lectures expertes indépendantes
+(19 spécialités routées d'après le triage) → consensus → annotations.
 
-## Licence
+Déterministe : `temperature: 0`, graine fixe, toutes deux consignées dans
+la traçabilité de chaque compte rendu.
 
-[MIT](LICENSE) © 2026 Nicolas Julienne — Studio Niko Design
+Toute perte de matière est rendue visible — lot en échec, réponse tronquée,
+lecture forcée sur image jugée non analysable — à l'écran **et** dans le PDF.
+Une région non évaluable est signalée comme telle et jamais comme normale.
+
+## Développement
+
+```
+npm install jsdom canvas
+node test/e2e.js index.html nominal        # + rate-limit, lot-perdu, tronque, quota
+```
+
+Travailler sur `dev`, ouvrir une pull request vers `main`. L'intégration
+continue vérifie la syntaxe, les cinq scénarios et la cohérence des versions
+entre `index.html`, `sw.js` et `manifest.json`.
+
+À chaque version, incrémenter les trois ensemble : `APP_VERSION`, le `BUILD`
+du service worker et `version` du manifeste. Sinon la coquille en cache reste
+en arrière.
+
+## Mesurer la performance
+
+Voir [`test/BENCH.md`](test/BENCH.md). Aucune mesure n'a encore été effectuée.
+C'est le point bloquant du dossier réglementaire.
