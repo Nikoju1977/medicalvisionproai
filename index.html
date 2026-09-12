@@ -595,7 +595,18 @@ canvas{display:block;touch-action:none;}
         <div id="medgemmaCfg" style="display:none">
             <input id="customBaseIn" placeholder="https://ton-serveur.exemple/v1" style="margin-bottom:6px" autocomplete="off">
             <input type="password" id="customKeyIn" placeholder="Token endpoint (optionnel)" style="margin-bottom:6px" autocomplete="off">
-            <input id="customModelIn" value="google/medgemma-1.5-4b-it" placeholder="Nom du modèle" style="margin-bottom:6px" autocomplete="off">
+            <datalist id="mgModels">
+                <option value="google/medgemma-1.5-4b-it">MedGemma 1.5 4B — multimodal, le plus récent</option>
+                <option value="google/medgemma-27b-it">MedGemma 27B — multimodal, plus lourd</option>
+                <option value="google/medgemma-4b-it">MedGemma 4B — génération précédente</option>
+                <option value="hf.co/unsloth/medgemma-1.5-4b-it-GGUF">GGUF quantisé — Ollama / llama.cpp</option>
+            </datalist>
+            <input id="customModelIn" list="mgModels" value="google/medgemma-1.5-4b-it" placeholder="Nom du modèle" style="margin-bottom:6px" autocomplete="off">
+            <div style="font-size:.68rem;color:var(--txd);margin-bottom:10px;line-height:1.45">
+                Identifiants vérifiés sur Hugging Face. En GGUF via Ollama ou llama.cpp,
+                la lecture d'images exige le fichier <code>mmproj</code> du même dépôt :
+                sans lui le modèle démarre mais reste aveugle.
+            </div>
             <div style="font-size:.7rem;color:var(--txd);margin-bottom:8px">MedGemma 1.5 4B est open-weight et spécialisé en compréhension d'images médicales. Il faut toutefois le servir sur ton propre endpoint : il n'existe pas actuellement de fournisseur Hugging Face gratuit permanent pour ce modèle.</div>
         </div>
 
@@ -636,7 +647,7 @@ const store = (() => {
     };
 })();
 
-const APP_VERSION = 'v15.7';
+const APP_VERSION = 'v15.8';
 
 const AG = {
     radio: {
@@ -2194,7 +2205,23 @@ const RUN_SEED = 20260911;
 function moteurPret() {
     return (S.provider || 'mistral') === 'mistral' ? !!S.ak : !!String(S.customBase || '').trim();
 }
-function seedKey() { return (S.provider || 'mistral') === 'mistral' ? 'random_seed' : 'seed'; }
+function seedKey() { return isMistralProv() ? 'random_seed' : 'seed'; }
+function isMistralProv() { return (S.provider || 'mistral') === 'mistral'; }
+
+// image_url: "data:..."  ->  image_url: { url: "data:..." }
+function toOpenAIImages(msgs) {
+    return (msgs || []).map(function (m) {
+        if (!m || !Array.isArray(m.content)) return m;
+        return {
+            role: m.role,
+            content: m.content.map(function (c) {
+                if (c && c.type === 'image_url' && typeof c.image_url === 'string')
+                    return { type: 'image_url', image_url: { url: c.image_url } };
+                return c;
+            })
+        };
+    });
+}
 
 // Mois absolu extrait du suffixe date des identifiants Mistral (-AAMM).
 function mdlEpoch(id) {
@@ -2390,6 +2417,13 @@ function mchat(model, messages, schema, opts) {
             max_tokens: budget
         };
         b[seedKey()] = opts.seed != null ? opts.seed : RUN_SEED;
+        // Mistral accepte image_url sous forme de chaine ; la specification
+        // OpenAI impose un objet {url}. vLLM et les serveurs stricts rejettent
+        // la chaine : le mode MedGemma partait donc en erreur de schema des la
+        // premiere image. On normalise au moment de l'envoi, sans toucher au
+        // reste du pipeline. (Le propre diagnostic de l'app utilisait deja
+        // l'objet pour MedGemma et la chaine pour Mistral.)
+        if (!isMistralProv()) b.messages = toOpenAIImages(b.messages);
         if (wantEffort && level < 3) b.reasoning_effort = opts.effort;
         if (isMistral && level === 0) b.response_format = { type: 'json_schema', json_schema: { name: schema.name, schema: schema.def, strict: true } };
         else if (isMistral && level === 1) b.response_format = { type: 'json_schema', json_schema: { name: schema.name, schema_definition: schema.def, strict: true } };
