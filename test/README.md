@@ -1,36 +1,15 @@
-# Banc de test bout-en-bout — MedVision AI Pro
+# Tests techniques MedVision
 
-Pilote l'application réelle (`index.html`) dans un navigateur headless, avec une
-API Mistral simulée. Aucune clé, aucun appel réseau, aucune image patient.
+Installer les dépendances avec `npm install --ignore-scripts`, puis exécuter `npm test` (Node.js 22+).
 
-## Installation
+Le banc exécute le JavaScript de `index.html`, le décodage d’images, Canvas et WebCrypto dans un hôte Node. Le DOM et les réponses du fournisseur IA sont simulés. Aucun examen réel, aucune clé réelle et aucun appel facturable.
 
-    npm install jsdom canvas
+- `e2e.js` : parcours d’import et pipeline complet ; nominal, limite temporaire 429, lecture perdue, JSON tronqué, quota épuisé.
+- `regressions.cjs` : paramètres invalides, modèles vision, résultat général visible, import partiellement invalide, conservation des annotations, indices ROI, format MedGemma, annulation, examens indépendants, chiffrement/restauration et formats JSON.
+- `service-worker.cjs` : exclusion des données du cache, installation hors ligne incomplète, navigation hors ligne.
+- `runtime.cjs` : hôte d’exécution du code réel et adaptateur Canvas ; ce n’est pas un moteur de navigateur.
+- `run.cjs` : syntaxe, cohérence des versions et exécution de l’ensemble des tests.
 
-## Exécution
+Les tests ne prouvent ni la conformité des mises en page sur chaque appareil, ni la disponibilité de votre compte fournisseur, ni la pertinence clinique d’une réponse IA.
 
-    node test/e2e.js index.html nominal
-    node test/e2e.js index.html rate-limit
-    node test/e2e.js index.html lot-perdu
-    node test/e2e.js index.html tronque
-    node test/e2e.js index.html quota
-
-Code de sortie 1 si un contrôle échoue — utilisable en pré-déploiement.
-
-## Ce que chaque scénario vérifie
-
-| Scénario     | Vérifie |
-|--------------|---------|
-| `nominal`    | Chaîne complète : clé → image → /v1/models → triage → lectures → consensus → compte rendu rendu à l'écran |
-| `rate-limit` | Un 429 avec `Retry-After` sur le triage est repris par le gouverneur de débit et l'analyse aboutit |
-| `lot-perdu`  | Une lecture experte définitivement perdue (403) est **signalée** au lieu d'être silencieusement absorbée |
-| `quota`      | Tous les appels refusés : l'analyse s'arrête en quelques secondes avec un message désignant le quota, au lieu de mouliner |
-| `tronque`    | Une réponse coupée, récupérée partiellement, est **signalée** dans le compte rendu |
-
-Les deux derniers sont les régressions médicalement critiques : avant v14.4, une
-matière perdue devenait indiscernable d'un finding écarté.
-
-## Limites
-
-Ce banc prouve que le code s'exécute et que les gardes fonctionnent. Il ne dit
-rien de la performance diagnostique : les réponses du modèle sont simulées.
+Le banc clinique expérimental `bench.js` reste séparé ; voir `BENCH.md` pour ses dépendances et prérequis. Il n’est jamais lancé par `npm test`.

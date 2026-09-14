@@ -1,0 +1,2386 @@
+diff --git a/.github/workflows/tests.yml b/.github/workflows/tests.yml
+index b2f9f47..304c5da 100644
+--- a/.github/workflows/tests.yml
++++ b/.github/workflows/tests.yml
+@@ -1,74 +1,22 @@
+ name: Banc de test
+-
+-# Aucune fusion vers main sans que les cinq scenarios passent.
+-# Corrige la faiblesse relevee au dossier MDR : neuf deploiements directs
+-# en production le 11/09/2026, sans etape de verification.
+ on:
+   pull_request:
+     branches: [main]
+   push:
+-    branches: [dev]
++    branches: [main, dev]
+   workflow_dispatch:
+-
++permissions:
++  contents: read
+ jobs:
+   e2e:
+     runs-on: ubuntu-latest
+-    timeout-minutes: 20
++    timeout-minutes: 8
+     steps:
+       - uses: actions/checkout@v4
+-
+       - uses: actions/setup-node@v4
+         with:
+           node-version: '22'
+-
+-      # node-canvas a besoin de Cairo et Pango quand aucun binaire preconstruit
+-      # ne correspond au couple node/plateforme du runner.
+-      - name: Bibliotheques natives pour node-canvas
+-        run: |
+-          sudo apt-get update -qq
+-          sudo apt-get install -y --no-install-recommends \
+-            libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
+-
+-      - name: Dependances du banc
+-        run: npm install --no-save --foreground-scripts jsdom canvas
+-
+-      - name: Verification des dependances
+-        run: node -e "require('jsdom');require('canvas');console.log('jsdom + canvas OK')"
+-
+-      - name: Syntaxe du fichier unique
+-        run: |
+-          node -e "
+-          const fs=require('fs');
+-          const s=fs.readFileSync('index.html','utf8');
+-          const b=[...s.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
+-          b.forEach((x,i)=>{ if(!x.trim()) return;
+-            fs.writeFileSync('/tmp/b'+i+'.js',x); });
+-          " 
+-          for f in /tmp/b*.js; do node --check "$f"; done
+-          echo "syntaxe OK"
+-
+-      - name: Scenarios bout-en-bout
+-        run: |
+-          fail=0
+-          for sc in nominal rate-limit lot-perdu tronque quota; do
+-            echo "──── $sc"
+-            node test/e2e.js index.html $sc || fail=1
+-          done
+-          exit $fail
+-
+-      - name: Coherence des versions
+-        run: |
+-          node -e "
+-          const fs=require('fs');
+-          const app=(fs.readFileSync('index.html','utf8').match(/APP_VERSION = '(v[\d.]+)'/)||[])[1];
+-          const sw=(fs.readFileSync('sw.js','utf8').match(/BUILD = '(v[\d.]+)/)||[])[1];
+-          const mf='v'+JSON.parse(fs.readFileSync('manifest.json','utf8')).version;
+-          console.log('index',app,'| sw',sw,'| manifest',mf);
+-          if(!app||!sw||!mf) { console.error('version introuvable'); process.exit(1); }
+-          if(sw.indexOf(app)!==0 || mf!==app){
+-            console.error('Versions desynchronisees : le cache du service worker servirait un ancien shell.');
+-            process.exit(1);
+-          }
+-          console.log('versions coherentes');
+-          "
+-
++      - name: Dépendance de test (version fixée, binaire précompilé)
++        run: npm install --ignore-scripts --no-audit --no-fund
++      - name: Syntaxe, versions et scénarios de fonctionnement
++        run: npm test
+diff --git a/DEPLOIEMENT.md b/DEPLOIEMENT.md
+index 2f43eb6..0dd185c 100644
+--- a/DEPLOIEMENT.md
++++ b/DEPLOIEMENT.md
+@@ -1,41 +1,29 @@
+-# MedVision AI Pro v12 — déploiement PWA
++# Déploiement de MedVision AI Pro 16.2.0
+ 
+-## Fichiers
++Le site reste une application statique sans étape de compilation. Conservez `index.html`, `sw.js`, `manifest.json` et les icônes dans le même dossier. Les chemins relatifs fonctionnent dans le sous-dossier GitHub Pages.
+ 
+-| Fichier | Rôle |
+-|---|---|
+-| `index.html` | Application complète (single-file) |
+-| `sw.js` | Service worker — coquille en cache, API jamais mise en cache |
+-| `manifest.json` | Manifeste PWA |
+-| `icon-192.png` / `icon-512.png` | Icônes standard |
+-| `icon-maskable-192.png` / `icon-maskable-512.png` | Icônes adaptatives Android |
+-| `apple-touch-icon.png` | Icône iOS |
++## Vérifier puis publier
+ 
+-**Les 7 fichiers doivent être à la racine du même dossier.** Les chemins sont relatifs :
+-la racine d'un domaine comme un sous-dossier GitHub Pages fonctionnent sans modification.
++1. `npm install --ignore-scripts` puis `npm test`.
++2. Soumettre les corrections dans une branche et vérifier les tests avant la fusion.
++3. GitHub Pages doit publier `main` depuis la racine du dépôt, ou utiliser le déploiement Pages déjà configuré.
++4. Attendre la réussite du déploiement, puis ouvrir https://nikoju1977.github.io/medicalvisionproai/ et vérifier la version affichée.
+ 
+-## GitHub Pages
++La version doit être identique dans `APP_VERSION`, `BUILD`, `manifest.json` et `package.json`. Le test automatique vérifie cette cohérence.
+ 
+-```bash
+-git add index.html sw.js manifest.json *.png
+-git commit -m "v12 — PWA, mode Lot, analyse multi-sources"
+-git push origin main
+-```
++## Mise à jour et hors ligne
+ 
+-Puis Settings → Pages → Source : `main` / `(root)`.
+-URL : `https://nikoju1977.github.io/medicalvisionproai/`
++Une mise à jour du service worker affiche une bannière. Enregistrez l’examen avant de recharger : aucun rechargement n’est imposé pendant une opération. Si le nouveau fichier principal ne peut pas être téléchargé, le worker ne remplace pas la version hors ligne précédente.
+ 
+-## Contrôles après mise en ligne
++Le cache comprend seulement les chemins applicatifs explicitement autorisés et jsPDF. Les URL avec paramètres, les appels authentifiés et les endpoints de données ne sont pas mis en cache. Le fonctionnement hors ligne exige un premier chargement réussi ; l’IA distante nécessite Internet.
+ 
+-1. Ouvrir l'URL **en https** — jamais le fichier téléchargé (origine opaque = tout appel réseau bloqué)
+-2. Modale clé API → **🩺 Diagnostic** → l'étape 0 doit afficher l'origine en vert
+-3. Bouton **⤓ Installer** dans l'en-tête (Android/Chrome). iOS : Partager → « Sur l'écran d'accueil »
+-4. Mode avion → l'app se lance, l'affichage, les mesures, les annotations et l'export PDF
+-   restent disponibles. Seule l'analyse IA exige le réseau.
++## Vérification manuelle après déploiement
+ 
+-## Mise à jour
+-
+-Modifier `BUILD` dans `sw.js` (`v12.0.1`, …) à chaque déploiement.
+-Les utilisateurs voient une bannière « Nouvelle version disponible » et
+-rechargent d'un clic. Les anciens caches sont purgés automatiquement.
++- Premier accès et déverrouillage avec le code choisi.
++- Import de deux images, déplacement, annotations, suppression d’une image.
++- Sauvegarde et restauration sur un dossier de test sans données réelles.
++- Configuration IA puis **Tester** avec une clé personnelle valide.
++- Lecture réelle d’une image de test autorisée, arrêt d’une requête et export PDF.
++- Installation Android, fermeture/réouverture et essai hors ligne.
+ 
++Les tests automatisés utilisent une API simulée. Un essai de génération réelle requiert votre accès fournisseur et ne constitue pas une validation clinique.
+diff --git a/README.md b/README.md
+index 7bef4d2..b0c208d 100644
+--- a/README.md
++++ b/README.md
+@@ -1,35 +1,54 @@
+-![MedVision AI Pro](banner.svg)
+-
+ # MedVision AI Pro
+ 
+-[![Démo](https://img.shields.io/badge/Démo-en_ligne-00ff9d?style=flat-square&labelColor=050a0d)](https://medvisionproai.vercel.app) [![PWA](https://img.shields.io/badge/PWA-installable-00d4ff?style=flat-square&labelColor=050a0d)](#) [![Licence](https://img.shields.io/badge/Licence-MIT-9fb4ba?style=flat-square&labelColor=050a0d)](LICENSE)
++Prototype de visualisation et de lecture d’images assistée par IA. Création : Nicolas Julienne — Studio Niko Design.
++
++**Application : https://nikoju1977.github.io/medicalvisionproai/**
++
++## Démarrage
++
++1. Au premier accès, choisissez un code de 6 à 12 chiffres et confirmez-le. Conservez ce code : il permet de déchiffrer vos dossiers sur cet appareil.
++2. Importez une ou plusieurs images JPEG, PNG, WebP ou BMP (24 maximum, 30 Mo et 32 mégapixels par image). Les fichiers DICOM et PDF ne sont pas décodés : exportez les images en PNG/JPEG depuis votre lecteur.
++3. Ouvrez **Configurer l’IA**. Pour Mistral, renseignez votre clé personnelle et choisissez **Auto Éco**. Le bouton **Tester** utilise une image géométrique synthétique ; il ne transmet aucun examen.
++4. Enregistrez la configuration puis lancez l’analyse. **Arrêter l’analyse** annule les requêtes en cours et celles en attente.
++
++Aucune clé n’est fournie par ce dépôt. L’accès à l’API, ses quotas et ses tarifs dépendent de votre compte fournisseur. Auto Éco sélectionne un modèle vision accessible ; il ne garantit pas la gratuité. Les modèles sont interrogés via le [catalogue Mistral](https://docs.mistral.ai/api/endpoint/models) et la [Chat Completions API](https://docs.mistral.ai/api/endpoint/chat).
+ 
+-Plateforme web d'**imagerie médicale assistée par intelligence artificielle** — application single-file, installable en PWA, données traitées localement.
++## Fonctions disponibles
+ 
+-**Démo** : [medvisionproai.vercel.app](https://medvisionproai.vercel.app) · [Pages](https://nikoju1977.github.io/medicalvisionproai/)
++- Visualisation, comparaison, zoom, mesures calibrées, annotations et zones d’intérêt.
++- Import de séries d’images ; extraction de trames vidéo dans les formats décodés par le navigateur (250 Mo maximum).
++- Série / évolution pour un même examen ; lot pour des examens indépendants. Les deux boutons d’analyse respectent ce choix.
++- Mistral vision ou endpoint privé compatible OpenAI, par exemple un serveur hébergeant MedGemma. MedGemma n’est pas installé ni hébergé par cette application.
++- Description générale d’une image non médicale avec résultat visible.
++- Sauvegarde locale chiffrée de toute la série, des annotations, du contexte et du rapport ; restauration du dernier examen du patient sélectionné.
++- Export PDF d’un rapport médical terminé (bibliothèque jsPDF requise), installation PWA et notification de mise à jour.
+ 
+-## Fonctionnalités
++## Données et limites
+ 
+-- 🧠 Système **multi-agents IA** spécialisés par domaine d'analyse
+-- 🩻 **Lecteur DICOM** intégré au navigateur
+-- 🔐 Authentification par PIN, stockage local chiffré (IndexedDB)
+-- 📊 Export de rapports (PPTX)
+-- 📱 PWA mobile-first, fonctionne hors ligne après installation
+-- 🛡️ Aucune donnée patient envoyée à un serveur tiers sans action explicite
++Les images sont traitées localement pour l’affichage. **Lancer l’analyse transmet les images et le contexte clinique au fournisseur configuré.** Retirez les informations identifiantes, y compris celles inscrites dans les pixels. Le prétraitement n’anonymise pas les images.
+ 
+-## Stack
++Les dossiers sauvegardés dans IndexedDB sont chiffrés en AES-256-GCM avec une clé dérivée du code. Les anciennes sauvegardes restent lisibles. Les clés API sont conservées localement par la version actuelle ; utilisez cet espace uniquement sur un appareil de confiance. Une sauvegarde navigateur n’est pas une sauvegarde externe : effacer les données du site peut supprimer les dossiers et le code de déchiffrement.
+ 
+-`HTML/CSS/JS single-file` · `IndexedDB` · `Mistral AI / Pixtral (vision)` · `PWA` · `Vercel`
++Le cache hors ligne contient uniquement les fichiers applicatifs autorisés. Il ne stocke ni réponses IA ni endpoints patients. L’IA distante requiert une connexion. Le PDF hors ligne dépend du chargement préalable de jsPDF.
+ 
+-## Lancer en local
++**Prototype non certifié comme dispositif médical.** Les tests logiciels ne valident pas les performances diagnostiques. Les réponses IA peuvent être inexactes et ne permettent pas, seules, de poser ou d’écarter un diagnostic.
+ 
+-Ouvrir `index.html` dans un navigateur moderne. Aucun build, aucune dépendance.
++## Développement et tests
+ 
+-## ⚠️ Avertissement médical
++Node.js 22 ou supérieur ; Python 3 pour servir le dossier en local :
+ 
+-Cette application est un **outil d'information et de suivi personnel**. Elle ne constitue pas un dispositif médical certifié, ne fournit ni diagnostic ni prescription, et ne remplace en aucun cas l'avis d'un professionnel de santé. En cas d'urgence : **15 (SAMU)** ou **112**.
++```bash
++npm install --ignore-scripts
++npm test
++python3 -m http.server 8080 --bind 127.0.0.1
++```
++
++Ouvrez ensuite http://localhost:8080 (évitez `file://`, incompatible avec certaines fonctions sécurisées).
++
++Les tests exécutent le JavaScript réel, Canvas, le décodage d’images et WebCrypto dans un hôte Node avec DOM de test. Ils couvrent les cinq scénarios d’intégration d’origine et les régressions de configuration, import, sauvegarde, annulation, indices d’images et cache. Ils utilisent des réponses IA simulées, sans appel payant. Ils ne remplacent pas un essai dans les navigateurs cibles ni une validation avec un compte IA réel.
++
++Le banc expérimental `test/bench.js` est séparé ; ses dépendances historiques et son mode d’emploi sont décrits dans `test/BENCH.md`. Il transmet les images du jeu d’essai au fournisseur : ne l’exécuter que sur des données autorisées.
+ 
+ ## Licence
+ 
+ [MIT](LICENSE) © 2026 Nicolas Julienne — Studio Niko Design
+-
+diff --git a/index.html b/index.html
+index ed2e31e..17a0877 100644
+--- a/index.html
++++ b/index.html
+@@ -2,7 +2,7 @@
+ <html lang="fr">
+ <head>
+ <meta charset="UTF-8">
+-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=no, viewport-fit=cover">
++<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+ <meta name="apple-mobile-web-app-capable" content="yes">
+ <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+ <meta name="mobile-web-app-capable" content="yes">
+@@ -368,6 +368,21 @@ canvas{display:block;touch-action:none;}
+ .u-none{background:var(--sf2);color:var(--txd);}
+ .trace{margin-top:14px;font-size:.66rem;color:var(--txd);font-family:var(--fmono);border-top:1px solid var(--bd);padding-top:8px;line-height:1.6;}
+ .trace code{color:var(--ac);}
++/* Mobile controls remain reachable without horizontal clipping. */
++[hidden]{display:none!important}
++button:disabled{opacity:.5;cursor:wait;transform:none}
++:focus-visible{outline:2px solid var(--cy);outline-offset:3px}
++.air,.pinmsg,#importStatus,#diagOut{overflow-wrap:anywhere}
++.auth{overflow-y:auto;padding:24px 16px}
++.pinlbl{max-width:360px;text-align:center;line-height:1.5}
++header{gap:8px;flex-wrap:wrap}
++header>div:first-child{flex:1;min-width:170px}
++#serArea>.fr{flex-wrap:wrap;gap:8px}
++#serArea>.fr>.fr{flex:1;flex-wrap:wrap;min-width:0}
++#modeSel{flex:1;min-width:180px}
++#vfSel{width:auto;max-width:100%}
++@media(max-width:480px){.app{padding:8px}.cd{padding:10px}.bt{min-height:44px;padding:10px}header .lsel{max-width:115px}.sub{font-size:.7rem}.ac-n{font-size:.75rem}.air{font-size:1rem;padding:12px}.ctxr{flex-wrap:wrap}}
++@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+ </style>
+ <meta name="description" content="MedVision AI Pro — Prototype d'aide à la lecture d'images médicales par IA multimodale. Usage de recherche/professionnel, non certifié comme dispositif médical.">
+ <meta name="author" content="Nicolas Julienne — Studio Niko Design">
+@@ -397,7 +412,7 @@ canvas{display:block;touch-action:none;}
+     <p style="color:var(--txd);font-size:.8rem;margin-bottom:4px" data-i18n="auth.edition">Expert Edition</p>
+     <div class="pdots" id="pinDots"><span class="pdot"></span><span class="pdot"></span><span class="pdot"></span><span class="pdot"></span></div>
+     <div class="pgr" id="pinPad"></div>
+-    <div class="pinmsg" id="pinMsg"></div>
++    <div class="pinmsg" id="pinMsg" role="status" aria-live="polite"></div>
+     <div class="pinlbl">Code à 6 chiffres minimum · les données de santé sont chiffrées en AES-256-GCM avec une clé dérivée de ce code</div>
+ </div>
+ 
+@@ -408,11 +423,21 @@ canvas{display:block;touch-action:none;}
+         <select id="langSel" class="lsel" onchange="setLang(this.value)" data-i18n-title="lang.label" title="Langue"></select>
+         <button id="instB" class="instb" style="display:none" onclick="doInstall()">⤓ Installer</button>
+         <div class="fr fnw">
+-            <button class="bt bi" onclick="openApiM()" title="Configuration API" aria-label="Configuration API Mistral">🔑</button>
++            <button class="bt bi" onclick="openApiM()" title="Configuration API" aria-label="Configuration IA">🔑</button>
++            <button class="bt bi" onclick="lockApp()" title="Verrouiller" aria-label="Verrouiller la session">🔒</button>
+             <button class="bt bi" onclick="exportPDF()" title="Exporter PDF" aria-label="Exporter le rapport en PDF">📄</button>
+         </div>
+     </header>
+ 
++    <div class="cd" id="startHelp">
++        <strong>Votre espace d’imagerie</strong>
++        <p style="font-size:.8rem;color:var(--txd);margin:6px 0">1. Importez vos images. 2. Configurez votre IA. 3. Lancez la lecture.</p>
++        <p style="font-size:.75rem;color:var(--txd);margin:6px 0">La visualisation et les annotations fonctionnent sans clé. L’analyse envoie les images au fournisseur choisi et nécessite son accès API.</p>
++        <button class="bt" onclick="openApiM()">Configurer l’IA</button>
++        <span id="connectionStatus" role="status" style="font-size:.75rem;margin-left:8px"></span>
++    </div>
++    <div id="updateNotice" class="cd" hidden>Une mise à jour est disponible. Enregistrez l’examen avant de recharger. <button class="bt" onclick="reloadApp()">Recharger</button></div>
++
+     <!-- PATIENT -->
+     <div class="cd">
+         <div class="fr fsb fnw">
+@@ -448,13 +473,15 @@ canvas{display:block;touch-action:none;}
+         <div class="fr fsb fnw">
+             <div class="fr fw">
+                 <button class="bt" onclick="pickF()">📂 Images</button>
+-                <input type="file" id="fIn" hidden accept="image/*" multiple>
++                <input type="file" id="fIn" hidden accept="image/jpeg,image/png,image/webp,image/bmp,.jpg,.jpeg,.png,.webp,.bmp" multiple>
+                 <button class="bt" onclick="pickV()">🎬 Vidéo</button>
+                 <input type="file" id="vIn" hidden accept="video/*">
+                 <button class="bt" onclick="startCam()">📷 Caméra</button>
+             </div>
+         </div>
+ 
++        <p style="font-size:.72rem;color:var(--txd);margin-top:8px">JPEG, PNG, WebP, BMP · 24 images maximum · 30 Mo par image. Exportez les DICOM en PNG/JPEG depuis votre lecteur.</p>
++        <div id="importStatus" role="status" aria-live="polite" style="font-size:.75rem"></div>
+         <div id="serArea" style="display:none;margin-top:10px">
+             <div class="fr fsb fnw" style="align-items:center;margin-bottom:6px">
+                 <span class="serlbl">Série · <span id="serCount">0</span></span>
+@@ -548,16 +575,18 @@ canvas{display:block;touch-action:none;}
+ 
+         <!-- Analysis Buttons -->
+         <div class="fr fw" style="margin-bottom:8px">
+-            <button class="bt bp" style="flex:1" onclick="runAutoAI()">🤖 ANALYSE ASSISTÉE</button>
+-            <button class="bt" style="flex:1" onclick="runAI()">🧠 Analyse manuelle</button>
++            <button id="runAutoBtn" class="bt bp" style="flex:1" onclick="runAutoAI()">🤖 ANALYSE ASSISTÉE</button>
++            <button id="runBtn" class="bt" style="flex:1" onclick="runAI()">🧠 Analyse manuelle</button>
+         </div>
+ 
++        <button id="cancelBtn" class="bt" onclick="cancelAnalysis()" hidden>Arrêter l’analyse</button>
++        <p id="sendNotice" style="font-size:.72rem;color:var(--txd)">Avant l’envoi : retirez les noms et identifiants visibles des images. Les réponses IA doivent être revues par un professionnel de santé.</p>
+         <!-- Pipeline Progress -->
+         <div id="pipeWrap" style="display:none">
+             <div class="pipe" id="pipeDisp"></div>
+         </div>
+ 
+-        <div class="air" id="aiO"></div>
++        <div class="air" id="aiO" aria-live="polite" aria-busy="false"></div>
+     </div>
+ </div>
+ 
+@@ -565,11 +594,11 @@ canvas{display:block;touch-action:none;}
+ <div id="apiM" class="mdl">
+     <div class="mbox">
+         <h3 style="margin-bottom:8px">⚙️ Moteur IA</h3>
+-        <p style="color:var(--txd);font-size:.82rem;margin-bottom:12px">Choisis un moteur. Les secrets restent stockés localement dans ce navigateur.</p>
++        <p style="color:var(--txd);font-size:.82rem;margin-bottom:12px">Choisis un moteur. Les clés sont conservées sur cet appareil et transmises uniquement au fournisseur choisi pour les requêtes.</p>
+ 
+         <div style="font-size:.72rem;font-weight:700;color:var(--txd);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Fournisseur</div>
+         <select id="providerSel" style="margin-bottom:8px" onchange="providerChanged()">
+-            <option value="mistral" selected>Mistral API — mode Free / vision</option>
++            <option value="mistral" selected>Mistral API — vision (clé personnelle)</option>
+             <option value="medgemma">MedGemma 1.5 — endpoint privé compatible OpenAI</option>
+         </select>
+ 
+@@ -578,7 +607,7 @@ canvas{display:block;touch-action:none;}
+             <div style="font-size:.7rem;color:var(--txd);margin-bottom:8px">Le plan API Free de Mistral permet de créer une clé avec des limites d'usage. Le mode Auto Éco n'emploie que les modèles vision accessibles à ta clé. <b>N'envoie que des images anonymisées/désidentifiées en mode gratuit.</b></div>
+             <div style="font-size:.72rem;font-weight:700;color:var(--txd);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Modèle Mistral</div>
+             <select id="mdlSel" style="margin-bottom:6px">
+-                <optgroup label="✅ Gratuit / économique">
++                <optgroup label="Modèles compacts (selon votre accès)">
+                     <option value="" selected>Auto Éco — modèle vision accessible le plus adapté</option>
+                     <option value="ministral-14b-2512">Ministral 3 14B — vision, recommandé</option>
+                     <option value="ministral-8b-2512">Ministral 3 8B — vision, plus léger</option>
+@@ -614,7 +643,7 @@ canvas{display:block;touch-action:none;}
+         <div id="akStat" style="font-size:.7rem;color:var(--txd);margin-bottom:12px;font-family:var(--fmono)"></div>
+         <div class="orgwarn" style="margin-top:8px"><b>Prototype non certifié</b><span>Ne pas utiliser seul pour poser ou exclure un diagnostic. Les images peuvent être envoyées au fournisseur IA configuré.</span></div>
+         <div id="diagOut" class="diag" style="display:none"></div>
+-        <div class="fr fsb fnw"><button class="bt" onclick="clM('apiM')">Fermer</button><button class="bt" onclick="diagAPI()" id="diagBtn">🩺 Tester</button><button class="bt bp" onclick="saveKey()">✓ Enregistrer</button></div>
++        <div class="fr fsb fnw"><button class="bt" onclick="clM('apiM')">Fermer</button><button class="bt" onclick="diagAPI()" id="diagBtn">🩺 Tester</button><button id="saveKeyBtn" class="bt bp" onclick="saveKey()">✓ Enregistrer</button></div>
+     </div>
+ </div>
+ 
+@@ -628,7 +657,7 @@ canvas{display:block;touch-action:none;}
+     </div>
+ </div>
+ 
+-<div id="toast" class="toast"></div>
++<div id="toast" class="toast" role="status" aria-live="polite"></div>
+ 
+ <script>
+ (function(){
+@@ -647,7 +676,7 @@ const store = (() => {
+     };
+ })();
+ 
+-const APP_VERSION = 'v15.9';
++const APP_VERSION = 'v16.2.0';
+ 
+ const AG = {
+     radio: {
+@@ -960,7 +989,8 @@ const S = {
+     provider: 'mistral', customBase: '', customKey: '', customModel: 'google/medgemma-1.5-4b-it',
+     only: null, onDone: null, batch: null, vFrames: 6, chunks: null, autoRoute: false, step: 0,
+     uRelCal: null, calD: null, calMm: null, zoomOff: false, pinNew: null, pinBusy: false, lang: 'fr',
+-    swReg: null, instEvt: null,
++    swReg: null, instEvt: null, importing: false, diagnosing: false, loadingExam: false,
++    analysisController: null, batchRunning: false, batchCancelled: false, loadSequence: 0,
+     // --- série multi-images / vidéo v12 ---
+     series: [], active: 0, mode: 'serie', imgSet: null
+ };
+@@ -968,13 +998,49 @@ const S = {
+ const cA = $('cA'), xA = cA.getContext('2d');
+ const cB = $('cB'), xB = cB.getContext('2d');
+ 
++let toastTimer;
+ function toast(msg) {
+     const el = $('toast');
+     el.textContent = msg;
+     el.classList.add('show');
+-    setTimeout(() => el.classList.remove('show'), 3000);
++    clearTimeout(toastTimer);
++    toastTimer = setTimeout(() => el.classList.remove('show'), 4500);
+ }
+ 
++function operationLocked() {
++    return S.busy || S.batchRunning || S.importing || S.loadingExam || S.diagnosing;
++}
++function setBusy(value) {
++    S.busy = value;
++    ['runAutoBtn', 'runBtn', 'saveKeyBtn', 'diagBtn'].forEach(id => { if ($(id)) $(id).disabled = value || S.batchRunning; });
++    $('cancelBtn').hidden = !value && !S.batchRunning;
++    $('aiO').setAttribute('aria-busy', String(value));
++}
++function updateConnectionStatus() {
++    const el = $('connectionStatus');
++    if (el) el.textContent = navigator.onLine === false ? 'Hors ligne · outils locaux disponibles' : (moteurPret() ? 'IA configurée' : 'IA à configurer');
++}
++function clearReport() {
++    S.lastReport = null; S.lastMeta = null; S.triage = null; S.cov = null; S.batch = null;
++    S.imgSet = null; S.chunks = null; S.forceTri = false; S.triForce = false;
++    S.series.forEach(it => { it.report = null; it.reportMeta = null; if (it.ann) it.ann.aiRois = []; });
++    S.aiRois = [];
++    $('aiO').innerHTML = ''; $('aiO').classList.remove('vis');
++    $('pipeWrap').style.display = 'none';
++    $('batchBar').style.display = 'none';
++}
++function abortError() { return { status: -2, msg: 'Analyse arrêtée à votre demande.' }; }
++function checkCancelled(signal) { if (signal && signal.aborted) throw abortError(); }
++window.cancelAnalysis = function() {
++    S.batchCancelled = true;
++    if (S.analysisController) S.analysisController.abort();
++    toast('Arrêt demandé…');
++};
++window.reloadApp = function() {
++    if (operationLocked()) return toast('Terminez ou arrêtez l’opération avant de recharger.');
++    location.reload();
++};
++
+ // Un sous-systeme en echec ne doit jamais empecher l'installation des suivants.
+ function safeInit(label, fn) {
+     try { fn(); } catch (e) { try { console.error('init ' + label + ' : ' + (e && e.message)); } catch (e2) {} }
+@@ -982,6 +1048,9 @@ function safeInit(label, fn) {
+ 
+ function init() {
+     safeInit('pin', initPin);
++    updateConnectionStatus();
++    window.addEventListener('online', updateConnectionStatus);
++    window.addEventListener('offline', updateConnectionStatus);
+     safeInit('agents', renderAg);
+     safeInit('db', initDB);
+     safeInit('resize', rsz);
+@@ -1028,6 +1097,8 @@ function initPin() {
+         b.onclick = () => hPin(k);
+         p.appendChild(b);
+     }
++    rDots();
++    pinMsg(VAULT.isSet() ? 'Saisissez votre code pour ouvrir le coffre.' : 'Premier accès : choisissez votre code (6 à 12 chiffres), puis confirmez-le.');
+ }
+ 
+ function pinMsg(t, err) {
+@@ -1039,6 +1110,7 @@ function openApp() {
+     $('authScreen').style.display = 'none';
+     $('app').classList.add('on');
+     setTimeout(rsz, 100);
++    ldPL();
+     auditLog('deverrouillage', {});
+     if (needsAttest()) setTimeout(() => $('attM').classList.add('open'), 400);
+ }
+@@ -1083,6 +1155,10 @@ function hPin(k) {
+ }
+ 
+ window.lockApp = function() {
++    if (S.busy || S.batchRunning || S.importing || S.loadingExam) return toast('Terminez ou arrêtez l’opération avant de verrouiller.');
++    stopCam();
++    if (S.recog) { try { S.recog.stop(); } catch (e) {} }
++    document.querySelectorAll('.mdl.open').forEach(m => m.classList.remove('open'));
+     VAULT.lock();
+     S.pin = ''; S.pinNew = null; rDots();
+     $('app').classList.remove('on');
+@@ -1127,7 +1203,7 @@ function cfgRestore() {
+         if (!S.ak && m.mv_key) S.ak = String(m.mv_key).replace(/[\x00-\x1f\x7f\s]/g, '');
+         if (!S.customBase && m.mv_custom_base) S.customBase = m.mv_custom_base;
+         if (!S.customKey && m.mv_custom_key) S.customKey = m.mv_custom_key;
+-        if (!S.customModel && m.mv_custom_model) S.customModel = m.mv_custom_model;
++        if (store.get('mv_custom_model') == null && m.mv_custom_model) S.customModel = m.mv_custom_model;
+         if (!S.mdlForce && m.mv_mdl) S.mdlForce = m.mv_mdl;
+         if (m.mv_provider && store.get('mv_provider') == null) S.provider = m.mv_provider;
+         if (S.provider === 'medgemma' && S.customModel) S.mdlForce = S.customModel;
+@@ -1220,6 +1296,7 @@ function ldPL() {
+ }
+ 
+ window.addPat = function() {
++    if (operationLocked()) return toast('Une opération est déjà en cours.');
+     const n = prompt('Nom du patient :');
+     if (!n || !n.replace(/\s/g, '')) return;
+     if (!S.db) return toast('Base indisponible');
+@@ -1236,71 +1313,69 @@ window.addPat = function() {
+     }).catch(e => toast('Chiffrement impossible : ' + e.message));
+ };
+ 
+-window.saveExam = function() {
+-    const pid = $('patL').value;
+-    if (!pid || !S.imgA) return toast('Patient ou image manquant');
+-    if (!S.db) return toast('Base indisponible');
+-    if (!VAULT.key) return toast('Coffre verrouillé — impossible d\'enregistrer');
+-
+-    // Tout ce qui constitue une donnée de santé est chiffré avant écriture.
+-    // Seuls l'identifiant patient et l'horodatage restent en clair, pour l'indexation.
+-    const clinique = {
+-        img: S.srcA,
+-        notes: $('notes').value,
+-        report: S.lastReport || null,
+-        contexte: {
+-            age: ($('ctxAge') && $('ctxAge').value) || '',
+-            sexe: ($('ctxSex') && $('ctxSex').value) || '',
+-            indication: ($('ctxInd') && $('ctxInd').value) || '',
+-            pxMm: S.pxMm || null, uRelCal: S.uRelCal || null
+-        },
+-        meta: { drw: S.drw, meas: S.meas, rois: S.rois }
++window.saveExam = async function() {
++    if (operationLocked()) return toast('Terminez l’opération avant d’enregistrer.');
++    const pid = Number($('patL').value);
++    if (!pid || !S.imgA) return toast('Sélectionnez un patient et importez une image.');
++    if (!S.db || !VAULT.key) return toast('Coffre indisponible ou verrouillé');
++    stashAnn();
++    const snapshot = {
++        series: S.series.map(it => ({ src: it.src, name: it.name, kind: it.kind, t: it.t, ann: it.ann, report: it.report, reportMeta: it.reportMeta })),
++        active: S.active, mode: S.mode, notes: $('notes').value,
++        report: S.lastReport, reportMeta: S.lastMeta, triage: S.triage, coverage: S.cov,
++        contexte: { age: $('ctxAge').value, sexe: $('ctxSex').value, indication: $('ctxInd').value }
+     };
+-    VAULT.encrypt(clinique).then(blob => {
+-        S.db.transaction('e', 'readwrite').objectStore('e').add({
+-            pid: parseInt(pid), date: Date.now(),
+-            v: APP_VERSION,
+-            audit: S.lastMeta || null,      // traçabilité technique, sans donnée de santé
+-            data: blob
+-        }).onsuccess = () => {
+-            auditLog('enregistrement_examen', { pid: parseInt(pid), chiffre: true });
+-            toast(t('msg.saved'));
+-        };
+-    }).catch(e => toast('Chiffrement impossible : ' + e.message));
++    S.loadingExam = true;
++    try {
++        const blob = await VAULT.encrypt(snapshot);
++        await new Promise((resolve, reject) => {
++            const tx = S.db.transaction('e', 'readwrite');
++            tx.objectStore('e').add({ pid, date: Date.now(), v: APP_VERSION, data: blob });
++            tx.oncomplete = resolve; tx.onerror = tx.onabort = () => reject(tx.error || new Error('Stockage plein ou indisponible'));
++        });
++        auditLog('enregistrement_examen', { pid, chiffre: true }); toast(t('msg.saved'));
++    } catch (e) { toast('Enregistrement impossible : ' + e.message); }
++    finally { S.loadingExam = false; }
+ };
+ 
+-window.loadPat = function() {
+-    const pid = $('patL').value;
+-    if (!pid || !S.db) return;
+-    if (!VAULT.key) return toast(t('msg.locked'));
+-    S.db.transaction('e', 'readonly').objectStore('e').index('pid').getAll(parseInt(pid)).onsuccess = e => {
+-        const rows = e.target.result || [];
+-        if (!rows.length) return toast('Aucun examen pour ce patient');
+-        // Les enregistrements sont chiffrés ; les anciens, en clair, restent lisibles.
++window.loadPat = async function() {
++    if (operationLocked()) { $('patL').value = S.loadedPatient || ''; return toast('Terminez l’opération avant de changer de patient.'); }
++    const pid = Number($('patL').value);
++    if (!S.db || !VAULT.key) return toast(t('msg.locked'));
++    S.loadingExam = true;
++    try {
++        const rows = pid ? await new Promise((resolve, reject) => {
++            const req = S.db.transaction('e', 'readonly').objectStore('e').index('pid').getAll(pid);
++            req.onsuccess = () => resolve(req.result || []); req.onerror = () => reject(req.error);
++        }) : [];
++        rows.sort((a, b) => a.date - b.date);
+         const rec = rows[rows.length - 1];
+-        const open = rec.data ? VAULT.decrypt(rec.data) : Promise.resolve(rec);
+-        open.then(o => {
+-            const src = typeof o.img === 'string' ? o.img : (o.img ? URL.createObjectURL(o.img) : null);
+-            if (src) ldImg(src);
+-            $('notes').value = o.notes || '';
+-            if (o.contexte) {
+-                if ($('ctxAge')) $('ctxAge').value = o.contexte.age || '';
+-                if ($('ctxSex')) $('ctxSex').value = o.contexte.sexe || '';
+-                if ($('ctxInd')) $('ctxInd').value = o.contexte.indication || '';
+-                S.pxMm = o.contexte.pxMm || null;
+-                S.uRelCal = o.contexte.uRelCal || null;
+-                upCal();
+-            }
+-            if (o.meta) { S.drw = o.meta.drw || []; S.meas = o.meta.meas || []; S.rois = o.meta.rois || []; }
+-            if (o.report) {
+-                S.lastReport = o.report;
+-                S.lastMeta = rec.audit || S.lastMeta;
+-                setTimeout(() => renderReport(o.report, selectedAgents().length ? selectedAgents() : ['gen'], S.triage), 300);
+-            }
+-            auditLog('consultation_examen', { pid: parseInt(pid), date: rec.date });
+-            toast('Examen déchiffré et chargé');
+-        }).catch(() => toast('Déchiffrement impossible — code incorrect ?'));
+-    };
++        const o = rec ? (rec.data ? await VAULT.decrypt(rec.data) : rec) : {};
++        const saved = o.series || (o.img ? [{ src: o.img, name: 'Examen enregistré', ann: Object.assign(newAnn(), o.meta || {}, o.contexte || {}) }] : []);
++        if (!Array.isArray(saved) || saved.length > SERIES_MAX) throw new Error('Série enregistrée invalide');
++        const items = [];
++        for (const entry of saved) {
++            let src = entry.src;
++            if (typeof src !== 'string') src = await readAsURL(src);
++            const it = await mkItem(src, entry.name, entry.kind, entry.t);
++            it.ann = Object.assign(newAnn(), entry.ann || {});
++            it.report = entry.report || null; it.reportMeta = entry.reportMeta || null;
++            items.push(it);
++        }
++        resetSeriesView(); S.series = items;
++        S.mode = MODES[o.mode] ? o.mode : 'serie'; $('modeSel').value = S.mode; setMode();
++        $('notes').value = o.notes || '';
++        const ctx = o.contexte || {};
++        $('ctxAge').value = ctx.age || ''; $('ctxSex').value = ctx.sexe || ''; $('ctxInd').value = ctx.indication || '';
++        if (items.length) setActive(Math.min(o.active || 0, items.length - 1), true);
++        S.lastReport = o.report || null; S.lastMeta = o.reportMeta || (rec && rec.audit) || null;
++        S.triage = o.triage || (S.lastMeta && S.lastMeta.triage) || null; S.cov = o.coverage || null;
++        if (S.lastReport) renderReport(S.lastReport, selectedAgents().length ? selectedAgents() : ['gen'], S.triage);
++        S.loadedPatient = pid || '';
++        if (rec) auditLog('consultation_examen', { pid, date: rec.date });
++        toast(rec ? 'Examen complet déchiffré et chargé' : 'Dossier vide — importez un nouvel examen');
++    } catch (e) { $('patL').value = S.loadedPatient || ''; toast('Chargement impossible : ' + e.message); }
++    finally { S.loadingExam = false; }
+ };
+ 
+ function rsz() {
+@@ -1333,21 +1408,23 @@ window.setVFrames = function() {
+ };
+ 
+ window.setMode = function() {
++    if (S.busy || S.batchRunning) { $('modeSel').value = S.mode; return; }
+     S.mode = $('modeSel').value || 'serie';
+     $('modeHint').textContent = (MODES[S.mode] || MODES.serie).d;
+ };
+ 
++function resetSeriesView() {
++    S.series = []; S.active = 0; S.imgA = null; S.srcA = null; S.pp = null;
++    S.imgB = null; S.srcB = null; S.comp = false;
++    S.pxMm = null; S.uRelCal = null; S.calD = null; S.calMm = null;
++    S.meas = []; S.rois = []; S.drw = []; S.aiRois = [];
++    $('pB').style.display = 'none'; $('bCmp').classList.remove('on');
++    $('lA').textContent = 'Aucune image'; $('ppArea').style.display = 'none';
++    clearReport(); upCal(); rsz(); showImgStats(); renderStrip();
++}
+ window.clrSeries = function() {
+-    if (!S.series.length) return;
+-    S.series = []; S.active = 0;
+-    S.imgA = null; S.srcA = null; S.pp = null;
+-    S.pxMm = null; S.meas = []; S.rois = []; S.drw = []; S.aiRois = [];
+-    S.lastReport = null; S.imgSet = null;
+-    $('lA').textContent = 'Aucune image';
+-    $('ppArea').style.display = 'none';
+-    $('aiO').classList.remove('vis');
+-    upCal(); drw(); showImgStats(); renderStrip();
+-    toast('Série vidée');
++    if (operationLocked()) return toast('Terminez l’opération avant de vider la série.');
++    resetSeriesView(); toast('Série vidée');
+ };
+ 
+ function readAsURL(f) {
+@@ -1359,22 +1436,38 @@ function readAsURL(f) {
+     });
+ }
+ 
+-function hFile(inp) {
+-    const files = Array.prototype.slice.call(inp.files || []);
+-    inp.value = '';
++async function hFile(inp) {
++    const files = Array.from(inp.files || []); inp.value = '';
+     if (!files.length) return;
+-    Promise.all(files.map(f => readAsURL(f).then(u => mkItem(u, f.name, 'image', null))))
+-        .then(items => {
+-            items.forEach(it => { try { it.sharp = PP.metrics(PP.lum(PP.draw(it.img, 320).x.getImageData(0, 0, Math.min(320, it.w), Math.min(320, it.h)).data), Math.min(320, it.w), Math.min(320, it.h)).sharp; } catch (e) {} });
+-            addItems(items);
+-        })
+-        .catch(e => toast(e.message));
++    if (operationLocked()) return toast('Une opération est déjà en cours.');
++    const room = SERIES_MAX - S.series.length;
++    if (room <= 0) return toast('Série pleine (24 images maximum)');
++    S.importing = true;
++    const status = $('importStatus'), items = [], failures = [];
++    try {
++        for (const f of files.slice(0, room)) {
++            status.textContent = 'Importation : ' + (items.length + failures.length + 1) + '/' + Math.min(files.length, room);
++            try {
++                if (!/\.(jpe?g|png|webp|bmp)$/i.test(f.name) && !/^image\/(jpeg|png|webp|bmp)$/.test(f.type)) throw new Error('format non pris en charge');
++                if (f.size > 30 * 1024 * 1024) throw new Error('limite de 30 Mo dépassée');
++                items.push(await mkItem(await readAsURL(f), f.name, 'image', null));
++            } catch (e) { failures.push(f.name + ' : ' + e.message); }
++        }
++        addItems(items);
++        status.textContent = items.length + ' image(s) importée(s).' +
++            (files.length > room ? ' Limite de 24 images atteinte.' : '') +
++            (failures.length ? ' Fichiers ignorés : ' + failures.join(' ; ') : '');
++    } finally { S.importing = false; }
+ }
+ 
+ function hVideo(inp) {
++    if (operationLocked()) { inp.value = ''; return toast('Une opération est déjà en cours.'); }
+     const f = (inp.files || [])[0];
+     inp.value = '';
+     if (!f) return;
++    if (S.series.length >= SERIES_MAX) return toast('Série pleine');
++    if (f.size > 250 * 1024 * 1024) return toast('Vidéo trop volumineuse (250 Mo maximum).');
++    S.importing = true;
+     const box = $('vidProg'), fill = $('vpFill'), txt = $('vpTxt');
+     box.style.display = ''; fill.style.width = '0%';
+     txt.textContent = 'Sondage de la vidéo…';
+@@ -1395,14 +1488,16 @@ function hVideo(inp) {
+     }).catch(e => {
+         box.style.display = 'none';
+         toast('Vidéo : ' + e.message);
+-    });
++    }).finally(() => { S.importing = false; });
+ }
+ 
+ function ldImgSingle(src, name) {
+-    mkItem(src, name || 'Capture', 'image', null).then(it => addItems([it])).catch(e => toast(e.message));
++    if (operationLocked()) return Promise.resolve(toast('Une opération est déjà en cours.'));
++    S.importing = true;
++    return mkItem(src, name || 'Capture', 'image', null).then(it => addItems([it])).catch(e => toast(e.message)).finally(() => { S.importing = false; });
+ }
+ 
+-function ldImg(src, name) { ldImgSingle(src, name); }
++function ldImg(src, name) { return ldImgSingle(src, name); }
+ 
+ function upCal() {
+     const el = $('calS');
+@@ -1417,6 +1512,7 @@ function upCal() {
+ }
+ 
+ window.togCmp = function() {
++    if (operationLocked()) return toast('Une opération est déjà en cours.');
+     // La comparaison affiche l'élément PRÉCÉDENT de la série (ou l'historique patient).
+     if (!S.comp && S.series.length > 1) {
+         const j = S.active > 0 ? S.active - 1 : 1;
+@@ -1560,6 +1656,7 @@ function pCtr(e) {
+ }
+ 
+ function onTS(e) {
++    if (operationLocked()) return;
+     e.preventDefault();
+     if (e.touches.length === 2) {
+         S.ip = true;
+@@ -1579,6 +1676,7 @@ function onTS(e) {
+ }
+ 
+ function onMD(e) {
++    if (operationLocked()) return;
+     S.dn = true;
+     S.ip = false;
+     S.lP = gP(e);
+@@ -1684,6 +1782,7 @@ window.setT = function(t) {
+ };
+ 
+ window.undo = function() {
++    if (operationLocked()) return toast('Une opération est déjà en cours.');
+     if (S.drw.length) S.drw.pop();
+     else if (S.meas.length) S.meas.pop();
+     else if (S.rois.length) S.rois.pop();
+@@ -1709,6 +1808,7 @@ function fitView() {
+ 
+ // Bouton ✕ : efface les annotations de l'image courante ET recadre.
+ window.resetV = function() {
++    if (operationLocked()) return toast('Une opération est déjà en cours.');
+     S.drw = [];
+     S.meas = [];
+     S.rois = [];
+@@ -1729,7 +1829,7 @@ function renderAg() {
+         d.setAttribute('data-ag', k);
+         d.innerHTML = '<div class="ac-i">' + a.i + '</div><div class="ac-n">' + a.n + '</div><div class="sdot"></div>';
+         d.title = a.s;
+-        d.onclick = () => togAg(k);
++        d.onclick = () => { if (!operationLocked()) togAg(k); };
+         g.appendChild(d);
+     }
+ }
+@@ -1743,6 +1843,7 @@ window.openApiM = function() {
+     $('apiM').classList.add('open');
+     $('providerSel').value = S.provider || 'mistral';
+     $('akIn').value = S.ak || '';
++    $('mdlSel').value = S.provider === 'mistral' ? S.mdlForce || '' : store.get('mv_mdl') || '';
+     $('customBaseIn').value = S.customBase || '';
+     $('customKeyIn').value = S.customKey || '';
+     $('customModelIn').value = S.customModel || 'google/medgemma-1.5-4b-it';
+@@ -1785,37 +1886,46 @@ function upMdlInfo() {
+ 
+ if ($('mdlSel')) $('mdlSel').addEventListener('change', upMdlInfo);
+ 
+-window.saveKey = function() {
+-    S.provider = $('providerSel').value || 'mistral';
+-    if (S.provider === 'mistral') {
+-        const raw = $('akIn').value || '';
+-        S.ak = raw.replace(/[\x00-\x1f\x7f\s]/g, '');
+-        if (!S.ak) { toast('Clé Mistral requise'); return; }
+-        S.mdlForce = $('mdlSel').value || '';
+-        S.mdl = S.mdlForce || 'auto-eco';
+-        store.set('mv_key', S.ak);
+-        store.set('mv_mdl', S.mdlForce);
+-        cfgPut('mv_key', S.ak); cfgPut('mv_mdl', S.mdlForce);
+-    } else {
+-        S.customBase = String($('customBaseIn').value || '').trim().replace(/\/+$/, '');
+-        S.customKey = String($('customKeyIn').value || '').trim();
+-        S.customModel = String($('customModelIn').value || 'google/medgemma-1.5-4b-it').trim();
+-        if (!/^https?:\/\//i.test(S.customBase)) { toast('Endpoint MedGemma invalide : http(s):// requis'); return; }
+-        S.mdlForce = S.customModel;
+-        S.mdl = S.customModel;
+-        store.set('mv_custom_base', S.customBase);
+-        store.set('mv_custom_key', S.customKey);
+-        store.set('mv_custom_model', S.customModel);
+-        cfgPut('mv_custom_base', S.customBase);
+-        cfgPut('mv_custom_key', S.customKey);
+-        cfgPut('mv_custom_model', S.customModel);
++function normalizeEndpoint(value) {
++    let url;
++    try { url = new URL(String(value || '').trim()); } catch (e) { throw new Error('Endpoint invalide : indiquez une URL https://…/v1'); }
++    const loopback = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
++    if (url.protocol !== 'https:' && !(url.protocol === 'http:' && loopback)) throw new Error('HTTPS requis (HTTP autorisé seulement sur localhost).');
++    if (url.username || url.password || url.search || url.hash) throw new Error('L’endpoint ne doit pas contenir de mot de passe, de paramètres ni de fragment.');
++    url.pathname = url.pathname.replace(/\/+$/, '').replace(/\/chat\/completions$/, '');
++    if (!url.pathname || url.pathname === '/') url.pathname = '/v1';
++    return url.toString().replace(/\/+$/, '');
++}
++function readConfigForm() {
++    const provider = $('providerSel').value || 'mistral';
++    if (provider === 'mistral') {
++        const ak = String($('akIn').value || '').replace(/[\x00-\x1f\x7f\s]/g, '');
++        if (!ak) throw new Error('Clé Mistral requise');
++        return { provider, ak, mdlForce: $('mdlSel').value || '' };
+     }
+-    store.set('mv_provider', S.provider);
+-    cfgPut('mv_provider', S.provider);
+-    upAkStat();
+-    S.mdlPool = null;
+-    clM('apiM');
+-    toast('Moteur IA enregistré : ' + (S.provider === 'mistral' ? (S.mdlForce || 'Mistral Auto Éco') : 'MedGemma 1.5'));
++    if (provider !== 'medgemma') throw new Error('Fournisseur non pris en charge');
++    const customBase = normalizeEndpoint($('customBaseIn').value);
++    const customKey = String($('customKeyIn').value || '').trim();
++    const customModel = String($('customModelIn').value || '').trim();
++    if (!customModel) throw new Error('Indiquez le nom du modèle servi par votre endpoint.');
++    return { provider, customBase, customKey, customModel, mdlForce: customModel };
++}
++function configSnapshot() {
++    return { provider: S.provider, ak: S.ak, customBase: S.customBase, customKey: S.customKey, customModel: S.customModel };
++}
++window.saveKey = function() {
++    if (operationLocked()) return toast('Terminez l’opération avant de modifier la connexion.');
++    let config;
++    try { config = readConfigForm(); } catch (e) { return toast(e.message); }
++    Object.assign(S, config);
++    S.mdl = S.mdlForce || 'auto-eco';
++    const values = config.provider === 'mistral' ? { mv_key: S.ak, mv_mdl: S.mdlForce } :
++        { mv_custom_base: S.customBase, mv_custom_key: S.customKey, mv_custom_model: S.customModel };
++    values.mv_provider = S.provider;
++    Object.entries(values).forEach(([k, v]) => { store.set(k, v); cfgPut(k, v); });
++    S.mdlPool = null; S.mdlVision = null; S.mdlFast = null; S.mdlSynth = null; S.caps = {};
++    upAkStat(); updateConnectionStatus(); clM('apiM');
++    toast('Configuration enregistrée. Le bouton Tester permet de vérifier l’accès.');
+ };
+ 
+ // ---------- Socle : pipeline visuel, agents, échappement ----------
+@@ -1885,6 +1995,7 @@ function mkItem(src, name, kind, t) {
+     return new Promise((res, rej) => {
+         const im = new Image();
+         im.onload = () => {
++            if (!im.width || !im.height || im.width * im.height > 32000000) return rej(new Error('image vide ou supérieure à 32 mégapixels'));
+             const it = {
+                 id: 'it' + (++ITEM_SEQ), name: name || ('Image ' + ITEM_SEQ), kind: kind || 'image',
+                 src: src, img: im, w: im.width, h: im.height, t: (t == null ? null : t),
+@@ -1905,9 +2016,9 @@ function stashAnn() {
+ }
+ 
+ // Bascule l'élément actif : chaque image conserve SES annotations
+-function setActive(i) {
++function setActive(i, skipStash) {
+     if (i < 0 || i >= S.series.length) return;
+-    stashAnn();
++    if (!skipStash) stashAnn();
+     S.active = i;
+     const it = S.series[i];
+     S.imgA = it.img; S.srcA = it.src; S.w = it.w; S.h = it.h;
+@@ -1918,20 +2029,19 @@ function setActive(i) {
+     $('lA').textContent = it.name + ' (' + it.w + '×' + it.h + ')';
+     upCal(); fitView(); drw(); showImgStats(); renderStrip();
+     if (it.pp) renderPP(it.pp);
++    else $('ppArea').style.display = 'none';
+ }
+ 
+ function delItem(i) {
++    if (operationLocked()) return toast('Terminez l’opération avant de supprimer une image.');
+     if (!S.series[i]) return;
++    stashAnn();
++    const activeId = S.series[S.active] && S.series[S.active].id;
+     S.series.splice(i, 1);
+-    if (!S.series.length) {
+-        S.imgA = null; S.srcA = null; S.pp = null; S.active = 0;
+-        S.pxMm = null; S.meas = []; S.rois = []; S.drw = []; S.aiRois = [];
+-        $('lA').textContent = 'Aucune image';
+-        upCal(); drw(); showImgStats(); renderStrip();
+-        return;
+-    }
+-    S.active = Math.min(S.active, S.series.length - 1);
+-    setActive(S.active);
++    clearReport();
++    if (!S.series.length) { resetSeriesView(); return; }
++    const next = S.series.findIndex(it => it.id === activeId);
++    setActive(next >= 0 ? next : Math.min(i, S.series.length - 1), true);
+ }
+ 
+ function addItems(items) {
+@@ -1940,9 +2050,11 @@ function addItems(items) {
+     if (room <= 0) return toast('Série pleine (' + SERIES_MAX + ' max)');
+     const keep = items.slice(0, room);
+     const first = S.series.length === 0;
++    stashAnn();
+     S.series = S.series.concat(keep);
++    clearReport();
+     if (keep.length < items.length) toast('Série limitée à ' + SERIES_MAX + ' éléments');
+-    setActive(first ? 0 : S.active);
++    setActive(first ? 0 : S.active, true);
+     renderStrip();
+     toast(keep.length + ' élément(s) ajouté(s) — ' + S.series.length + ' au total');
+ }
+@@ -2084,7 +2196,7 @@ function renderStrip() {
+         x.onclick = ev => { ev.stopPropagation(); delItem(i); };
+         d.appendChild(x);
+         d.title = it.name + ' — ' + it.w + '×' + it.h + (it.kind === 'frame' ? ' — t=' + fmtT(it.t) : '');
+-        d.onclick = () => setActive(i);
++        d.onclick = () => { if (!operationLocked()) setActive(i); else toast('Une opération est déjà en cours.'); };
+         el.appendChild(d);
+     });
+ }
+@@ -2273,14 +2385,29 @@ const RL = {
+     max: 2,          // appels simultanes
+     minGap: 1100,    // ms minimum entre deux departs
+     active: 0, last: 0, until: 0, q: [], t: null,
+-    acquire: function () { return new Promise(function (r) { RL.q.push(r); RL.pump(); }); },
++    acquire: function (signal) {
++        return new Promise((resolve, reject) => {
++            if (signal && signal.aborted) return reject(abortError());
++            const entry = { resolve, reject, signal };
++            entry.abort = () => {
++                const i = RL.q.indexOf(entry); if (i >= 0) RL.q.splice(i, 1);
++                reject(abortError()); RL.pump();
++            };
++            if (signal) signal.addEventListener('abort', entry.abort, { once: true });
++            RL.q.push(entry); RL.pump();
++        });
++    },
+     pump: function () {
+         if (!RL.q.length || RL.active >= RL.max) return;
+-        const now = Date.now();
+-        const wait = Math.max(RL.until - now, RL.last + RL.minGap - now, 0);
++        const wait = Math.max(RL.until - Date.now(), RL.last + RL.minGap - Date.now(), 0);
+         if (wait > 0) { clearTimeout(RL.t); RL.t = setTimeout(RL.pump, wait + 10); return; }
+-        RL.active++; RL.last = Date.now(); RL.q.shift()();
++        const entry = RL.q.shift();
++        if (entry.signal) entry.signal.removeEventListener('abort', entry.abort);
++        if (entry.signal && entry.signal.aborted) { entry.reject(abortError()); RL.pump(); return; }
++        RL.active++; RL.last = Date.now(); entry.resolve();
++        RL.pump();
+     },
++
+     release: function () { RL.active = Math.max(0, RL.active - 1); RL.pump(); },
+     // Un 429 de cadence se resorbe en quelques secondes ; un quota epuise jamais.
+     // ok ne compte QUE les generations : /v1/models repond meme sur un compte a sec.
+@@ -2306,42 +2433,72 @@ function normalizeOpenAIImages(body) {
+     return b;
+ }
+ 
++function retryDelay(value) {
++    if (!value) return 0;
++    const seconds = Number(value);
++    return Number.isFinite(seconds) ? Math.max(0, seconds) : Math.max(0, (Date.parse(value) - Date.now()) / 1000) || 0;
++}
+ function rawCall(o) {
+-    return new Promise(function (res, rej) {
++    return new Promise((resolve, reject) => {
++        const config = o.config || configSnapshot();
++        const signal = o.signal;
++        if (signal && signal.aborted) return reject(abortError());
++        const isMistral = config.provider === 'mistral';
++        let base;
++        try { base = isMistral ? MISTRAL_API_BASE : normalizeEndpoint(config.customBase); }
++        catch (e) { return reject({ status: 0, msg: e.message }); }
+         const x = new XMLHttpRequest();
+-        const isMistral = (S.provider || 'mistral') === 'mistral';
+-        const base = isMistral ? MISTRAL_API_BASE : String(S.customBase || '').replace(/\/+$/, '');
+-        if (!base) return rej({ status: 0, msg: 'endpoint IA non configuré' });
++        let settled = false;
++        const settle = (fn, value) => {
++            if (settled) return; settled = true;
++            if (signal) signal.removeEventListener('abort', abort);
++            fn(value);
++        };
++        const abort = () => { x.abort(); settle(reject, abortError()); };
+         x.open(o.method || 'POST', base + (o.path || '/chat/completions'), true);
+-        const token = isMistral ? S.ak : S.customKey;
++        const token = isMistral ? config.ak : config.customKey;
+         if (token) x.setRequestHeader('Authorization', 'Bearer ' + token);
+         if (o.body) x.setRequestHeader('Content-Type', 'application/json');
+         x.timeout = o.timeout || 90000;
+-        x.onload = function () {
+-            let d = null;
++        x.onload = () => {
++            let d;
+             try { d = JSON.parse(x.responseText); } catch (e) {}
+-            if (x.status >= 200 && x.status < 300) return res(d);
+-            let ra = 0;
+-            try { ra = parseFloat(x.getResponseHeader('Retry-After') || x.getResponseHeader('retry-after') || '0') || 0; } catch (e) {}
+-            rej({ status: x.status, body: d, raw: x.responseText, retryAfter: ra });
++            if (x.status >= 200 && x.status < 300) {
++                if (!d || typeof d !== 'object') return settle(reject, { status: 200, msg: 'Le serveur a renvoyé une réponse vide ou non JSON.' });
++                return settle(resolve, d);
++            }
++            let delay = 0;
++            try { delay = retryDelay(x.getResponseHeader('Retry-After')); } catch (e) {}
++            settle(reject, { status: x.status, body: d, retryAfter: delay });
+         };
+-        x.onerror = function () { rej({ status: 0, msg: 'reseau' }); };
+-        x.ontimeout = function () { rej({ status: -1, msg: 'timeout' }); };
+-        let payload = o.body || null;
+-        if (payload && !isMistral) payload = normalizeOpenAIImages(payload);
+-        x.send(payload ? JSON.stringify(payload) : null);
++        x.onerror = () => settle(reject, { status: 0, msg: 'Connexion impossible. Vérifiez Internet, l’URL et les autorisations CORS du serveur.' });
++        x.ontimeout = () => settle(reject, { status: -1, msg: 'Le serveur a dépassé le délai de réponse.' });
++        x.onabort = () => settle(reject, abortError());
++        if (signal) signal.addEventListener('abort', abort, { once: true });
++        try { x.send(o.body ? JSON.stringify(isMistral ? o.body : normalizeOpenAIImages(o.body)) : null); }
++        catch (e) { settle(reject, { status: 0, msg: e.message }); }
+     });
+ }
++function waitRetry(ms, signal) {
++    return new Promise((resolve, reject) => {
++        if (signal && signal.aborted) return reject(abortError());
++        const abort = () => { clearTimeout(timer); reject(abortError()); };
++        const timer = setTimeout(() => { if (signal) signal.removeEventListener('abort', abort); resolve(); }, ms);
++        if (signal) signal.addEventListener('abort', abort, { once: true });
++    });
++}
++
+ 
+ // Tout appel passe par la file, et un 429 est repris avec repli
+ // exponentiel + jitter, en respectant Retry-After quand il est fourni.
+ const RETRIABLE = { 429: 1, 500: 1, 502: 1, 503: 1, 504: 1 };
+ 
+ function mcall(o) {
++    o = Object.assign({}, o, { config: o.config || configSnapshot(), signal: 'signal' in o ? o.signal : (S.analysisController && S.analysisController.signal) });
+     const maxTry = (o.retries != null ? o.retries : 5);
+     let n = 0;
+     function run() {
+-        return RL.acquire()
++        return RL.acquire(o.signal)
+             .then(function () {
+                 const gen = !o.path || o.path === '/chat/completions';
+                 return rawCall(o).then(
+@@ -2365,7 +2522,7 @@ function mcall(o) {
+                             ' · reprise dans ' + secs + 's (' + n + '/' + maxTry + ')');
+                     }
+                 } catch (ue) {}
+-                return new Promise(function (r) { setTimeout(r, wait); }).then(run);
++                return waitRetry(wait, o.signal).then(run);
+             });
+     }
+     return run();
+@@ -2374,10 +2531,10 @@ function mcall(o) {
+ // Extraction du message d'erreur réel renvoyé par l'API
+ function apiErr(e) {
+     if (!e) return 'erreur inconnue';
+-    if (e.status === -1) return 'délai dépassé';
+-    if (e.status === 0) return 'connexion impossible';
++    if (e.status === -2) return 'Analyse arrêtée à votre demande.';
++    if (e.status === -1 || e.status === 0) return e.msg || 'Connexion impossible ou délai dépassé.';
+     const b = e.body;
+-    let m = '';
++    let m = e.msg || '';
+     if (b) {
+         if (typeof b.message === 'string') m = b.message;
+         else if (b.message && b.message.detail) m = JSON.stringify(b.message.detail);
+@@ -2446,7 +2603,8 @@ function mchat(model, messages, schema, opts) {
+         return mcall({ body: build(level), timeout: opts.timeout })
+             .then(d => {
+                 const ch = d && d.choices && d.choices[0];
+-                const txt = (ch && ch.message && ch.message.content) || '';
++                const content = ch && ch.message && ch.message.content;
++                const txt = Array.isArray(content) ? content.filter(x => x.type === 'text').map(x => x.text || '').join('\n') : (content || '');
+                 if (!txt) throw { status: 200, body: { message: 'réponse vide du modèle' } };
+                 // Une réponse coupée par max_tokens produit un JSON invalide. Ce n'est
+                 // pas un défaut de format : dégrader le schéma n'y changerait rien,
+@@ -2459,6 +2617,7 @@ function mchat(model, messages, schema, opts) {
+                 let parsed;
+                 try { parsed = JSON.parse(clean); }
+                 catch (pe) { pe._raw = clean; throw pe; }
++                if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw { status: 200, msg: 'Le modèle n’a pas renvoyé un objet JSON exploitable.' };
+                 S.caps[model] = level;
+                 return parsed;
+             })
+@@ -2481,7 +2640,7 @@ function mchat(model, messages, schema, opts) {
+                     }
+                     return attempt(level + 1, e);
+                 }
+-                if (e && (e.status === 400 || e.status === 422 || e.status === 404)) return attempt(level + 1, e);
++                if (e && (e.status === 400 || e.status === 422)) return attempt(level + 1, e);
+                 throw e;
+             });
+     }
+@@ -2523,30 +2682,32 @@ function salvageJSON(raw) {
+ }
+ 
+ // ---------- Découverte dynamique des modèles ----------
+-function discoverModels() {
+-    if ((S.provider || 'mistral') === 'medgemma') {
+-        const id = S.customModel || 'google/medgemma-1.5-4b-it';
+-        return Promise.resolve([{ id: id, rank: 100, lbl: 'MedGemma 1.5 — médical multimodal' }]);
+-    }
+-    return mcall({ method: 'GET', path: '/models', timeout: 15000 })
++function visionModels(list) {
++    return (Array.isArray(list) ? list : []).filter(m => {
++        if (!m || typeof m.id !== 'string' || m.deprecation) return false;
++        const c = m.capabilities || {};
++        if (c.vision === false || c.completion_chat === false) return false;
++        if (c.vision === true) return true;
++        // Missing metadata permits only verified vision IDs, never arbitrary text models.
++        return MDL_FALLBACK.some(f => f.id === m.id) || /^pixtral-(12b-2409|large-latest)$/.test(m.id);
++    }).map(m => ({ id: m.id, rank: rankModel(m.id), lbl: m.description || m.name || m.id }))
++      .sort((a, b) => b.rank - a.rank);
++}
++function discoverModels(config) {
++    config = config || configSnapshot();
++    if (config.provider === 'medgemma') return Promise.resolve([{ id: config.customModel, rank: 100, lbl: config.customModel }]);
++    return mcall({ method: 'GET', path: '/models', timeout: 15000, config, retries: 1 })
+         .then(d => {
+-            const list = (d && d.data) || [];
+-            let vis = list.filter(m => {
+-                const c = m.capabilities || {};
+-                return c.vision === true && c.completion_chat !== false && !m.deprecation;
+-            });
+-            // Certaines réponses n'exposent pas `capabilities.vision` : repli par famille.
+-            // Repli : liste blanche figee -> aveugle a toute famille future.
+-            // On exclut plutot les familles notoirement non-vision.
+-            if (!vis.length) vis = list.filter(m =>
+-                !/codestral|devstral|voxtral|ocr|embed|moderation|nemo|mixtral|^open-|guardrail|rerank|leanstral|vibe-cli|mathstral|saba|agentic|tts|transcribe/i.test(m.id) &&
+-                !m.deprecation);
+-            vis = vis.map(m => ({ id: m.id, rank: rankModel(m.id), lbl: m.description || m.name || m.id }));
+-            if (!vis.length) throw new Error('aucun modèle vision');
+-            vis.sort((a, b) => b.rank - a.rank);
+-            return vis;
+-        })
+-        .catch(() => MDL_FALLBACK.slice());
++            const models = visionModels(d.data);
++            if (!models.length) throw { status: 200, msg: 'Aucun modèle avec capacité vision confirmé pour cette clé. Vérifiez l’accès dans votre compte Mistral.' };
++            return models;
++        });
++}
++function prepareModels() {
++    return (S.mdlPool ? Promise.resolve(S.mdlPool) : discoverModels()).then(models => {
++        if (S.mdlForce && !models.some(m => m.id === S.mdlForce)) throw { status: 400, msg: 'Le modèle sélectionné n’est pas accessible en vision. Choisissez Auto Éco dans la configuration.' };
++        assignRoles(models); applyForce(); return models;
++    });
+ }
+ 
+ function assignRoles(models) {
+@@ -3103,7 +3264,7 @@ window.auditVerify = function() {
+     let log;
+     try { log = JSON.parse(store.get('mv_audit') || '[]'); } catch (e) { return toast('Journal illisible'); }
+     if (!log.length) return toast('Journal vide');
+-    let prev = '0', bad = 0;
++    let prev = log[0].p || '0', bad = 0;
+     for (let i = 0; i < log.length; i++) {
+         const e = log[i], h = e.h;
+         const copy = { t: e.t, a: e.a, d: e.d, v: e.v, p: e.p };
+@@ -3142,18 +3303,18 @@ const VAULT = {
+     },
+ 
+     // Clé de chiffrement AES-256-GCM
+-    deriveKey(code, salt) {
++    deriveKey(code, salt, iterations = this.ITER) {
+         return this._material(code).then(m => crypto.subtle.deriveKey(
+-            { name: 'PBKDF2', salt: salt, iterations: this.ITER, hash: 'SHA-256' },
++            { name: 'PBKDF2', salt: salt, iterations, hash: 'SHA-256' },
+             m, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']));
+     },
+ 
+     // Vérificateur : dérivation SÉPARÉE, ne permet pas de remonter à la clé.
+-    deriveVerifier(code, salt) {
++    deriveVerifier(code, salt, iterations = this.ITER) {
+         const s2 = new Uint8Array(salt.length + 4);
+         s2.set(salt); s2.set(new TextEncoder().encode('vrfy'), salt.length);
+         return this._material(code).then(m => crypto.subtle.deriveBits(
+-            { name: 'PBKDF2', salt: s2, iterations: this.ITER, hash: 'SHA-256' }, m, 256))
++            { name: 'PBKDF2', salt: s2, iterations, hash: 'SHA-256' }, m, 256))
+             .then(b => this.b64(b));
+     },
+ 
+@@ -3190,7 +3351,7 @@ const VAULT = {
+         const wait = this.lockedFor();
+         if (wait > 0) return Promise.resolve({ ok: false, err: 'Verrouillé — réessayez dans ' + wait + ' s', wait: wait });
+         const salt = this.unb64(c.salt);
+-        return this.deriveVerifier(code, salt).then(v => {
++        return this.deriveVerifier(code, salt, c.iter || this.ITER).then(v => {
+             if (!this.eq(v, c.verifier)) {
+                 const f = (c.fails || 0) + 1;
+                 const d = this.LOCKOUT[Math.min(f, this.LOCKOUT.length - 1)];
+@@ -3200,7 +3361,7 @@ const VAULT = {
+             }
+             c.fails = 0; c.until = 0;
+             store.set('mv_vault', JSON.stringify(c));
+-            return this.deriveKey(code, salt).then(k => { this.key = k; return { ok: true }; });
++            return this.deriveKey(code, salt, c.iter || this.ITER).then(k => { this.key = k; return { ok: true }; });
+         });
+     },
+ 
+@@ -3461,10 +3622,11 @@ window.applyRoute = function () {
+ // ============================================================
+ window.runBatch = function() {
+     const agents = selectedAgents();
+-    if (!agents.length) return toast(t('msg.noexpert'));
++    if (!moteurPret()) { openApiM(); return toast('Configurez le moteur IA'); }
+     if (S.series.length < 2) return toast('Le mode Lot demande au moins 2 éléments');
+-    if (S.busy) return toast(t('msg.busy'));
+-
++    if (operationLocked()) return toast(t('msg.busy'));
++    S.batchRunning = true; S.batchCancelled = false;
++    clearReport();
+     const results = [];
+     const total = S.series.length;
+     let i = 0;
+@@ -3478,16 +3640,19 @@ window.runBatch = function() {
+     tick();
+ 
+     const step = () => {
+-        if (i >= total) {
+-            S.only = null; S.onDone = null; S.batch = results;
++        if (i >= total || S.batchCancelled) {
++            S.only = null; S.onDone = null; S.batch = results; S.batchRunning = false;
++            setBusy(false);
+             bar.style.display = 'none';
++            S.lastReport = null; S.lastMeta = null;
+             renderBatch(results, agents);
+             return;
+         }
+         S.only = i;
++        setActive(i);
+         S.onDone = (rep, err) => {
+             results.push({ i: i, name: S.series[i].name, t: S.series[i].t, rep: rep, err: err });
+-            if (rep) S.series[i].report = rep;
++            if (rep) { S.series[i].report = rep; S.series[i].reportMeta = S.lastMeta; }
+             i++; tick();
+             setTimeout(step, 200);   // respiration entre deux éléments
+         };
+@@ -3512,7 +3677,7 @@ function renderBatch(res, agents) {
+ 
+     h += '<ul class="btl">';
+     sorted.forEach(r => {
+-        h += '<li><div class="btl-h">' + sevBadge(r.rep ? r.rep.severite_globale : 'norm') +
++        h += '<li><div class="btl-h">' + sevBadge(r.rep ? r.rep.severite_globale : 'nonev') +
+              '<b>' + escapeHtml(r.name) + '</b>' +
+              (r.t != null ? '<span class="loc">t = ' + fmtT(r.t) + '</span>' : '') +
+              '<button class="bt bmini" onclick="showBatchItem(' + r.i + ')">Voir</button></div>';
+@@ -3528,17 +3693,19 @@ function renderBatch(res, agents) {
+     });
+     h += '</ul>';
+     h += '<p class="trace">Experts : ' + agents.map(k => AG[k].n).join(', ') +
+-         '<br>Chaque élément a reçu une analyse complète et indépendante.' +
++         '<br>' + nOk + ' élément(s) avec un rapport ; les échecs sont indiqués ci-dessus.' +
+          '<br><br>⚠️ Aide à la décision — ne remplace pas un diagnostic posé par un professionnel de santé.</p>';
+     $('aiO').innerHTML = h;
+     $('aiO').classList.add('vis');
+ }
+ 
+ window.showBatchItem = function(i) {
++    if (operationLocked()) return toast('Une opération est déjà en cours.');
+     const it = S.series[i];
+     if (!it || !it.report) return toast('Aucun rapport pour cet élément');
+     setActive(i);
+-    S.lastReport = it.report;
++    S.lastReport = it.report; S.lastMeta = it.reportMeta || null;
++    S.triage = S.lastMeta ? S.lastMeta.triage : null;
+     renderReport(it.report, selectedAgents(), S.triage);
+ };
+ 
+@@ -3561,54 +3728,35 @@ function pxImg() {
+     return c.toDataURL('image/jpeg', 0.9);
+ }
+ 
+-window.diagAPI = function() {
+-    const p = $('providerSel').value || S.provider || 'mistral';
+-    const box = $('diagOut');
+-    box.style.display = 'block';
+-    box.innerHTML = '<div class="dg-l"><span class="sp"></span> Test en cours…</div>';
+-    const L = [];
+-    const put = (st, t, d) => {
+-        L.push('<div class="dg-l dg-' + st + '"><b>' + t + '</b>' + (d ? '<span>' + escapeHtml(String(d)) + '</span>' : '') + '</div>');
+-        box.innerHTML = L.join('');
+-    };
+-    const old = { provider:S.provider, ak:S.ak, customBase:S.customBase, customKey:S.customKey, customModel:S.customModel };
+-    S.provider = p;
+-    if (p === 'mistral') {
+-        S.ak = String($('akIn').value || S.ak || '').replace(/[\x00-\x1f\x7f\s]/g, '');
+-        if (!S.ak) { put('err','Configuration','Clé Mistral requise'); return; }
+-    } else {
+-        S.customBase = String($('customBaseIn').value || S.customBase || '').trim().replace(/\/+$/, '');
+-        S.customKey = String($('customKeyIn').value || S.customKey || '').trim();
+-        S.customModel = String($('customModelIn').value || S.customModel || 'google/medgemma-1.5-4b-it').trim();
+-        if (!/^https?:\/\//i.test(S.customBase)) { put('err','Configuration','Endpoint http(s):// requis'); return; }
+-    }
+-    const restore = () => Object.assign(S, old);
+-    const oi = originIssue();
+-    if (oi && p === 'mistral') put('warn','Origine de la page : ' + oi,'Une page file:// peut bloquer les requêtes CORS. Préférer GitHub Pages ou Vercel en HTTPS.');
+-    else put('ok','Origine',location.origin || location.protocol);
+-
+-    if (p === 'mistral') {
+-        mcall({ method:'GET', path:'/models', timeout:20000 })
+-          .then(d => {
+-              const list=(d&&d.data)||[];
+-              const vm=list.filter(m => (m.capabilities||{}).vision === true || /mistral-(?:medium|large|small)|ministral-(?:14b|8b|3b)/i.test(m.id));
+-              put('ok','Catalogue Mistral',list.length + ' modèles accessibles');
+-              put(vm.length?'ok':'warn','Vision',vm.length ? vm.slice(0,8).map(m=>m.id).join(', ') : 'aucun modèle vision détecté');
+-              const pick = ($('mdlSel').value || (vm.sort((a,b)=>rankModel(b.id)-rankModel(a.id))[0]||{}).id || 'ministral-14b-2512');
+-              return mcall({ body:{ model:pick, messages:[{role:'user',content:[{type:'text',text:'Décris seulement la forme géométrique visible.'},{type:'image_url',image_url:pxImg()}]}], max_tokens:50 }, timeout:45000 })
+-                .then(()=>put('ok','Vision ' + pick,'image acceptée'));
+-          })
+-          .catch(e=>put('err','API Mistral',apiErr(e)))
+-          .then(()=>{ put('info','Test terminé','Le mode Free reste soumis aux limites de compte Mistral.'); restore(); });
+-    } else {
+-        const model=S.customModel;
+-        mcall({ body:{ model:model, messages:[{role:'user',content:[{type:'text',text:'Réponds uniquement : TEST_OK si tu peux lire cette image.'},{type:'image_url',image_url:{url:pxImg()}}]}], max_tokens:30 }, timeout:60000 })
+-          .then(()=>put('ok','Endpoint MedGemma','chat multimodal accepté par ' + model))
+-          .catch(e=>put('err','Endpoint MedGemma',apiErr(e)))
+-          .then(()=>{ put('info','Test terminé','Le backend doit être compatible OpenAI /chat/completions et accepter les images data: URL.'); restore(); });
+-    }
++window.diagAPI = async function() {
++    if (operationLocked()) return toast('Une opération est déjà en cours.');
++    const box = $('diagOut'); box.style.display = 'block'; box.textContent = 'Test en cours…';
++    let config;
++    try { config = readConfigForm(); } catch (e) { box.textContent = e.message; return; }
++    S.diagnosing = true; $('diagBtn').disabled = true; $('saveKeyBtn').disabled = true;
++    try {
++        let model = config.mdlForce;
++        if (config.provider === 'mistral') {
++            const d = await mcall({ method: 'GET', path: '/models', config, signal: null, timeout: 15000, retries: 1 });
++            const models = visionModels(d.data);
++            if (!models.length) throw { status: 200, msg: 'Aucun modèle vision accessible.' };
++            model = model || models[0].id;
++            if (!models.some(m => m.id === model)) throw { status: 400, msg: 'Modèle non accessible en vision : choisissez Auto Éco.' };
++        }
++        const d = await mcall({ config, signal: null, retries: 1, timeout: 45000,
++            body: { model, max_tokens: 80, messages: [{ role: 'user', content: [
++                { type: 'text', text: 'Décris brièvement la forme géométrique visible.' },
++                { type: 'image_url', image_url: pxImg() }
++            ] }] }
++        });
++        const reply = d.choices && d.choices[0] && d.choices[0].message;
++        if (!reply || !reply.content) throw { status: 200, msg: 'Réponse vide : vérifiez le modèle et son projecteur vision.' };
++        box.textContent = 'Connexion réussie · ' + model + '. Le serveur accepte une requête avec image. Cela ne valide pas sa fiabilité médicale. Cliquez sur Enregistrer pour appliquer cette configuration.';
++    } catch (e) { box.textContent = 'Échec du test : ' + apiErr(e); }
++    finally { S.diagnosing = false; $('diagBtn').disabled = false; $('saveKeyBtn').disabled = false; }
+ };
+ 
++
+ // ============================================================
+ //  PRÉ-TRAITEMENT IMAGE (canvas, 100 % local)
+ // ============================================================
+@@ -4057,7 +4205,9 @@ function analyzeGeneral() {
+     if (S.busy) return;
+     if (!S.imgA) return toast('Chargez une image d\'abord');
+     if (!moteurPret()) { openApiM(); return toast('Configurez le moteur IA'); }
+-    S.busy = true; S.lastReport = null; S.lastMeta = null;
++    clearReport(); setBusy(true);
++    S.analysisController = new AbortController();
++    $('aiO').classList.add('vis');
+     $('aiO').innerHTML = '<p>Analyse générale en cours…</p>';
+     const sys = 'Tu decris une image de facon factuelle et neutre. Tu n\'es pas medecin ' +
+         'et cette image n\'est pas un examen : n\'emets aucun diagnostic, aucune hypothese ' +
+@@ -4071,7 +4221,7 @@ function analyzeGeneral() {
+         const d = PP.draw(S.imgA, 1280);
+         part = { type: 'image_url', image_url: d.c.toDataURL('image/jpeg', 0.85) };
+     } catch (e) {
+-        S.busy = false;
++        setBusy(false); S.analysisController = null;
+         $('aiO').innerHTML = '<h3>Analyse interrompue</h3><p>Image illisible.</p>';
+         return;
+     }
+@@ -4079,12 +4229,12 @@ function analyzeGeneral() {
+         { role: 'system', content: sys },
+         { role: 'user', content: [{ type: 'text', text: 'Decris cette image.' }].concat([part]) }
+     ];
+-    mchat(S.mdlVision || S.mdlForce || 'mistral-medium-3-5', msgs, SCH_GEN, { max_tokens: 1800, timeout: 90000 })
++    prepareModels().then(() => mchat(S.mdlVision, msgs, SCH_GEN, { max_tokens: 1800, timeout: 90000 }))
+         .then(function (r) { renderGeneral(r); })
+         .catch(function (e) {
+             $('aiO').innerHTML = '<h3>Analyse interrompue</h3><p>' + escapeHtml(apiErr(e)) + '</p>';
+         })
+-        .then(function () { S.busy = false; });
++        .finally(function () { setBusy(false); S.analysisController = null; });
+ }
+ 
+ function renderGeneral(r) {
+@@ -4111,7 +4261,7 @@ function renderGeneral(r) {
+ }
+ 
+ window.forceAnalyse = function () {
+-    if (S.busy) return;
++    if (operationLocked()) return;
+     S.forceTri = true;
+     analyzeWithAI(S.lastAuto);
+ };
+@@ -4128,7 +4278,9 @@ function analyzeWithAI(auto) {
+     if (agents.length === 0) return toast(t('msg.noexpert'));
+     if (!S.series.length) return toast('Chargez au moins une image');
+     if (S.busy) return toast(t('msg.busy'));
+-    S.busy = true;
++    setBusy(true); S.analysisController = new AbortController();
++    S.lastReport = null; S.lastMeta = null;
++    const signal = S.analysisController.signal;
+     stashAnn();
+ 
+     const N = S.series.length;
+@@ -4155,13 +4307,14 @@ function analyzeWithAI(auto) {
+     const fail = (i, lbl, msg) => {
+         updPipe(i, 'err', lbl);
+         $('aiO').innerHTML = '<h3>Analyse interrompue</h3><p>' + escapeHtml(msg) + '</p>';
+-        S.busy = false;
++        setBusy(false); S.analysisController = null;
+         if (S.onDone) S.onDone(null, msg);
+     };
+ 
+     // --- Étape 0 : pré-traitement local de TOUS les éléments de la série ---
+     at(0);
+     const preprocAll = (k) => new Promise((res, rej) => {
++        try { checkCancelled(signal); } catch (e) { return rej(e); }
+         if (k >= S.series.length) return res();
+         const it = S.series[k];
+         updPipe(0, 'active', (k + 1) + '/' + S.series.length);
+@@ -4187,10 +4340,10 @@ function analyzeWithAI(auto) {
+ 
+         // --- Étape 1 : découverte des modèles ---
+         at(1);
+-        const mdlReady = S.mdlPool ? Promise.resolve(S.mdlPool) : discoverModels();
++        checkCancelled(signal);
++        const mdlReady = prepareModels();
+         mdlReady.then(models => {
+-            assignRoles(models);
+-            applyForce();
++            checkCancelled(signal);
+             updPipe(1, 'done', S.mdlVision);
+ 
+             // --- Étape 2 : triage modalité/région ---
+@@ -4203,7 +4356,7 @@ function analyzeWithAI(auto) {
+             // divise la charge par environ quatre.
+             const triPart = (function () {
+                 try {
+-                    const it = S.series[S.active] || S.series[0];
++                    const it = S.series[S.only != null ? S.only : S.active] || S.series[0];
+                     if (!it || !it.img) return S.imgSet.parts[0];
+                     const d = PP.draw(it.img, 768);
+                     return { type: 'image_url', image_url: d.c.toDataURL('image/jpeg', 0.72) };
+@@ -4248,7 +4401,9 @@ function analyzeWithAI(auto) {
+                             'Analyser malgré tout</button>' +
+                             '<p style="color:var(--txd);font-size:.72rem;margin-top:6px">' +
+                             'La réserve sera portée dans le compte rendu et dans le PDF.</p>';
+-                        S.busy = false; throw 'stop';
++                        setBusy(false); S.analysisController = null;
++                        if (S.onDone) S.onDone(null, 'Image non analysable');
++                        throw 'stop';
+                     }
+                     S.triForce = !!S.forceTri; S.forceTri = false;
+                     const grille = grilleFor(tri.modalite + ' ' + tri.region);
+@@ -4280,6 +4435,7 @@ function analyzeWithAI(auto) {
+                     }));
+ 
+                     return Promise.all(jobs).then(res => {
++                        checkCancelled(signal);
+                         // Fusion des lots : un expert = une lecture consolidée.
+                         const byExp = {};
+                         const good = res.filter(x => !x.err);
+@@ -4381,7 +4537,7 @@ function analyzeWithAI(auto) {
+                     fail(S.step, 'erreur', m);
+                 });
+         }).catch(e => fail(1, 'erreur', apiErr(e)));
+-    }).catch(e => fail(0, 'erreur', e.message || String(e)));
++    }).catch(e => fail(0, 'erreur', e.status != null ? apiErr(e) : (e.message || String(e))));
+ }
+ 
+ function lectureMsg(agents, tri, grille, set) {
+@@ -4463,12 +4619,12 @@ function finish(rep, agents, tri, t0, annStep) {
+     S.lastMeta = {
+         fournisseur_ia: S.provider || 'mistral', modele_vision: S.mdlVision, modele_triage: S.mdlFast, modele_synthese: S.mdlSynth,
+         experts: agents.map(k => AG[k].n), triage: tri,
+-        mode: S.mode, elements: S.series.length,
+-        images_envoyees: S.imgSet ? S.imgSet.parts.length : 1,
++        mode: S.mode, elements: S.only == null ? S.series.length : 1,
++        images_envoyees: S.chunks ? S.chunks.reduce((n, c) => n + c.parts.length, 0) : 1,
+         variante: S.ppSel || 'clahe',
+         graine: RUN_SEED, temperature: 0,
+         triage_force: !!S.triForce,
+-        elements_total: S.series.length,
++        elements_total: S.only == null ? S.series.length : 1,
+         // Auparavant : total PLANIFIE. Un lot en echec affichait quand meme
+         // « 12/12 elements analyses » avec une coche verte -- fausse reassurance.
+         elements_analyses: S.cov ? S.cov.elements_lus
+@@ -4480,13 +4636,12 @@ function finish(rep, agents, tri, t0, annStep) {
+         lectures_echouees: S.cov ? S.cov.echouees : 0,
+         inspection_zoom: !S.zoomOff && S.chunks && S.chunks.some(zoomUseful), duree_ms: Date.now() - t0, horodatage: new Date().toISOString()
+     };
+-    // Les ROI portent un numéro d'image de la REQUÊTE ; on le remappe vers la série.
+-    const map = (S.imgSet && S.imgSet.map) || [0];
+-    S.series.forEach(it => { it.ann = it.ann || newAnn(); it.ann.aiRois = []; });
++    // Les lectures ont déjà converti les indices en indices globaux de série.
++    S.series.forEach((it, i) => { it.ann = it.ann || newAnn(); if (S.only == null || i === S.only) it.ann.aiRois = []; });
+     let placed = 0;
+     (rep.rois || []).filter(r => typeof r.xmin === 'number').forEach(r => {
+-        const n = Math.max(1, Math.min(map.length, parseInt(r.image, 10) || 1));
+-        const si = map[n - 1];
++        const si = Number(r.image) - 1;
++        if (!Number.isInteger(si) || si < 0 || si >= S.series.length) return;
+         const it = S.series[si];
+         if (!it) return;
+         it.ann.aiRois.push(r); placed++;
+@@ -4497,7 +4652,7 @@ function finish(rep, agents, tri, t0, annStep) {
+     updPipe(annStep, 'done', placed + ' zone(s) / ' + S.series.length + ' img');
+     renderReport(rep, agents, tri);
+     showImgStats();
+-    S.busy = false;
++    setBusy(false); S.analysisController = null;
+     if (S.onDone) S.onDone(rep, null);
+ }
+ 
+@@ -4540,6 +4695,7 @@ function urgBadge(u) {
+ }
+ 
+ function renderReport(r, agents, tri) {
++    $('aiO').classList.add('vis');
+     let h = '';
+     h += '<div class="fr fsb fnw" style="align-items:center"><h3 style="margin-top:0;border:none">' + t('rep.summary') + '</h3>' + sevBadge(r.severite_globale) + '</div>';
+ 
+@@ -4713,22 +4869,18 @@ function showImgStats() {
+     $('imgStats').innerHTML = h;
+ }
+ 
+-window.runAutoAI = function() {
+-    // Le mode Lot exécute une analyse complète et indépendante par élément.
+-    if (S.mode === 'batch' && S.series.length > 1) return window.runBatch();
+-    // Le garde-fou exigeait la cle Mistral quel que soit le moteur : en mode
+-    // MedGemma, l'analyse ne demarrait jamais alors que tout etait configure.
+-    if (!moteurPret()) { openApiM(); return toast('Configurez le moteur IA'); }
+-    if (!S.imgA) return toast('Chargez une image d\'abord');
+-    analyzeWithAI(true);
+-};
+-window.runAI = function() {
+-    // Le garde-fou exigeait la cle Mistral quel que soit le moteur : en mode
+-    // MedGemma, l'analyse ne demarrait jamais alors que tout etait configure.
++function startAnalysis(auto) {
++    if (operationLocked()) return toast('Une opération est déjà en cours.');
++    if (!S.imgA) return toast('Importez une image avant de lancer l’analyse.');
+     if (!moteurPret()) { openApiM(); return toast('Configurez le moteur IA'); }
+-    if (!S.imgA) return toast('Chargez une image d\'abord');
+-    analyzeWithAI(false);
+-};
++    if (navigator.onLine === false && isMistralProv()) return toast('Reconnectez-vous à Internet pour utiliser Mistral.');
++    if (!$('genMode').checked && S.mode === 'batch' && S.series.length > 1) return window.runBatch();
++    analyzeWithAI(auto);
++}
++window.runAutoAI = () => startAnalysis(true);
++window.runAI = () => startAnalysis(false);
++
++
+ 
+ // ---------- Caméra ----------
+ // navigator.mediaDevices est ABSENT sur origine non sécurisée (http://, file://,
+@@ -4747,6 +4899,7 @@ function camUnavailableMsg() {
+ }
+ 
+ window.startCam = function() {
++    if (operationLocked()) return toast('Une opération est déjà en cours.');
+     if (!camAvailable()) return toast(camUnavailableMsg());
+     $('camM').classList.add('open');
+     openStream();
+@@ -4839,7 +4992,9 @@ window.exportPDF = function() {
+         return toast('Analyse générale : export PDF médical indisponible');
+     const ns = window.jspdf;
+     if (!ns || !ns.jsPDF) return toast(t('msg.nopdf'));
++    if (operationLocked()) return toast('Terminez l’opération avant l’export.');
+     if (!S.imgA) return toast(t('msg.noexam'));
++    if (!S.lastReport) return toast('Lancez une analyse complète avant d’exporter un rapport.');
+ 
+     const doc = new ns.jsPDF({ unit: 'mm', format: 'a4' });
+ 
+@@ -5261,12 +5416,12 @@ else
+ function registerSW() {
+     if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+     if (location.protocol !== 'https:' && location.hostname !== 'localhost') return;
+-    navigator.serviceWorker.register('./sw.js', { scope: './' })
++    navigator.serviceWorker.register('./sw.js', { scope: './', updateViaCache: 'none' })
+         .then(function (reg) {
+             S.sw = reg;
+-            try { reg.update(); } catch (e) {}
++            try { reg.update().catch(() => {}); } catch (e) {}
+             document.addEventListener('visibilitychange', function () {
+-                if (!document.hidden) { try { reg.update(); } catch (e) {} }
++                if (!document.hidden) { try { reg.update().catch(() => {}); } catch (e) {} }
+             });
+             reg.addEventListener('updatefound', function () {
+                 const nw = reg.installing;
+@@ -5274,7 +5429,8 @@ function registerSW() {
+                 nw.addEventListener('statechange', function () {
+                     if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+                         // Jamais de rechargement automatique : une analyse peut tourner.
+-                        toast('Nouvelle version installee — rechargez la page');
++                        $('updateNotice').hidden = false;
++                        toast('Mise à jour disponible : enregistrez l’examen puis rechargez.');
+                     }
+                 });
+             });
+diff --git a/manifest.json b/manifest.json
+index 1955414..7d36852 100644
+--- a/manifest.json
++++ b/manifest.json
+@@ -47,31 +47,5 @@
+       "purpose": "maskable"
+     }
+   ],
+-  "shortcuts": [
+-    {
+-      "name": "Nouvelle capture",
+-      "short_name": "Caméra",
+-      "description": "Ouvrir la caméra pour capturer un examen",
+-      "url": "./?action=camera",
+-      "icons": [
+-        {
+-          "src": "icon-192.png",
+-          "sizes": "192x192"
+-        }
+-      ]
+-    },
+-    {
+-      "name": "Importer une image",
+-      "short_name": "Importer",
+-      "description": "Charger un examen depuis la galerie",
+-      "url": "./?action=import",
+-      "icons": [
+-        {
+-          "src": "icon-192.png",
+-          "sizes": "192x192"
+-        }
+-      ]
+-    }
+-  ],
+-  "version": "15.9"
++  "version": "16.2.0"
+ }
+diff --git a/sw.js b/sw.js
+index 34213de..e69032b 100644
+--- a/sw.js
++++ b/sw.js
+@@ -1,168 +1,61 @@
+-/* MedVision AI Pro — Service Worker
+-   Studio Niko Design · v12
+-
+-   Règle cardinale : aucune donnée de santé ni aucune réponse de l'API Mistral
+-   ne doit être mise en cache. Seule la coquille applicative est stockée.
+-   Les examens et rapports restent dans IndexedDB, sous le contrôle de l'app.   */
+-
++/* Cache only the application shell. Never cache API responses or patient data. */
+ 'use strict';
+-
+-const BUILD = 'v15.9.0';
++const BUILD = 'v16.2.0';
+ const SHELL = 'medvision-shell-' + BUILD;
+ const VENDOR = 'medvision-vendor-' + BUILD;
++const PRECACHE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png',
++    './icon-maskable-192.png', './icon-maskable-512.png', './apple-touch-icon.png'];
++const shellURLs = new Set(PRECACHE.map(path => new URL(path, self.registration.scope).href));
++const vendorURLs = new Set(['https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js']);
+ 
+-// Chemins relatifs : fonctionne aussi bien à la racine que dans un sous-dossier
+-// GitHub Pages (/medicalvisionproai/).
+-const PRECACHE = [
+-    './',
+-    './index.html',
+-    './manifest.json',
+-    './icon-192.png',
+-    './icon-512.png',
+-    './icon-maskable-192.png',
+-    './icon-maskable-512.png',
+-    './apple-touch-icon.png'
+-];
+-
+-// Hôtes dont les réponses ne doivent JAMAIS toucher le cache.
+-const NEVER_CACHE = [
+-    'api.mistral.ai',
+-    'api.groq.com',
+-    'api.cerebras.ai',
+-    'api.openai.com',
+-    'localhost',
+-    '127.0.0.1',
+-    'api.anthropic.com'
+-];
+-
+-// Ressources tierces stables : mise en cache autorisée.
+-const VENDOR_HOSTS = [
+-    'fonts.googleapis.com',
+-    'fonts.gstatic.com',
+-    'cdnjs.cloudflare.com'
+-];
+-
+-function isNeverCache(url) {
+-    return NEVER_CACHE.indexOf(url.hostname) >= 0;
+-}
+-
+-function isVendor(url) {
+-    return VENDOR_HOSTS.indexOf(url.hostname) >= 0;
+-}
+-
+-// ---------- Installation ----------
+ self.addEventListener('install', event => {
+-    event.waitUntil(
+-        caches.open(SHELL)
+-            // addAll est atomique : un seul 404 ferait échouer toute l'installation.
+-            // On tolère les absences pour ne jamais bloquer la mise à jour.
+-            .then(cache => Promise.all(PRECACHE.map(u =>
+-                cache.add(new Request(u, { cache: 'reload' })).catch(() => null)
+-            )))
+-            .then(() => self.skipWaiting())
+-    );
++    event.waitUntil(caches.open(SHELL).then(async cache => {
++        // Keep the previous offline version if the replacement shell cannot load.
++        await cache.addAll(['./', './index.html'].map(path => new Request(path, { cache: 'reload' })));
++        await Promise.all(PRECACHE.slice(2).map(path => cache.add(new Request(path, { cache: 'reload' })).catch(() => {})));
++        await self.skipWaiting();
++    }));
+ });
+-
+-// ---------- Activation ----------
+ self.addEventListener('activate', event => {
+-    event.waitUntil(
+-        caches.keys()
+-            .then(keys => Promise.all(
+-                keys.filter(k => k.indexOf('medvision-') === 0 && k !== SHELL && k !== VENDOR)
+-                    .map(k => caches.delete(k))
+-            ))
+-            .then(() => self.clients.claim())
+-    );
++    event.waitUntil(caches.keys().then(keys => Promise.all(keys
++        .filter(key => key.startsWith('medvision-') && key !== SHELL && key !== VENDOR)
++        .map(key => caches.delete(key)))).then(() => self.clients.claim()));
+ });
+-
+-// ---------- Stratégies ----------
+-function networkFirst(request, cacheName, fallback) {
+-    return fetch(request)
+-        .then(res => {
+-            if (res && res.ok) {
+-                const copy = res.clone();
+-                caches.open(cacheName).then(c => c.put(request, copy)).catch(() => {});
+-            }
+-            return res;
+-        })
+-        .catch(() => caches.match(request)
+-            .then(hit => hit || (fallback ? caches.match(fallback) : undefined))
+-            .then(hit => hit || new Response(
+-                '<!doctype html><meta charset="utf-8"><title>Hors ligne</title>' +
+-                '<body style="background:#050a12;color:#e8eef5;font-family:system-ui;padding:32px">' +
+-                '<h1 style="color:#06d6a0">Hors ligne</h1>' +
+-                '<p>MedVision n\'a pas encore été mis en cache sur cet appareil. ' +
+-                'Reconnectez-vous une fois pour terminer l\'installation.</p></body>',
+-                { headers: { 'Content-Type': 'text/html; charset=utf-8' }, status: 503 }
+-            ))
+-        );
++async function networkFirst(request) {
++    const cache = await caches.open(SHELL);
++    try {
++        const response = await fetch(request);
++        if (response.ok) { await cache.put(request, response.clone()).catch(() => {}); return response; }
++        return await cache.match(request) || response;
++    } catch (error) {
++        return await cache.match(request) || await cache.match('./index.html') ||
++            new Response('Hors ligne : reconnectez-vous une fois pour charger MedVision.', {
++                status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' }
++            });
++    }
+ }
+-
+-function cacheFirst(request, cacheName) {
+-    return caches.match(request).then(hit => {
+-        if (hit) {
+-            // Rafraîchissement silencieux en arrière-plan
+-            fetch(request).then(res => {
+-                if (res && res.ok) caches.open(cacheName).then(c => c.put(request, res.clone())).catch(() => {});
+-            }).catch(() => {});
+-            return hit;
+-        }
+-        return fetch(request).then(res => {
+-            if (res && res.ok) {
+-                const copy = res.clone();
+-                caches.open(cacheName).then(c => c.put(request, copy)).catch(() => {});
+-            }
+-            return res;
+-        });
+-    });
++async function cacheFirst(request, name) {
++    const cache = await caches.open(name);
++    const cached = await cache.match(request);
++    if (cached) return cached;
++    const response = await fetch(request);
++    if (response.ok) await cache.put(request, response.clone()).catch(() => {});
++    return response;
+ }
+-
+ self.addEventListener('fetch', event => {
+-    const req = event.request;
+-
+-    // On ne touche qu'aux GET : POST vers l'API, uploads, etc. passent directement.
+-    if (req.method !== 'GET') return;
+-
+-    let url;
+-    try { url = new URL(req.url); } catch (e) { return; }
+-
+-    // Appels d'inférence : réseau seul, jamais interceptés ni stockés.
+-    if (isNeverCache(url)) return;
+-
+-    // Schémas non http(s) (chrome-extension:, data:, blob:…)
+-    if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+-
+-    // Navigation : réseau d'abord pour recevoir les mises à jour,
+-    // repli sur la coquille en cache hors ligne.
+-    if (req.mode === 'navigate') {
+-        event.respondWith(networkFirst(req, SHELL, './index.html'));
+-        return;
+-    }
+-
+-    // Polices et bibliothèques tierces : cache d'abord.
+-    if (isVendor(url)) {
+-        event.respondWith(cacheFirst(req, VENDOR));
+-        return;
+-    }
+-
+-    // Même origine : cache d'abord (coquille, icônes, manifeste).
+-    if (url.origin === self.location.origin) {
+-        event.respondWith(cacheFirst(req, SHELL));
+-        return;
++    const request = event.request;
++    // Allowlist includes path AND query. Same-origin API endpoints are excluded.
++    if (request.method !== 'GET' || request.headers.has('authorization')) return;
++    if (shellURLs.has(request.url)) {
++        event.respondWith(request.mode === 'navigate' ? networkFirst(request) : cacheFirst(request, SHELL));
++    } else if (vendorURLs.has(request.url)) {
++        event.respondWith(cacheFirst(request, VENDOR));
+     }
+-
+-    // Le reste part au réseau sans interception.
+ });
+-
+-// ---------- Messages depuis la page ----------
+ self.addEventListener('message', event => {
+-    const d = event.data || {};
+-    if (d.type === 'SKIP_WAITING') self.skipWaiting();
+-    if (d.type === 'GET_VERSION' && event.source) event.source.postMessage({ type: 'VERSION', build: BUILD });
+-    if (d.type === 'PURGE') {
+-        event.waitUntil(caches.keys().then(ks => Promise.all(
+-            ks.filter(k => k.indexOf('medvision-') === 0).map(k => caches.delete(k))
+-        )));
+-    }
++    const data = event.data || {};
++    if (data.type === 'SKIP_WAITING') self.skipWaiting();
++    if (data.type === 'GET_VERSION' && event.source) event.source.postMessage({ type: 'VERSION', build: BUILD });
++    if (data.type === 'PURGE') event.waitUntil(caches.keys().then(keys => Promise.all(keys
++        .filter(key => key.startsWith('medvision-')).map(key => caches.delete(key)))));
+ });
+-
+diff --git a/test/e2e.js b/test/e2e.js
+index a34726a..9bffb92 100644
+--- a/test/e2e.js
++++ b/test/e2e.js
+@@ -1,24 +1,10 @@
+-// Banc de test bout-en-bout : pilote l'application reelle dans un navigateur
+-// headless, avec une API Mistral simulee. Aucune cle, aucun appel reseau.
+-const { JSDOM, VirtualConsole } = require('jsdom');
+-const { createCanvas } = require('canvas');
+-const fs = require('fs');
+-
++// Integration tests: real application JS, image decoding, Canvas and mocked API.
++// No clinical data or real API credentials are used.
++const { runtime } = require('./runtime.cjs');
+ const FILE = process.argv[2] || 'index.html';
+-const SCENARIO = process.argv[3] || 'nominal';   // nominal | rate-limit | lot-perdu | tronque
+-
+-const errs = [];
+-const vc = new VirtualConsole();
+-vc.on('jsdomError', e => { const m = String(e.message || e);
+-    // Bruit d'environnement : le bac a sable n'a pas acces aux CDN de polices.
+-    if (/Could not load link|fonts\.googleapis|cdnjs/.test(m)) return;
+-    errs.push(m); });
+-
+-const dom = new JSDOM(fs.readFileSync(FILE, 'utf8'), {
+-    runScripts: 'dangerously', pretendToBeVisual: true,
+-    url: 'https://nikoju1977.github.io/medicalvisionproai/', virtualConsole: vc, resources: 'usable'
+-});
+-const w = dom.window;
++const SCENARIO = process.argv[3] || 'nominal';
++const host = runtime(FILE), w = host.w, errs = host.errors;
++const { createCanvas } = host.canvas;
+ 
+ // ---------- API Mistral simulee ----------
+ const calls = { models: 0, triage: 0, lecture: 0, consensus: 0, refus429: 0 };
+@@ -139,7 +125,7 @@ function dataUrlToFile(u, name) {
+ const t = (ms) => new Promise(r => setTimeout(r, ms));
+ 
+ (async function () {
+-    await t(1200);
++    await t(50);
+     installMockXHR();
+ 
+     const $ = id => w.document.getElementById(id);
+@@ -158,8 +144,8 @@ const t = (ms) => new Promise(r => setTimeout(r, ms));
+     const inp = $('fIn');
+     const f = dataUrlToFile(testImage(), 'thorax.png');
+     Object.defineProperty(inp, 'files', { value: [f], configurable: true });
+-    inp.dispatchEvent(new w.Event('change'));
+-    await t(1500);
++    inp.dispatchEvent({ type: 'change' });
++    for (let n = 0; host.api.S.importing && n < 100; n++) await t(50);
+ 
+     const cnt = ($('serCount') || {}).textContent || '';
+     check('image chargee dans la serie', /\d/.test(cnt), cnt || 'bandeau vide');
+@@ -210,6 +196,6 @@ const t = (ms) => new Promise(r => setTimeout(r, ms));
+     }
+ 
+     console.log(out.join('\n'));
+-    process.exit(process.exitCode || 0);
++    host.close(); process.exit(process.exitCode || 0);
+ })();
+ 
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..3c45938
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,3 @@
++node_modules/
++*.log
++.DS_Store
+diff --git a/package.json b/package.json
+new file mode 100644
+index 0000000..e314eef
+--- /dev/null
++++ b/package.json
+@@ -0,0 +1,15 @@
++{
++  "name": "medicalvisionproai",
++  "version": "16.2.0",
++  "private": true,
++  "description": "MedVision AI Pro — static application and integration tests",
++  "scripts": {
++    "test": "node test/run.cjs",
++    "test:regressions": "node --test test/regressions.cjs test/service-worker.cjs",
++    "start": "python3 -m http.server 8080 --bind 127.0.0.1"
++  },
++  "devDependencies": {
++    "@napi-rs/canvas": "0.1.100"
++  },
++  "engines": { "node": ">=22" }
++}
+diff --git a/test/regressions.cjs b/test/regressions.cjs
+new file mode 100644
+index 0000000..3d09603
+--- /dev/null
++++ b/test/regressions.cjs
+@@ -0,0 +1,182 @@
++const { test } = require('node:test');
++const assert = require('node:assert/strict');
++const { runtime } = require('./runtime.cjs');
++const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
++
++function app(t) { const host = runtime(); host.api.RL.minGap = 0; t.after(() => host.close()); return host; }
++function mock(host, respond) {
++    const calls = [];
++    host.w.XMLHttpRequest = class {
++        constructor() { this.headers = {}; }
++        open(method, url) { this.method = method; this.url = url; }
++        setRequestHeader(k, v) { this.headers[k] = v; }
++        getResponseHeader(k) { return this.responseHeaders?.[k] || null; }
++        send(payload) {
++            const call = { url: this.url, method: this.method, body: payload ? JSON.parse(payload) : null, headers: this.headers };
++            calls.push(call);
++            this.timer = setTimeout(() => {
++                const answer = respond(call);
++                if (answer.hang) return;
++                this.status = answer.status || 200; this.responseHeaders = answer.headers;
++                this.responseText = JSON.stringify(answer.body); this.onload();
++            }, 5);
++        }
++        abort() { clearTimeout(this.timer); this.onabort?.(); }
++    };
++    return calls;
++}
++const catalogue = { data: [{ id: 'ministral-14b-2512', capabilities: { vision: true } }] };
++const response = value => ({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(value) } }] });
++function configure(host) {
++    host.w.document.getElementById('akIn').value = 'synthetic-test-key'; host.w.saveKey();
++}
++async function picture(host, name = 'test.png', shade = '#ccc') {
++    const canvas = host.canvas.createCanvas(100, 100), ctx = canvas.getContext('2d');
++    ctx.fillStyle = shade; ctx.fillRect(0, 0, 100, 100);
++    const file = new host.w.File([canvas.toBuffer('image/png')], name, { type: 'image/png' });
++    return { file, item: await host.api.mkItem(canvas.toDataURL(), name, 'image', null) };
++}
++async function imported(host) {
++    const p = await picture(host); await host.api.hFile({ files: [p.file], value: '' }); return p;
++}
++async function waitDone(host) {
++    for (let n = 0; n < 500 && (host.api.S.busy || host.api.S.batchRunning); n++) await pause(20);
++    assert.equal(host.api.S.busy, false, 'analysis released busy state');
++    assert.equal(host.api.S.batchRunning, false, 'batch finished');
++    assert.deepEqual(host.errors, [], 'no unhandled application errors');
++}
++
++test('invalid settings and failed diagnostics preserve the active connection', async t => {
++    const h = app(t); configure(h);
++    const before = JSON.stringify({ provider: h.api.S.provider, ak: h.api.S.ak });
++    h.w.document.getElementById('providerSel').value = 'medgemma';
++    h.w.document.getElementById('customBaseIn').value = 'javascript:invalid';
++    h.w.saveKey(); await h.w.diagAPI();
++    assert.equal(JSON.stringify({ provider: h.api.S.provider, ak: h.api.S.ak }), before);
++    assert.equal(h.api.S.diagnosing, false);
++    assert.equal(h.api.normalizeEndpoint('https://example.test/v1/chat/completions/'), 'https://example.test/v1');
++    assert.equal(h.api.normalizeEndpoint('http://localhost:11434'), 'http://localhost:11434/v1');
++    for (const url of ['http://example.test/v1', 'https://user:pass@example.test/v1', 'https://example.test/v1?key=secret']) assert.throws(() => h.api.normalizeEndpoint(url));
++});
++test('model discovery refuses non-vision models and propagates authentication failures', async t => {
++    const h = app(t); configure(h);
++    assert.equal(h.api.visionModels([{ id: 'ministral-14b-2512', capabilities: { vision: false } }, { id: 'unknown-text-model' }]).length, 0);
++    assert.equal(h.api.visionModels([{ id: 'future-vision', capabilities: { vision: true } }])[0].id, 'future-vision');
++    const calls = mock(h, () => ({ status: 401, body: { message: 'Invalid API key' } }));
++    await assert.rejects(h.api.discoverModels(), e => e.status === 401);
++    assert.equal(calls.length, 1); assert.ok(calls[0].url.endsWith('/models'));
++});
++test('general analysis discovers the configured model and renders a visible result', async t => {
++    const h = app(t); configure(h); await imported(h);
++    h.w.document.getElementById('genMode').checked = true;
++    const calls = mock(h, c => ({ body: c.url.endsWith('/models') ? catalogue : response({ description: 'Carré gris de test', elements: [], limites: [] }) }));
++    h.w.runAI(); await waitDone(h);
++    const output = h.w.document.getElementById('aiO');
++    assert.ok(output.classList.contains('vis')); assert.match(output.innerHTML, /Carré gris/);
++    assert.equal(calls[1].body.model, 'ministral-14b-2512'); assert.equal(h.api.S.lastReport, null);
++});
++test('one corrupt file does not discard valid images and image limit is enforced before decoding', async t => {
++    const h = app(t), good = await picture(h);
++    const bad = new h.w.File(['not a PNG'], 'corrupt.png', { type: 'image/png' });
++    await h.api.hFile({ files: [bad, good.file], value: '' });
++    assert.equal(h.api.S.series.length, 1);
++    assert.match(h.w.document.getElementById('importStatus').textContent, /corrupt.png/);
++    h.api.S.series = Array.from({ length: 23 }, (_, i) => ({ ...good.item, id: 'i' + i }));
++    await h.api.hFile({ files: [good.file, good.file, good.file], value: '' });
++    assert.equal(h.api.S.series.length, 24);
++});
++test('deleting the active image preserves annotations on its neighbour', async t => {
++    const h = app(t), a = (await picture(h, 'a.png')).item, b = (await picture(h, 'b.png')).item;
++    a.ann.meas = [{ id: 'measurement-A', a: {x: 1, y: 1}, b: {x: 5, y: 5} }]; b.ann.meas = [{ id: 'measurement-B', a: {x: 2, y: 2}, b: {x: 8, y: 8} }];
++    h.api.S.series = [a, b]; h.api.setActive(0, true); h.api.delItem(0);
++    assert.equal(h.api.S.series[0].name, 'b.png');
++    assert.equal(h.api.S.meas[0].id, 'measurement-B'); assert.equal(h.api.S.lastReport, null);
++});
++test('ROI indices are global after chunk remapping, including the ninth image', async t => {
++    const h = app(t), p = (await picture(h)).item;
++    h.api.S.series = Array.from({ length: 10 }, (_, i) => ({ ...p, id: 'i' + i, ann: { ...p.ann, aiRois: [] } }));
++    h.api.S.imgSet = { map: [0, 0, 1, 1], parts: [] }; h.api.S.chunks = [];
++    h.api.finish({ findings: [], rois: [{ image: 9, xmin: .1, ymin: .1, xmax: .2, ymax: .2 }] }, ['gen'], {}, Date.now(), 0);
++    assert.equal(h.api.S.series[8].ann.aiRois.length, 1);
++    assert.equal(h.api.S.series[1].ann.aiRois.length, 0);
++});
++test('MedGemma receives OpenAI image objects and uses its own model after provider changes', async t => {
++    const h = app(t); configure(h); h.api.S.mdlVision = 'old-mistral-model';
++    const $ = id => h.w.document.getElementById(id);
++    $('providerSel').value = 'medgemma'; $('customBaseIn').value = 'https://private.example/v1'; $('customModelIn').value = 'medgemma-local';
++    h.w.saveKey(); await imported(h); $('genMode').checked = true;
++    const calls = mock(h, () => ({ body: response({ description: 'Objet de test' }) }));
++    h.w.runAI(); await waitDone(h);
++    assert.equal(calls[0].url, 'https://private.example/v1/chat/completions');
++    assert.equal(calls[0].body.model, 'medgemma-local');
++    assert.equal(typeof calls[0].body.messages[1].content[1].image_url.url, 'string');
++    assert.equal(calls[0].headers.Authorization, undefined);
++});
++test('cancellation aborts pending HTTP and queued work without producing a report', async t => {
++    const h = app(t); configure(h); await imported(h);
++    h.w.document.getElementById('genMode').checked = true;
++    const calls = mock(h, c => c.url.endsWith('/models') ? { body: catalogue } : { hang: true });
++    h.w.runAI(); for (let n = 0; n < 100 && calls.length < 2; n++) await pause(10);
++    assert.equal(calls.length, 2); h.w.cancelAnalysis(); await waitDone(h);
++    assert.match(h.w.document.getElementById('aiO').innerHTML, /arrêtée/);
++    assert.equal(h.api.RL.active, 0); assert.equal(h.api.RL.q.length, 0); assert.equal(h.api.S.lastReport, null);
++    const controller = new AbortController(); h.api.RL.until = Date.now() + 60000;
++    const queued = h.api.mcall({ body: {}, signal: controller.signal }); controller.abort();
++    await assert.rejects(queued, e => e.status === -2); assert.equal(h.api.RL.q.length, 0);
++});
++test('manual batch mode triages every independent image and finishes even when one is unanalysable', async t => {
++    const h = app(t); configure(h);
++    const a = await picture(h, 'a.png', '#333'), b = await picture(h, 'b.png', '#eee');
++    await h.api.hFile({ files: [a.file, b.file], value: '' });
++    const $ = id => h.w.document.getElementById(id);
++    $('modeSel').value = 'batch'; h.w.setMode(); $('zoomOff').checked = true; h.w.setZoom();
++    const triages = [];
++    mock(h, c => {
++        if (c.url.endsWith('/models')) return { body: catalogue };
++        const text = JSON.stringify(c.body.messages);
++        if (text.includes('technicien en imagerie')) {
++            triages.push(c.body.messages[1].content[1].image_url);
++            return { body: response({ modalite: 'Radiographie', region: 'Thorax', incidence: 'Face', qualite: 'test', artefacts: [], analysable: triages.length !== 2 }) };
++        }
++        return { body: response({ severite: 'nonev', findings: [], rois: [], limites: ['Test technique uniquement'] }) };
++    });
++    h.w.runAI(); await waitDone(h);
++    assert.equal(triages.length, 2); assert.notEqual(triages[0], triages[1]);
++    assert.equal(h.api.S.batch.length, 2); assert.match(h.api.S.batch[1].err, /non analysable/);
++    assert.equal(h.api.S.only, null); assert.equal(h.api.S.lastReport, null);
++});
++test('encrypted save/load restores all images, annotations and context without appending to another exam', async t => {
++    const h = app(t), rows = [];
++    h.api.S.db = { transaction() {
++        const tx = { objectStore() { return {
++            add(record) { rows.push(record); setTimeout(() => tx.oncomplete?.(), 0); },
++            index() { return { getAll(pid) { const req = {}; setTimeout(() => { req.result = rows.filter(r => r.pid === pid); req.onsuccess(); }, 0); return req; } }; }
++        }; } }; return tx;
++    } };
++    await h.api.VAULT.create('123456');
++    const a = await picture(h, 'a.png'), b = await picture(h, 'b.png');
++    await h.api.hFile({ files: [a.file, b.file], value: '' });
++    const $ = id => h.w.document.getElementById(id);
++    $('patL').value = '1'; $('notes').value = 'Synthetic note'; $('ctxInd').value = 'Synthetic context';
++    h.api.S.series[1].ann.meas = [{ id: 'B' }];
++    await h.w.saveExam();
++    assert.equal(rows.length, 1); assert.equal(rows[0].data._enc, 'A256GCM');
++    assert.ok(!JSON.stringify(rows[0]).includes('Synthetic note'));
++    h.w.clrSeries(); await imported(h); $('notes').value = 'Other context';
++    await h.w.loadPat();
++    assert.equal(h.api.S.series.length, 2); assert.equal(h.api.S.series[1].ann.meas[0].id, 'B');
++    assert.equal($('notes').value, 'Synthetic note'); assert.equal($('ctxInd').value, 'Synthetic context');
++    $('patL').value = '2'; await h.w.loadPat();
++    assert.equal(h.api.S.series.length, 0); assert.equal($('notes').value, '');
++});
++test('content-block JSON replies work and missing model errors do not retry four schema variants', async t => {
++    const h = app(t); configure(h);
++    let calls = mock(h, () => ({ body: { choices: [{ message: { content: [{ type: 'text', text: '{"ok":true}' }] } }] } }));
++    const schema = { name: 'test', def: { type: 'object', properties: { ok: { type: 'boolean' } } } };
++    assert.equal((await h.api.mchat('model', [{ role: 'system', content: 'JSON' }], schema)).ok, true);
++    calls = mock(h, () => ({ status: 404, body: { message: 'Unknown model' } }));
++    await assert.rejects(h.api.mchat('missing', [{ role: 'system', content: 'JSON' }], schema), e => e.status === 404);
++    assert.equal(calls.length, 1);
++    assert.equal(h.api.retryDelay('2'), 2);
++    assert.ok(h.api.retryDelay(new Date(Date.now() + 5000).toUTCString()) > 3);
++});
+diff --git a/test/run.cjs b/test/run.cjs
+new file mode 100644
+index 0000000..689a947
+--- /dev/null
++++ b/test/run.cjs
+@@ -0,0 +1,20 @@
++const fs = require('node:fs');
++const vm = require('node:vm');
++const { spawnSync } = require('node:child_process');
++const assert = require('node:assert/strict');
++const html = fs.readFileSync('index.html', 'utf8');
++for (const block of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) new vm.Script(block[1]);
++new vm.Script(fs.readFileSync('sw.js', 'utf8'));
++const version = html.match(/APP_VERSION = 'v([\d.]+)'/)[1];
++assert.equal(JSON.parse(fs.readFileSync('manifest.json')).version, version);
++assert.equal(JSON.parse(fs.readFileSync('package.json')).version, version);
++assert.equal(fs.readFileSync('sw.js', 'utf8').match(/BUILD = 'v([\d.]+)'/)[1], version);
++console.log('Syntax and application/cache versions OK: ' + version);
++let failures = 0;
++for (const scenario of ['nominal', 'rate-limit', 'lot-perdu', 'tronque', 'quota']) {
++    const result = spawnSync(process.execPath, ['test/e2e.js', 'index.html', scenario], { stdio: 'inherit', timeout: 120000 });
++    if (result.status !== 0) failures++;
++}
++const regressions = spawnSync(process.execPath, ['--test', 'test/regressions.cjs', 'test/service-worker.cjs'], { stdio: 'inherit', timeout: 60000 });
++if (regressions.status !== 0) failures++;
++process.exitCode = failures ? 1 : 0;
+diff --git a/test/runtime.cjs b/test/runtime.cjs
+new file mode 100644
+index 0000000..edde3d1
+--- /dev/null
++++ b/test/runtime.cjs
+@@ -0,0 +1,135 @@
++// Lightweight Node host for integration tests. Real app JS, WebCrypto, image
++// decoding and Canvas run here; this is not a browser/layout conformance test.
++const fs = require('node:fs');
++const vm = require('node:vm');
++const { webcrypto } = require('node:crypto');
++const { File } = require('node:buffer');
++const canvas = require('@napi-rs/canvas');
++
++function runtime(file = 'index.html') {
++    const errors = [], timers = new Set();
++    const html = fs.readFileSync(file, 'utf8');
++    class Element {
++        constructor(tag) {
++            this.tagName = tag.toUpperCase(); this.children = []; this.attributes = {};
++            this.style = {}; this.value = ''; this.checked = false; this.disabled = false;
++            this.hidden = false; this.listeners = {}; this._text = ''; this._html = '';
++            if (tag === 'canvas') this._canvas = canvas.createCanvas(300, 150);
++        }
++        get className() { return this.attributes.class || ''; }
++        set className(value) { this.attributes.class = value; }
++        get classList() {
++            const el = this;
++            return {
++                contains(x) { return el.className.split(/\s+/).includes(x); },
++                add(...xs) { el.className = [...new Set([...el.className.split(/\s+/).filter(Boolean), ...xs])].join(' '); },
++                remove(...xs) { el.className = el.className.split(/\s+/).filter(x => !xs.includes(x)).join(' '); },
++                toggle(x, force) { const add = force == null ? !this.contains(x) : force; add ? this.add(x) : this.remove(x); return add; }
++            };
++        }
++        setAttribute(k, v) { this.attributes[k] = String(v); if (k === 'value') this.value = String(v); if (k === 'checked') this.checked = true; }
++        getAttribute(k) { return this.attributes[k] ?? null; }
++        removeAttribute(k) { delete this.attributes[k]; }
++        get id() { return this.attributes.id; } set id(v) { this.attributes.id = v; }
++        get textContent() { return this._text + this.children.map(c => c.textContent).join(''); }
++        set textContent(v) { this._text = String(v); this._html = String(v); this.children = []; }
++        get innerHTML() { return this._html; }
++        set innerHTML(v) { this._html = String(v); this._text = ''; this.children = []; parse(String(v), this); }
++        appendChild(child) { this.children.push(child); child.parentNode = this; return child; }
++        removeChild(child) { this.children.splice(this.children.indexOf(child), 1); child.parentNode = null; }
++        get lastChild() { return this.children.at(-1); }
++        get options() { return descendants(this).filter(e => e.tagName === 'OPTION'); }
++        get width() { return this._canvas ? this._canvas.width : 600; }
++        set width(v) { if (this._canvas) this._canvas.width = v; }
++        get height() { return this._canvas ? this._canvas.height : 600; }
++        set height(v) { if (this._canvas) this._canvas.height = v; }
++        get clientWidth() { return this.tagName === 'CANVAS' ? this.width : 800; }
++        get clientHeight() { return this.tagName === 'CANVAS' ? this.height : 400; }
++        getBoundingClientRect() { return { x: 0, y: 0, left: 0, top: 0, width: this.clientWidth, height: this.clientHeight }; }
++        getContext(type) {
++            const ctx = this._canvas.getContext(type);
++            return new Proxy(ctx, {
++                get(target, key) {
++                    if (key === 'drawImage') return (source, ...args) => target.drawImage(source._canvas || source, ...args);
++                    const value = Reflect.get(target, key, target);
++                    return typeof value === 'function' ? value.bind(target) : value;
++                },
++                set(target, key, value) { Reflect.set(target, key, value, target); return true; }
++            });
++        }
++        toDataURL(...args) { return this._canvas.toDataURL(...args); }
++        addEventListener(type, cb) { (this.listeners[type] ||= []).push(cb); }
++        removeEventListener(type, cb) { this.listeners[type] = (this.listeners[type] || []).filter(x => x !== cb); }
++        dispatchEvent(event) { event.target = this; for (const fn of this.listeners[event.type] || []) fn.call(this, event); }
++        click() { this.onclick?.({ target: this, stopPropagation() {} }); this.dispatchEvent({ type: 'click' }); }
++        querySelectorAll(selector) { return descendants(this).filter(e => matches(e, selector)); }
++        querySelector(selector) { return this.querySelectorAll(selector)[0] || null; }
++        scrollIntoView() {} focus() {}
++    }
++    function descendants(el) { return el.children.flatMap(c => [c, ...descendants(c)]); }
++    function matches(el, selector) {
++        const parts = selector.trim().split(/\s+(?![^\[]*\])/);
++        const last = parts.pop();
++        const attrs = [...last.matchAll(/\[([^=\]]+)(?:=["']?([^"'\]]+)["']?)?\]/g)];
++        if (attrs.some(m => m[2] == null ? el.getAttribute(m[1]) == null : el.getAttribute(m[1]) !== m[2])) return false;
++        const base = last.replace(/\[[^\]]+\]/g, '');
++        const id = base.match(/#([\w-]+)/); if (id && el.id !== id[1]) return false;
++        if ([...base.matchAll(/\.([\w-]+)/g)].some(m => !el.classList.contains(m[1]))) return false;
++        const tag = base.match(/^[a-z][\w-]*/i); if (tag && el.tagName !== tag[0].toUpperCase()) return false;
++        if (parts.length) { let parent = el.parentNode; while (parent) { if (matches(parent, parts.join(' '))) return true; parent = parent.parentNode; } return false; }
++        return true;
++    }
++    function parse(source, root) {
++        const stack = [root];
++        source = source.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '').replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '').replace(/<!--[\s\S]*?-->/g, '');
++        for (const m of source.matchAll(/<\/?([a-z][\w-]*)([^>]*)>|([^<]+)/gi)) {
++            if (m[3]) { stack.at(-1)._text += m[3]; continue; }
++            const tag = m[1].toLowerCase();
++            if (m[0].startsWith('</')) { while (stack.length > 1) { if (stack.pop().tagName === tag.toUpperCase()) break; } continue; }
++            const el = new Element(tag);
++            for (const a of m[2].matchAll(/([\w-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g)) el.setAttribute(a[1], a[2] ?? a[3] ?? a[4] ?? '');
++            el.checked = 'checked' in el.attributes; el.hidden = 'hidden' in el.attributes;
++            stack.at(-1).appendChild(el);
++            if (!['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'wbr'].includes(tag)) stack.push(el);
++        }
++        for (const el of descendants(root).filter(e => e.tagName === 'SELECT')) {
++            const option = el.options.find(o => 'selected' in o.attributes) || el.options[0];
++            if (option) el.value = option.getAttribute('value') ?? option.textContent;
++        }
++    }
++    const document = new Element('document'); parse(html, document);
++    document.readyState = 'loading'; document.hidden = false;
++    document.documentElement = document.querySelector('html');
++    document.getElementById = id => descendants(document).find(e => e.id === id) || null;
++    document.createElement = tag => new Element(tag);
++    const stored = new Map();
++    const localStorage = { getItem: k => stored.get(k) ?? null, setItem: (k, v) => stored.set(k, String(v)), removeItem: k => stored.delete(k), clear: () => stored.clear() };
++    const window = {
++        document, localStorage, console: { ...console, error: (...args) => errors.push(args.join(' ')) },
++        location: { protocol: 'https:', hostname: 'nikoju1977.github.io', origin: 'https://nikoju1977.github.io', reload() {} },
++        navigator: { language: 'fr-FR', languages: ['fr-FR'], userAgent: 'MedVision test host', onLine: true },
++        devicePixelRatio: 1, crypto: webcrypto, TextEncoder, TextDecoder,
++        AbortController, URL, Blob, File, Image: canvas.Image,
++        Uint8Array, Uint32Array, Uint8ClampedArray, Float32Array, Float64Array,
++        btoa: x => Buffer.from(x, 'binary').toString('base64'), atob: x => Buffer.from(x, 'base64').toString('binary'),
++        setTimeout(fn, ms, ...args) { const id = setTimeout(() => { timers.delete(id); try { fn(...args); } catch(e) { errors.push(e.stack); } }, ms); timers.add(id); return id; },
++        clearTimeout(id) { clearTimeout(id); timers.delete(id); },
++        requestAnimationFrame: fn => setTimeout(fn, 0),
++        addEventListener() {}, prompt() { return null; }, confirm() { return false; },
++        getComputedStyle: () => ({ getPropertyValue: () => '0' })
++    };
++    window.FileReader = class {
++        async readAsDataURL(file) { try { const result = 'data:' + file.type + ';base64,' + Buffer.from(await file.arrayBuffer()).toString('base64'); this.onload?.({ target: { result } }); } catch (error) { this.onerror?.(error); } }
++    };
++    window.window = window;
++    const context = vm.createContext(window);
++    const exposed = ['S','VAULT','RL','PP','init','hFile','mkItem','setActive','delItem','stashAnn','finish','normalizeEndpoint','visionModels','mchat','mcall','discoverModels','prepareModels','retryDelay','buildImageChunks','renderGeneral','renderReport','setBusy'];
++    for (const script of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) {
++        let code = script[1];
++        if (code.includes('const S =')) code = code.replace(/\}\)\(\);\s*$/, 'window.__test = {' + exposed.join(',') + '};\n})();');
++        vm.runInContext(code, context, { filename: file });
++    }
++    window.__test.init();
++    return { w: window, api: window.__test, errors, canvas, close() { for (const id of timers) clearTimeout(id); } };
++}
++module.exports = { runtime };
+diff --git a/test/service-worker.cjs b/test/service-worker.cjs
+new file mode 100644
+index 0000000..5726b6d
+--- /dev/null
++++ b/test/service-worker.cjs
+@@ -0,0 +1,54 @@
++const { test } = require('node:test');
++const assert = require('node:assert/strict');
++const vm = require('node:vm');
++const fs = require('node:fs');
++const source = fs.readFileSync('sw.js', 'utf8');
++
++function worker() {
++    const listeners = {}, puts = [], deleted = [];
++    let fail = false;
++    const entries = new Map();
++    const cache = {
++        addAll: async () => { if (fail) throw new Error('Offline'); }, add: async () => {},
++        match: async request => entries.get(typeof request === 'string' ? request : request.url),
++        put: async (request, response) => { puts.push(request.url); entries.set(request.url, response); }
++    };
++    const context = {
++        URL, Request, Response, Set, Promise,
++        self: { registration: { scope: 'https://example.test/medicalvisionproai/' },
++            addEventListener: (name, fn) => { listeners[name] = fn; },
++            skipWaiting: () => { context.activated = true; }, clients: { claim() {} } },
++        caches: { open: async () => cache, keys: async () => ['medvision-shell-old', 'other-app-cache'], delete: async k => { deleted.push(k); } },
++        fetch: async () => { if (fail) throw new Error('Offline'); return new Response('shell'); }
++    };
++    // Browser Request accepts relative URLs; Node Request requires absolute URLs.
++    context.Request = class extends Request { constructor(input, init) { super(new URL(input, context.self.registration.scope), init); } };
++    vm.runInNewContext(source, context);
++    return { listeners, puts, deleted, cache, entries, context, offline() { fail = true; } };
++}
++test('service worker never intercepts inference, patient endpoints, authorized requests or query URLs', async () => {
++    const h = worker();
++    for (const request of [
++        new Request('https://api.mistral.ai/v1/models'),
++        new Request('https://example.test/medicalvisionproai/patients/1'),
++        new Request('https://example.test/medicalvisionproai/index.html?patient=1'),
++        new Request('https://example.test/medicalvisionproai/index.html', { headers: { Authorization: 'Bearer test' } }),
++        new Request('https://private.test/v1/chat/completions', { method: 'POST' })
++    ]) {
++        let intercepted = false; h.listeners.fetch({ request, respondWith() { intercepted = true; } });
++        assert.equal(intercepted, false, request.url);
++    }
++    let promise;
++    h.listeners.fetch({ request: new Request('https://example.test/medicalvisionproai/index.html'), respondWith(p) { promise = p; } });
++    assert.equal((await promise).status, 200); assert.equal(h.puts.length, 1);
++});
++test('a failed shell installation keeps the previous cache and does not activate', async () => {
++    const h = worker(); h.offline(); let promise;
++    h.listeners.install({ waitUntil(p) { promise = p; } });
++    await assert.rejects(promise, /Offline/); assert.equal(h.context.activated, undefined); assert.equal(h.deleted.length, 0);
++});
++test('offline navigation serves the cached shell', async () => {
++    const h = worker(); h.entries.set('./index.html', new Response('cached shell')); h.offline(); let promise;
++    h.listeners.fetch({ request: { method: 'GET', mode: 'navigate', url: 'https://example.test/medicalvisionproai/', headers: new Headers() }, respondWith(p) { promise = p; } });
++    assert.equal(await (await promise).text(), 'cached shell');
++});

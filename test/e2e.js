@@ -1,24 +1,10 @@
-// Banc de test bout-en-bout : pilote l'application reelle dans un navigateur
-// headless, avec une API Mistral simulee. Aucune cle, aucun appel reseau.
-const { JSDOM, VirtualConsole } = require('jsdom');
-const { createCanvas } = require('canvas');
-const fs = require('fs');
-
+// Integration tests: real application JS, image decoding, Canvas and mocked API.
+// No clinical data or real API credentials are used.
+const { runtime } = require('./runtime.cjs');
 const FILE = process.argv[2] || 'index.html';
-const SCENARIO = process.argv[3] || 'nominal';   // nominal | rate-limit | lot-perdu | tronque
-
-const errs = [];
-const vc = new VirtualConsole();
-vc.on('jsdomError', e => { const m = String(e.message || e);
-    // Bruit d'environnement : le bac a sable n'a pas acces aux CDN de polices.
-    if (/Could not load link|fonts\.googleapis|cdnjs/.test(m)) return;
-    errs.push(m); });
-
-const dom = new JSDOM(fs.readFileSync(FILE, 'utf8'), {
-    runScripts: 'dangerously', pretendToBeVisual: true,
-    url: 'https://nikoju1977.github.io/medicalvisionproai/', virtualConsole: vc, resources: 'usable'
-});
-const w = dom.window;
+const SCENARIO = process.argv[3] || 'nominal';
+const host = runtime(FILE), w = host.w, errs = host.errors;
+const { createCanvas } = host.canvas;
 
 // ---------- API Mistral simulee ----------
 const calls = { models: 0, triage: 0, lecture: 0, consensus: 0, refus429: 0 };
@@ -139,7 +125,7 @@ function dataUrlToFile(u, name) {
 const t = (ms) => new Promise(r => setTimeout(r, ms));
 
 (async function () {
-    await t(1200);
+    await t(50);
     installMockXHR();
 
     const $ = id => w.document.getElementById(id);
@@ -158,8 +144,8 @@ const t = (ms) => new Promise(r => setTimeout(r, ms));
     const inp = $('fIn');
     const f = dataUrlToFile(testImage(), 'thorax.png');
     Object.defineProperty(inp, 'files', { value: [f], configurable: true });
-    inp.dispatchEvent(new w.Event('change'));
-    await t(1500);
+    inp.dispatchEvent({ type: 'change' });
+    for (let n = 0; host.api.S.importing && n < 100; n++) await t(50);
 
     const cnt = ($('serCount') || {}).textContent || '';
     check('image chargee dans la serie', /\d/.test(cnt), cnt || 'bandeau vide');
@@ -210,5 +196,6 @@ const t = (ms) => new Promise(r => setTimeout(r, ms));
     }
 
     console.log(out.join('\n'));
-    process.exit(process.exitCode || 0);
+    host.close(); process.exit(process.exitCode || 0);
 })();
+

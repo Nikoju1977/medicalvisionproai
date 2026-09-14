@@ -1,40 +1,29 @@
-# MedVision AI Pro v12 — déploiement PWA
+# Déploiement de MedVision AI Pro 16.2.0
 
-## Fichiers
+Le site reste une application statique sans étape de compilation. Conservez `index.html`, `sw.js`, `manifest.json` et les icônes dans le même dossier. Les chemins relatifs fonctionnent dans le sous-dossier GitHub Pages.
 
-| Fichier | Rôle |
-|---|---|
-| `index.html` | Application complète (single-file) |
-| `sw.js` | Service worker — coquille en cache, API jamais mise en cache |
-| `manifest.json` | Manifeste PWA |
-| `icon-192.png` / `icon-512.png` | Icônes standard |
-| `icon-maskable-192.png` / `icon-maskable-512.png` | Icônes adaptatives Android |
-| `apple-touch-icon.png` | Icône iOS |
+## Vérifier puis publier
 
-**Les 7 fichiers doivent être à la racine du même dossier.** Les chemins sont relatifs :
-la racine d'un domaine comme un sous-dossier GitHub Pages fonctionnent sans modification.
+1. `npm install --ignore-scripts` puis `npm test`.
+2. Soumettre les corrections dans une branche et vérifier les tests avant la fusion.
+3. GitHub Pages doit publier `main` depuis la racine du dépôt, ou utiliser le déploiement Pages déjà configuré.
+4. Attendre la réussite du déploiement, puis ouvrir https://nikoju1977.github.io/medicalvisionproai/ et vérifier la version affichée.
 
-## GitHub Pages
+La version doit être identique dans `APP_VERSION`, `BUILD`, `manifest.json` et `package.json`. Le test automatique vérifie cette cohérence.
 
-```bash
-git add index.html sw.js manifest.json *.png
-git commit -m "v12 — PWA, mode Lot, analyse multi-sources"
-git push origin main
-```
+## Mise à jour et hors ligne
 
-Puis Settings → Pages → Source : `main` / `(root)`.
-URL : `https://nikoju1977.github.io/medicalvisionproai/`
+Une mise à jour du service worker affiche une bannière. Enregistrez l’examen avant de recharger : aucun rechargement n’est imposé pendant une opération. Si le nouveau fichier principal ne peut pas être téléchargé, le worker ne remplace pas la version hors ligne précédente.
 
-## Contrôles après mise en ligne
+Le cache comprend seulement les chemins applicatifs explicitement autorisés et jsPDF. Les URL avec paramètres, les appels authentifiés et les endpoints de données ne sont pas mis en cache. Le fonctionnement hors ligne exige un premier chargement réussi ; l’IA distante nécessite Internet.
 
-1. Ouvrir l'URL **en https** — jamais le fichier téléchargé (origine opaque = tout appel réseau bloqué)
-2. Modale clé API → **🩺 Diagnostic** → l'étape 0 doit afficher l'origine en vert
-3. Bouton **⤓ Installer** dans l'en-tête (Android/Chrome). iOS : Partager → « Sur l'écran d'accueil »
-4. Mode avion → l'app se lance, l'affichage, les mesures, les annotations et l'export PDF
-   restent disponibles. Seule l'analyse IA exige le réseau.
+## Vérification manuelle après déploiement
 
-## Mise à jour
+- Premier accès et déverrouillage avec le code choisi.
+- Import de deux images, déplacement, annotations, suppression d’une image.
+- Sauvegarde et restauration sur un dossier de test sans données réelles.
+- Configuration IA puis **Tester** avec une clé personnelle valide.
+- Lecture réelle d’une image de test autorisée, arrêt d’une requête et export PDF.
+- Installation Android, fermeture/réouverture et essai hors ligne.
 
-Modifier `BUILD` dans `sw.js` (`v12.0.1`, …) à chaque déploiement.
-Les utilisateurs voient une bannière « Nouvelle version disponible » et
-rechargent d'un clic. Les anciens caches sont purgés automatiquement.
+Les tests automatisés utilisent une API simulée. Un essai de génération réelle requiert votre accès fournisseur et ne constitue pas une validation clinique.
