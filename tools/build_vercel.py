@@ -13,6 +13,7 @@ subprocess.check_call([sys.executable, str(ROOT / 'tools' / 'inject_medical_llm_
 subprocess.check_call([sys.executable, str(ROOT / 'tools' / 'inject_medical_evidence.py')], cwd=ROOT)
 subprocess.check_call([sys.executable, str(ROOT / 'tools' / 'inject_multiagent_review.py')], cwd=ROOT)
 subprocess.check_call([sys.executable, str(ROOT / 'tools' / 'inject_quantitative_pass.py')], cwd=ROOT)
+subprocess.check_call([sys.executable, str(ROOT / 'tools' / 'validate_medical_stack.py'), 'index.html'], cwd=ROOT)
 
 if DIST.exists():
     shutil.rmtree(DIST)
