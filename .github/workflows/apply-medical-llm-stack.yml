@@ -6,6 +6,9 @@ on:
       - feat/medical-agent-llm-stack
     paths:
       - tools/inject_medical_llm_stack.py
+      - tools/inject_medical_evidence.py
+      - tools/inject_multiagent_review.py
+      - tools/build_vercel.py
       - .github/workflows/apply-medical-llm-stack.yml
   workflow_dispatch:
 
@@ -23,17 +26,24 @@ jobs:
           fetch-depth: 0
       - name: Inject medical model routing
         run: python3 tools/inject_medical_llm_stack.py
+      - name: Inject recent medical evidence
+        run: python3 tools/inject_medical_evidence.py
+      - name: Inject independent review and critic agents
+        run: python3 tools/inject_multiagent_review.py
       - name: Validate generated integration
         run: |
           grep -q "MEDICAL_LLM_STACK_V3" index.html
+          grep -q "MEDICAL_EVIDENCE_RAG_V1" index.html
+          grep -q "MEDICAL_MULTIAGENT_REVIEW_V1" index.html
           grep -q "medicalModelFor(expertKey, 'vision')" index.html
           grep -q "medicalModelFor('consensus', 'consensus')" index.html
-          grep -q "lingshu-medical-mllm/Lingshu-I-8B" index.html
-          grep -q "lingshu-medical-mllm/Lingshu-32B" index.html
-          grep -q "YongchengYAO/MedVision-V0-7B" index.html
-          grep -q "google/medgemma-27b-text-it" index.html
+          grep -q "const secondModel = medicalIndependentModelFor" index.html
+          grep -q "medicalCriticForLectures(enriched, tri)" index.html
+          grep -q "CRITIQUE CONTRADICTOIRE" index.html
           grep -q "modeles_agents" index.html
-          grep -q "APP_VERSION = 'v16.3.0'" index.html
+          grep -q "preuves_recentes" index.html
+          grep -q "audit_multiagent" index.html
+          grep -q "APP_VERSION = 'v16.4.0'" index.html
           python3 - <<'PY'
           import re
           from pathlib import Path
@@ -51,5 +61,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "feat: route medical agents through specialized medical model stack"
+          git commit -m "feat: generate medical multi-agent review stack"
           git push origin feat/medical-agent-llm-stack
