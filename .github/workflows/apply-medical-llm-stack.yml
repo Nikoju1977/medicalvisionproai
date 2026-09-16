@@ -8,6 +8,9 @@ on:
       - tools/inject_medical_llm_stack.py
       - tools/inject_medical_evidence.py
       - tools/inject_multiagent_review.py
+      - tools/inject_quantitative_pass.py
+      - tools/validate_medical_stack.py
+      - tools/evaluate_medical_benchmark.py
       - tools/build_vercel.py
       - .github/workflows/apply-medical-llm-stack.yml
   workflow_dispatch:
@@ -24,34 +27,38 @@ jobs:
         with:
           ref: feat/medical-agent-llm-stack
           fetch-depth: 0
+
       - name: Inject medical model routing
         run: python3 tools/inject_medical_llm_stack.py
+
       - name: Inject recent medical evidence
         run: python3 tools/inject_medical_evidence.py
+
       - name: Inject independent review and critic agents
         run: python3 tools/inject_multiagent_review.py
-      - name: Validate generated integration
+
+      - name: Inject quantitative post-detection pass
+        run: python3 tools/inject_quantitative_pass.py
+
+      - name: Validate generated medical stack
+        run: python3 tools/validate_medical_stack.py index.html
+
+      - name: Benchmark evaluator smoke test
         run: |
-          grep -q "MEDICAL_LLM_STACK_V3" index.html
-          grep -q "MEDICAL_EVIDENCE_RAG_V1" index.html
-          grep -q "MEDICAL_MULTIAGENT_REVIEW_V1" index.html
-          grep -q "medicalModelFor(expertKey, 'vision')" index.html
-          grep -q "medicalModelFor('consensus', 'consensus')" index.html
-          grep -q "const secondModel = medicalIndependentModelFor" index.html
-          grep -q "medicalCriticForLectures(enriched, tri)" index.html
-          grep -q "CRITIQUE CONTRADICTOIRE" index.html
-          grep -q "modeles_agents" index.html
-          grep -q "preuves_recentes" index.html
-          grep -q "audit_multiagent" index.html
-          grep -q "APP_VERSION = 'v16.4.0'" index.html
+          cat > /tmp/benchmark.jsonl <<'EOF'
+          {"case_id":"T1","specialty":"pulmo","target":"pneumothorax","y_true":1,"score_a":0.9,"score_b":0.8,"critic_score":0.9}
+          {"case_id":"T2","specialty":"pulmo","target":"pneumothorax","y_true":0,"score_a":0.1,"score_b":0.2,"critic_score":0.1}
+          EOF
+          python3 tools/evaluate_medical_benchmark.py /tmp/benchmark.jsonl --out /tmp/benchmark-report.json
           python3 - <<'PY'
-          import re
-          from pathlib import Path
-          s = Path('index.html').read_text(encoding='utf-8')
-          blocks = re.findall(r'<script\b[^>]*>([\s\S]*?)</script>', s)
-          Path('/tmp/medvision-inline.js').write_text('\n'.join(blocks), encoding='utf-8')
+          import json
+          d=json.load(open('/tmp/benchmark-report.json'))
+          assert d['overall']['reader_a']['tp'] == 1
+          assert d['overall']['reader_a']['tn'] == 1
+          assert d['overall']['reader_agreement']['raw_agreement'] == 1
+          print('Benchmark evaluator smoke test OK')
           PY
-          node --check /tmp/medvision-inline.js
+
       - name: Commit generated integration
         run: |
           if git diff --quiet; then
@@ -61,5 +68,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "feat: generate medical multi-agent review stack"
+          git commit -m "feat: generate medical multi-agent quantitative stack"
           git push origin feat/medical-agent-llm-stack
