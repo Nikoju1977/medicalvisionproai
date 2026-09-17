@@ -13,6 +13,7 @@ markers = [
     'MEDICAL_MULTIAGENT_REVIEW_V1',
     'MEDICAL_QUANTITATIVE_PASS_V1',
     'DICOM_CALIBRATION_V1',
+    'MEDICAL_CONTROL_AGENTS_V1',
 ]
 errors = []
 for marker in markers:
@@ -21,14 +22,21 @@ for marker in markers:
         errors.append(f'{marker}: expected exactly one marker, found {n}')
 
 required = [
-    "APP_VERSION = 'v16.6.0'",
+    "APP_VERSION = 'v16.7.0'",
     "medicalModelFor(expertKey, 'vision')",
     "medicalModelFor('consensus', 'consensus')",
     'medicalEvidenceForLectures(lectures, tri)',
     'medicalCriticForLectures(enriched, tri)',
     'medicalQuantitativeForLectures(enriched, tri)',
+    'medicalControlAgentsForLectures(enriched, tri)',
     'medicalIndependentModelFor(expertKey, visionModel)',
     "medicalResolvePreferred([MEDICAL_MODELS.medvisionV0.id])",
+    'medicalControlQualityAgent',
+    'medicalEvidenceGraderForLectures',
+    'medicalUncertaintySafetyAgent',
+    'medicalProvenanceAgent',
+    'pipeline_lineage_not_claim_entailment',
+    'Fiabilité du pipeline et de ses contrôles, pas probabilité d’une maladie.',
     'dicomImportCalibrationFiles',
     'dicomPhysicalLength',
     'dicomPhysicalGeometry',
@@ -40,6 +48,9 @@ required = [
     'audit_multiagent:',
     'quantitative_measurements:',
     'dicom_geometry:',
+    'control_agents: rep.control_agents ||',
+    'uncertainty_safety: rep.uncertainty_safety ||',
+    'provenance: rep.provenance ||',
     'src="web-knowledge.js"',
     'src="web-knowledge-ui.js"',
 ]
@@ -47,7 +58,7 @@ for needle in required:
     if needle not in s:
         errors.append('missing: ' + needle)
 
-# Pipeline order: evidence -> critic -> quantitative -> final output.
+# Pipeline order: evidence -> critic -> quantitative -> control agents -> final output.
 chain = re.search(
     r'return medicalEvidenceForLectures\(lectures, tri\)(.*?)chunks: CH\.length',
     s, re.S
@@ -59,9 +70,10 @@ else:
     order = [
         body.find('medicalCriticForLectures(enriched, tri)'),
         body.find('medicalQuantitativeForLectures(enriched, tri)'),
+        body.find('medicalControlAgentsForLectures(enriched, tri)'),
     ]
     if min(order) < 0 or order != sorted(order):
-        errors.append('enrichment chain order must be evidence -> critic -> quantitative')
+        errors.append('enrichment chain order must be evidence -> critic -> quantitative -> control agents')
 
 # Blind reader B must be built from the image/messages, not from reader A output.
 if 'const secondBase = medicalIndependentPrompt(base, expertKey);' not in s:
@@ -89,6 +101,21 @@ else:
         errors.append('quantitative model is not restricted to dedicated MedVision-V0')
     if "medicalModelFor(" in qbody:
         errors.append('quantitative model has an unsafe general-model fallback')
+
+# Control agents are deliberately deterministic: they audit existing outputs and must
+# not call an LLM or create new diagnostic findings.
+control = re.search(r'// MEDICAL_CONTROL_AGENTS_V1(.*?)// DICOM_CALIBRATION_V1', s, re.S)
+if not control:
+    errors.append('control agents block not found')
+else:
+    cb = control.group(1)
+    for forbidden in ['mchat(', 'mcall(', 'findings.push(', 'differentiel.push(', 'diagnostic:']:
+        if forbidden in cb:
+            errors.append('control agents must remain non-diagnostic/deterministic: ' + forbidden)
+    if "scope: 'pipeline_lineage_not_claim_entailment'" not in cb:
+        errors.append('provenance scope disclaimer missing')
+    if "reliability_scope: 'Fiabilité du pipeline et de ses contrôles, pas probabilité d’une maladie.'" not in cb:
+        errors.append('uncertainty reliability scope disclaimer missing')
 
 # DICOM safety: patient-plane measurements require Pixel Spacing and exact Rows/Columns match.
 dicom_attach = re.search(r'function dicomAttachCalibration\(.*?\n\}', s, re.S)
@@ -147,4 +174,4 @@ if errors:
         print(' - ' + e)
     raise SystemExit(1)
 
-print('Medical stack validation OK: v16.6.0 with DICOM safeguards and curated web-reference explorer assets.')
+print('Medical stack validation OK: v16.7.0 with DICOM safeguards, deterministic control agents and curated web-reference explorer assets.')
