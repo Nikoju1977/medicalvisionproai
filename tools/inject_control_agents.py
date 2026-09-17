@@ -280,7 +280,8 @@ if panel in s and 'rep.control_agents = medicalControlSummary(ok, tri);' not in 
     s = s.replace(panel, panel + "\n                            rep.control_agents = medicalControlSummary(ok, tri);\n                            rep.uncertainty_safety = rep.control_agents.uncertainty;\n                            rep.provenance = medicalProvenanceAgent(ok, tri, rep.control_agents);", 1)
 
 needle_meta = "dicom_geometry: dicomSeriesGeometrySummary(),"
-if needle_meta in s and 'control_agents:' not in s:
+metadata_marker = "uncertainty_safety: rep.uncertainty_safety ||"
+if needle_meta in s and metadata_marker not in s:
     s = s.replace(needle_meta, needle_meta + "\n        control_agents: rep.control_agents || medicalControlSummary(rep._lectures || [], tri),\n        uncertainty_safety: rep.uncertainty_safety || medicalUncertaintySafetyAgent(rep._lectures || [], tri),\n        provenance: rep.provenance || medicalProvenanceAgent(rep._lectures || [], tri, rep.control_agents || medicalControlSummary(rep._lectures || [], tri)),", 1)
 
 s = s.replace("const APP_VERSION = 'v16.6.0';", "const APP_VERSION = 'v16.7.0';", 1)
@@ -292,9 +293,9 @@ required = [
     'medicalUncertaintySafetyAgent',
     'medicalProvenanceAgent',
     'medicalControlAgentsForLectures(enriched, tri)',
-    'control_agents:',
-    'uncertainty_safety:',
-    'provenance:',
+    'control_agents: rep.control_agents ||',
+    'uncertainty_safety: rep.uncertainty_safety ||',
+    'provenance: rep.provenance ||',
     "APP_VERSION = 'v16.7.0'"
 ]
 missing = [x for x in required if x not in s]
