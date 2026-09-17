@@ -9,6 +9,7 @@ on:
       - tools/inject_medical_evidence.py
       - tools/inject_multiagent_review.py
       - tools/inject_quantitative_pass.py
+      - tools/inject_dicom_calibration.py
       - tools/validate_medical_stack.py
       - tools/evaluate_medical_benchmark.py
       - tools/build_vercel.py
@@ -40,6 +41,9 @@ jobs:
       - name: Inject quantitative post-detection pass
         run: python3 tools/inject_quantitative_pass.py
 
+      - name: Inject DICOM calibration
+        run: python3 tools/inject_dicom_calibration.py
+
       - name: Validate generated medical stack
         run: python3 tools/validate_medical_stack.py index.html
 
@@ -68,5 +72,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "feat: generate medical multi-agent quantitative stack"
+          git commit -m "feat: generate medical multi-agent DICOM calibrated stack"
           git push origin feat/medical-agent-llm-stack
