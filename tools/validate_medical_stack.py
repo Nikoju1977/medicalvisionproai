@@ -48,9 +48,9 @@ required = [
     'audit_multiagent:',
     'quantitative_measurements:',
     'dicom_geometry:',
-    'control_agents:',
-    'uncertainty_safety:',
-    'provenance:',
+    'control_agents: rep.control_agents ||',
+    'uncertainty_safety: rep.uncertainty_safety ||',
+    'provenance: rep.provenance ||',
     'src="web-knowledge.js"',
     'src="web-knowledge-ui.js"',
 ]
