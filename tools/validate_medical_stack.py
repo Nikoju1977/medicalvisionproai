@@ -40,6 +40,8 @@ required = [
     'audit_multiagent:',
     'quantitative_measurements:',
     'dicom_geometry:',
+    'src="web-knowledge.js"',
+    'src="web-knowledge-ui.js"',
 ]
 for needle in required:
     if needle not in s:
@@ -118,16 +120,26 @@ if re.search(r'lesion_volume_mm3|volume_mm3\s*:', s, re.I):
 
 # Syntax-check generated inline JavaScript when Node is available.
 blocks = re.findall(r'<script\b[^>]*>([\s\S]*?)</script>', s)
-if blocks:
-    try:
+try:
+    if blocks:
         with tempfile.NamedTemporaryFile('w', suffix='.js', encoding='utf-8', delete=False) as f:
             f.write('\n'.join(blocks))
             js_path = f.name
         p = subprocess.run(['node', '--check', js_path], text=True, capture_output=True)
         if p.returncode != 0:
             errors.append('node --check failed: ' + (p.stderr or p.stdout).strip()[:1000])
-    except FileNotFoundError:
-        pass
+
+    # Syntax-check the external web knowledge assets too.
+    for asset in ['web-knowledge.js', 'web-knowledge-ui.js']:
+        asset_path = path.parent / asset
+        if not asset_path.is_file():
+            errors.append('missing web knowledge asset: ' + asset)
+            continue
+        p = subprocess.run(['node', '--check', str(asset_path)], text=True, capture_output=True)
+        if p.returncode != 0:
+            errors.append(asset + ' node --check failed: ' + (p.stderr or p.stdout).strip()[:1000])
+except FileNotFoundError:
+    pass
 
 if errors:
     print('Medical stack validation FAILED:')
@@ -135,4 +147,4 @@ if errors:
         print(' - ' + e)
     raise SystemExit(1)
 
-print('Medical stack validation OK: v16.6.0 with DICOM Pixel Spacing calibration, anisotropic measurements and volume-geometry safeguards.')
+print('Medical stack validation OK: v16.6.0 with DICOM safeguards and curated web-reference explorer assets.')
