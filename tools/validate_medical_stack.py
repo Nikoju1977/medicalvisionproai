@@ -12,6 +12,7 @@ markers = [
     'MEDICAL_EVIDENCE_RAG_V1',
     'MEDICAL_MULTIAGENT_REVIEW_V1',
     'MEDICAL_QUANTITATIVE_PASS_V1',
+    'DICOM_CALIBRATION_V1',
 ]
 errors = []
 for marker in markers:
@@ -20,7 +21,7 @@ for marker in markers:
         errors.append(f'{marker}: expected exactly one marker, found {n}')
 
 required = [
-    "APP_VERSION = 'v16.5.0'",
+    "APP_VERSION = 'v16.6.0'",
     "medicalModelFor(expertKey, 'vision')",
     "medicalModelFor('consensus', 'consensus')",
     'medicalEvidenceForLectures(lectures, tri)',
@@ -28,10 +29,17 @@ required = [
     'medicalQuantitativeForLectures(enriched, tri)',
     'medicalIndependentModelFor(expertKey, visionModel)',
     "medicalResolvePreferred([MEDICAL_MODELS.medvisionV0.id])",
-    'pixel_only_no_physical_spacing',
-    'physical_units_available: false',
+    'dicomImportCalibrationFiles',
+    'dicomPhysicalLength',
+    'dicomPhysicalGeometry',
+    'dicomSeriesGeometrySummary',
+    'Pixel Spacing (0028,0030)',
+    'verifiedDimensions: true',
+    'bounding_box_area_mm2',
+    'volume_geometry_ready',
     'audit_multiagent:',
     'quantitative_measurements:',
+    'dicom_geometry:',
 ]
 for needle in required:
     if needle not in s:
@@ -69,8 +77,7 @@ else:
         if forbidden in ev_body:
             errors.append('evidence query contains forbidden patient/free-text context: ' + forbidden)
 
-# Quantitative model is dedicated-only: no general-medical fallback may be used to
-# present geometry as a specialized MedVision measurement.
+# Quantitative model is dedicated-only.
 qm = re.search(r'function medicalQuantitativeModel\(\).*?\n\}', s, re.S)
 if not qm:
     errors.append('medicalQuantitativeModel not found')
@@ -81,7 +88,35 @@ else:
     if "medicalModelFor(" in qbody:
         errors.append('quantitative model has an unsafe general-model fallback')
 
-# Syntax-check the generated inline JavaScript when Node is available.
+# DICOM safety: patient-plane measurements require Pixel Spacing and exact Rows/Columns match.
+dicom_attach = re.search(r'function dicomAttachCalibration\(.*?\n\}', s, re.S)
+if not dicom_attach:
+    errors.append('dicomAttachCalibration not found')
+else:
+    db = dicom_attach.group(0)
+    for needle in ['dimension_mismatch', 'verifiedDimensions: true', 'physicalValid']:
+        if needle not in db:
+            errors.append('DICOM attach safety missing: ' + needle)
+
+parse = re.search(r'async function dicomParseCalibrationFile\(.*?\n\}', s, re.S)
+if not parse:
+    errors.append('dicomParseCalibrationFile not found')
+else:
+    pb = parse.group(0)
+    if '0x0028, 0x0030' not in pb:
+        errors.append('DICOM Pixel Spacing tag not parsed')
+    if '0x0018, 0x1164' not in pb:
+        errors.append('Imager Pixel Spacing tag not retained')
+
+# Imager Pixel Spacing alone must never become valid patient-plane calibration.
+if "physicalValid: !!(rowMm && colMm)" not in s:
+    errors.append('physicalValid must depend on Pixel Spacing, not detector spacing')
+
+# Volume geometry may be declared ready, but lesion volume must not be synthesized from bounding boxes.
+if re.search(r'lesion_volume_mm3|volume_mm3\s*:', s, re.I):
+    errors.append('unsafe lesion volume synthesis detected')
+
+# Syntax-check generated inline JavaScript when Node is available.
 blocks = re.findall(r'<script\b[^>]*>([\s\S]*?)</script>', s)
 if blocks:
     try:
@@ -100,4 +135,4 @@ if errors:
         print(' - ' + e)
     raise SystemExit(1)
 
-print('Medical stack validation OK: v16.5.0, double-read, evidence, critic and calibration-safe quantitative pass.')
+print('Medical stack validation OK: v16.6.0 with DICOM Pixel Spacing calibration, anisotropic measurements and volume-geometry safeguards.')
