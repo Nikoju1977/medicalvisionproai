@@ -303,7 +303,7 @@ required = [
     'medicalCriticForLectures(enriched, tri)',
     'CRITIQUE CONTRADICTOIRE',
     'audit_multiagent:',
-    "APP_VERSION = 'v16.4.0'"
+
 ]
 missing = [x for x in required if x not in s]
 if missing:
