@@ -296,7 +296,7 @@ required = [
     'control_agents: rep.control_agents ||',
     'uncertainty_safety: rep.uncertainty_safety ||',
     'provenance: rep.provenance ||',
-    "APP_VERSION = 'v16.7.0'"
+
 ]
 missing = [x for x in required if x not in s]
 if missing:
