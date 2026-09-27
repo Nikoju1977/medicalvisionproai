@@ -123,10 +123,10 @@ function runtime(file = 'index.html') {
     };
     window.window = window;
     const context = vm.createContext(window);
-    const exposed = ['S','VAULT','RL','PP','init','hFile','mkItem','setActive','delItem','stashAnn','finish','normalizeEndpoint','visionModels','mchat','mcall','discoverModels','prepareModels','retryDelay','buildImageChunks','renderGeneral','renderReport','setBusy'];
+    const exposed = ['S','VAULT','RL','PP','init','hFile','mkItem','setActive','delItem','stashAnn','finish','normalizeEndpoint','visionModels','mchat','mcall','discoverModels','prepareModels','medicalAvailableModels','medicalModelFor','retryDelay','buildImageChunks','renderGeneral','renderReport','setBusy'];
     for (const script of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) {
         let code = script[1];
-        if (code.includes('const S =')) code = code.replace(/\}\)\(\);\s*$/, 'window.__test = {' + exposed.join(',') + '};\n})();');
+        if (code.includes('const S =')) code = code.replace(/\}\)\(\);\s*$/, 'window.__test = {' + exposed.map(name => name + ': typeof ' + name + ' === "undefined" ? undefined : ' + name).join(',') + '};\n})();');
         vm.runInContext(code, context, { filename: file });
     }
     window.__test.init();

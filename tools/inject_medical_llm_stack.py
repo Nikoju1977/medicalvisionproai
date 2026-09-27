@@ -90,9 +90,12 @@ function medicalModelRank(id) {
 function medicalAvailableModels() {
     const models = [];
     (S.mdlPool || []).forEach(m => { if (m && m.id && !models.some(x => x.id === m.id)) models.push(m); });
-    [S.customModel, S.mdlVision, S.mdlFast, S.mdlSynth].forEach(id => {
-        if (id && !models.some(x => x.id === id)) models.push({ id: id });
-    });
+    // The active endpoint's catalogue is authoritative. Never offer a saved
+    // model from another provider as a candidate for this endpoint.
+    if (!models.length) {
+        const id = S.provider === 'medgemma' ? S.customModel : S.mdlVision;
+        if (id) models.push({ id: id });
+    }
     return models;
 }
 
@@ -144,8 +147,7 @@ function medicalModelFor(agentKey, purpose) {
     let id = medicalResolvePreferred(pref);
     if (!id) {
         // Endpoint mono-modèle : utilisation explicite du modèle réellement configuré.
-        if (S.provider === 'medgemma' && S.customModel) id = S.customModel;
-        else if (purpose === 'reasoning' || purpose === 'consensus') id = S.mdlSynth || S.mdlVision || S.mdlFast;
+        if (purpose === 'reasoning' || purpose === 'consensus') id = S.mdlSynth || S.mdlVision || S.mdlFast;
         else if (purpose === 'triage') id = S.mdlFast || S.mdlVision;
         else id = S.mdlVision || S.mdlFast;
     }
@@ -215,8 +217,6 @@ new_discover = """function discoverModels(config) {
                     .map(m => ({ id: m.id, rank: medicalModelRank(m.id), lbl: m.name || m.id }))
                     .filter(m => { if (seen.has(m.id)) return false; seen.add(m.id); return true; })
                     .sort((a, b) => b.rank - a.rank);
-                if (config.customModel && !seen.has(config.customModel))
-                    models.push({ id: config.customModel, rank: medicalModelRank(config.customModel), lbl: config.customModel });
                 return models.length ? models : fallback;
             })
             .catch(() => fallback);
