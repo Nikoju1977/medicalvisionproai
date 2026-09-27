@@ -5,7 +5,7 @@ const SHELL = 'medvision-shell-' + BUILD;
 const VENDOR = 'medvision-vendor-' + BUILD;
 const PRECACHE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png',
     './icon-maskable-192.png', './icon-maskable-512.png', './apple-touch-icon.png',
-    './web-knowledge.js', './web-knowledge-ui.js'];
+    './web-knowledge.js', './web-knowledge-ui.js', './imaging-pro.js'];
 const shellURLs = new Set(PRECACHE.map(path => new URL(path, self.registration.scope).href));
 const vendorURLs = new Set(['https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js']);
 
