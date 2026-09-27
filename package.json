@@ -1,15 +1,20 @@
 {
   "name": "medicalvisionproai",
-  "version": "16.2.0",
+  "version": "16.8.0",
   "private": true,
   "description": "MedVision AI Pro — static application and integration tests",
   "scripts": {
     "test": "node test/run.cjs",
     "test:regressions": "node --test test/regressions.cjs test/service-worker.cjs",
-    "start": "python3 -m http.server 8080 --bind 127.0.0.1"
+    "start": "python3 -m http.server 8080 --bind 127.0.0.1",
+    "build": "python3 tools/build_vercel.py",
+    "validate:dist": "python3 tools/validate_distribution.py dist",
+    "test:production": "npm run build && npm run validate:dist"
   },
   "devDependencies": {
     "@napi-rs/canvas": "0.1.100"
   },
-  "engines": { "node": ">=22" }
+  "engines": {
+    "node": ">=22"
+  }
 }
