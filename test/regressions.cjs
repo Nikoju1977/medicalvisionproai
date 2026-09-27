@@ -96,6 +96,18 @@ test('importing another photo displays the newly imported image', async t => {
     assert.equal(h.api.S.series[h.api.S.active].name, 'nouvelle.png');
     assert.match(h.w.document.getElementById('lA').textContent, /nouvelle\.png/);
 });
+test('prominent mobile photo picker imports through its change event and reports status at the top', async t => {
+    const h = app(t), photo = await picture(h, 'mobile.png');
+    const input = h.w.document.getElementById('fInQuick');
+    assert.ok(input && input.parentNode.tagName === 'LABEL');
+    assert.equal(input.getAttribute('hidden'), null);
+    input.files = [photo.file];
+    input.dispatchEvent({ type: 'change' });
+    for (let n = 0; n < 100 && !h.api.S.series.length; n++) await pause(10);
+    assert.equal(h.api.S.series.length, 1);
+    assert.match(h.w.document.getElementById('importStatusTop').textContent, /1 image\(s\) importée\(s\)/);
+    assert.deepEqual(h.errors, []);
+});
 test('deleting the active image preserves annotations on its neighbour', async t => {
     const h = app(t), a = (await picture(h, 'a.png')).item, b = (await picture(h, 'b.png')).item;
     a.ann.meas = [{ id: 'measurement-A', a: {x: 1, y: 1}, b: {x: 5, y: 5} }]; b.ann.meas = [{ id: 'measurement-B', a: {x: 2, y: 2}, b: {x: 8, y: 8} }];

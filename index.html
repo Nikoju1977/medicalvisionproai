@@ -470,8 +470,10 @@ header>div:first-child{flex:1;min-width:170px}
         <strong>Votre espace d’imagerie</strong>
         <p style="font-size:.8rem;color:var(--txd);margin:6px 0">1. Importez vos images. 2. Configurez votre IA. 3. Lancez la lecture.</p>
         <p style="font-size:.75rem;color:var(--txd);margin:6px 0">La visualisation et les annotations fonctionnent sans clé. L’analyse envoie les images au fournisseur choisi et nécessite son accès API.</p>
+        <label class="bt file-pick" style="margin:8px 8px 0 0"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-images"></use></svg><span>Importer une photo</span><input type="file" id="fInQuick" aria-label="Importer une photo depuis le téléphone" accept="image/jpeg,image/png,image/webp,image/bmp,.jpg,.jpeg,.png,.webp,.bmp"></label>
         <button class="bt" onclick="openApiM()">Configurer l’IA</button>
         <span id="connectionStatus" role="status" style="font-size:.75rem;margin-left:8px"></span>
+        <div id="importStatusTop" role="status" aria-live="polite" style="font-size:.75rem;margin-top:8px"></div>
     </div>
     <div id="updateNotice" class="cd" hidden>Une mise à jour est disponible. Enregistrez l’examen avant de recharger. <button class="bt" onclick="reloadApp()">Recharger</button></div>
 
@@ -489,7 +491,7 @@ header>div:first-child{flex:1;min-width:170px}
 
     <!-- VIEWER -->
     <div class="vbox" id="vBox">
-        <div class="cpn" id="pA"><canvas id="cA"></canvas><div class="olbl" id="lA">IMAGE A</div><div class="evst" id="evSt"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-imgplus"></use></svg><b>Aucune image chargée</b><span>Importez des images, une vidéo ou utilisez la caméra pour commencer la lecture.</span></div></div>
+        <div class="cpn" id="pA"><canvas id="cA"></canvas><div class="olbl" id="lA">IMAGE A</div><div class="evst" id="evSt"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-imgplus"></use></svg><b>Aucune image chargée</b><span>Importez une photo pour commencer la lecture.</span></div></div>
         <div class="cpn" id="pB" style="display:none"><canvas id="cB"></canvas><div class="olbl" id="lB">IMAGE B (Réf)</div></div>
         <div class="tbar" id="tbar">
             <button class="tb" onclick="togCmp()" id="bCmp" title="Comparaison" aria-label="Mode comparaison"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-compare"></use></svg></button>
@@ -713,7 +715,7 @@ const store = (() => {
     };
 })();
 
-const APP_VERSION = 'v17.1.2';
+const APP_VERSION = 'v17.1.3';
 
 const AG = {
     radio: {
@@ -1092,6 +1094,7 @@ function init() {
     safeInit('db', initDB);
     safeInit('resize', rsz);
     $('fIn').addEventListener('change', function() { hFile(this); });
+    $('fInQuick').addEventListener('change', function() { hFile(this); });
     $('vIn').addEventListener('change', function() { hVideo(this); });
     safeInit('mode', setMode);
     window.addEventListener('resize', () => setTimeout(rsz, 120));
@@ -1480,10 +1483,11 @@ async function hFile(inp) {
     const room = SERIES_MAX - S.series.length;
     if (room <= 0) return toast('Série pleine (24 images maximum)');
     S.importing = true;
-    const status = $('importStatus'), items = [], failures = [];
+    const status = $('importStatus'), topStatus = $('importStatusTop'), items = [], failures = [];
+    const report = message => { status.textContent = message; topStatus.textContent = message; };
     try {
         for (const f of files.slice(0, room)) {
-            status.textContent = 'Importation : ' + (items.length + failures.length + 1) + '/' + Math.min(files.length, room);
+            report('Importation : ' + (items.length + failures.length + 1) + '/' + Math.min(files.length, room));
             try {
                 if (!/\.(jpe?g|png|webp|bmp)$/i.test(f.name) && !/^image\/(jpeg|png|webp|bmp)$/.test(f.type)) throw new Error('format non pris en charge');
                 if (f.size > 30 * 1024 * 1024) throw new Error('limite de 30 Mo dépassée');
@@ -1491,11 +1495,11 @@ async function hFile(inp) {
             } catch (e) { failures.push(f.name + ' : ' + e.message); }
         }
         addItems(items);
-        status.textContent = items.length + ' image(s) importée(s).' +
+        report(items.length + ' image(s) importée(s).' +
             (files.length > room ? ' Limite de 24 images atteinte.' : '') +
-            (failures.length ? ' Fichiers ignorés : ' + failures.join(' ; ') : '');
+            (failures.length ? ' Fichiers ignorés : ' + failures.join(' ; ') : ''));
     } catch (e) {
-        status.textContent = 'Importation impossible : ' + (e && e.message ? e.message : 'erreur inconnue');
+        report('Importation impossible : ' + (e && e.message ? e.message : 'erreur inconnue'));
     } finally { S.importing = false; }
 }
 
