@@ -4288,7 +4288,9 @@ function renderGeneral(r) {
     if ((r.texte_visible || []).length)
         h += '<h3>Texte lisible</h3><ul>' + r.texte_visible.map(function (x) {
             return '<li>' + mdEsc(x) + '</li>'; }).join('') + '</ul>';
-    if (r.composition) h += '<h3>Composition et cadrage</h3><p>' + escapeHtml(r.composition) + '</p>';\n    if (r.couleurs_lumiere) h += '<h3>Couleurs et lumière</h3><p>' + escapeHtml(r.couleurs_lumiere) + '</p>';\n    if (r.qualite) h += '<h3>Qualité de l\'image</h3><p>' + escapeHtml(r.qualite) + '</p>';
+    if (r.composition) h += '<h3>Composition et cadrage</h3><p>' + escapeHtml(r.composition) + '</p>';
+    if (r.couleurs_lumiere) h += '<h3>Couleurs et lumière</h3><p>' + escapeHtml(r.couleurs_lumiere) + '</p>';
+    if (r.qualite) h += '<h3>Qualité de l\'image</h3><p>' + escapeHtml(r.qualite) + '</p>';
     if ((r.limites || []).length)
         h += '<h3>Limites</h3><ul>' + r.limites.map(function (x) {
             return '<li>' + mdEsc(x) + '</li>'; }).join('') + '</ul>';
