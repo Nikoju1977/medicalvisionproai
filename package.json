@@ -1,6 +1,6 @@
 {
   "name": "medicalvisionproai",
-  "version": "17.1.0",
+  "version": "17.1.1",
   "private": true,
   "description": "MedVision AI Pro — static application and integration tests",
   "scripts": {
