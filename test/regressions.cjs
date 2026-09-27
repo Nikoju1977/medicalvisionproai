@@ -85,6 +85,17 @@ test('one corrupt file does not discard valid images and image limit is enforced
     await h.api.hFile({ files: [good.file, good.file, good.file], value: '' });
     assert.equal(h.api.S.series.length, 24);
 });
+test('importing another photo displays the newly imported image', async t => {
+    const h = app(t);
+    const oldPhoto = await picture(h, 'ancienne.png', '#222');
+    const newPhoto = await picture(h, 'nouvelle.png', '#eee');
+    await h.api.hFile({ files: [oldPhoto.file], value: '' });
+    await h.api.hFile({ files: [newPhoto.file], value: '' });
+    assert.equal(h.api.S.series.length, 2);
+    assert.equal(h.api.S.active, 1);
+    assert.equal(h.api.S.series[h.api.S.active].name, 'nouvelle.png');
+    assert.match(h.w.document.getElementById('lA').textContent, /nouvelle\.png/);
+});
 test('deleting the active image preserves annotations on its neighbour', async t => {
     const h = app(t), a = (await picture(h, 'a.png')).item, b = (await picture(h, 'b.png')).item;
     a.ann.meas = [{ id: 'measurement-A', a: {x: 1, y: 1}, b: {x: 5, y: 5} }]; b.ann.meas = [{ id: 'measurement-B', a: {x: 2, y: 2}, b: {x: 8, y: 8} }];
