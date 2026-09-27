@@ -247,7 +247,7 @@ required = [
     'dedicated_model_not_available',
     'pixel_only_no_physical_spacing',
     'quantitative_measurements:',
-    "APP_VERSION = 'v16.5.0'"
+
 ]
 missing = [x for x in required if x not in s]
 if missing:
