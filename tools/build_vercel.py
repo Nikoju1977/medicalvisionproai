@@ -1,40 +1,40 @@
 from pathlib import Path
+import json
 import shutil
 import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT / 'dist'
+SOURCE_INDEX = ROOT / 'index.html'
 
-# Build-time injection keeps index.html reviewable in source while ensuring the deployed
-# preview runs the medical router, dated evidence, multi-agent safety review,
-# quantitative post-detection pass, verified DICOM physical calibration,
-# deterministic control agents and a separate curated web-reference explorer.
-subprocess.check_call([sys.executable, str(ROOT / 'tools' / 'inject_medical_llm_stack.py')], cwd=ROOT)
-subprocess.check_call([sys.executable, str(ROOT / 'tools' / 'inject_medical_evidence.py')], cwd=ROOT)
-subprocess.check_call([sys.executable, str(ROOT / 'tools' / 'inject_multiagent_review.py')], cwd=ROOT)
-subprocess.check_call([sys.executable, str(ROOT / 'tools' / 'inject_quantitative_pass.py')], cwd=ROOT)
-subprocess.check_call([sys.executable, str(ROOT / 'tools' / 'inject_dicom_calibration.py')], cwd=ROOT)
-subprocess.check_call([sys.executable, str(ROOT / 'tools' / 'inject_control_agents.py')], cwd=ROOT)
-subprocess.check_call([sys.executable, str(ROOT / 'tools' / 'inject_web_knowledge_loader.py')], cwd=ROOT)
-subprocess.check_call([sys.executable, str(ROOT / 'tools' / 'validate_medical_stack.py'), 'index.html'], cwd=ROOT)
+INJECTORS = [
+    'inject_medical_llm_stack.py',
+    'inject_medical_evidence.py',
+    'inject_multiagent_review.py',
+    'inject_quantitative_pass.py',
+    'inject_dicom_calibration.py',
+    'inject_control_agents.py',
+    'inject_web_knowledge_loader.py',
+]
 
-if DIST.exists():
-    shutil.rmtree(DIST)
-DIST.mkdir(parents=True)
+RUNTIME_FILES = [
+    '.nojekyll',
+    'index.html',
+    'manifest.json',
+    'sw.js',
+    'web-knowledge.js',
+    'web-knowledge-ui.js',
+    'apple-touch-icon.png',
+    'banner.svg',
+    'icon.svg',
+    'icon-192.png',
+    'icon-512.png',
+    'icon-maskable-192.png',
+    'icon-maskable-512.png',
+]
 
-EXCLUDE = {'.git', '.github', 'dist', 'tools', 'test', 'node_modules', '__pycache__'}
-for src in ROOT.iterdir():
-    if src.name in EXCLUDE:
-        continue
-    dst = DIST / src.name
-    if src.is_dir():
-        shutil.copytree(src, dst)
-    else:
-        shutil.copy2(src, dst)
-
-index = (DIST / 'index.html').read_text(encoding='utf-8')
-required = [
+REQUIRED_MARKERS = [
     'MEDICAL_LLM_STACK_V3',
     'MEDICAL_EVIDENCE_RAG_V1',
     'MEDICAL_MULTIAGENT_REVIEW_V1',
@@ -69,14 +69,57 @@ required = [
     'provenance: rep.provenance ||',
     'src="web-knowledge.js"',
     'src="web-knowledge-ui.js"',
-    "APP_VERSION = 'v16.7.0'"
 ]
-missing = [item for item in required if item not in index]
+
+def run_tool(name):
+    subprocess.check_call([sys.executable, str(ROOT / 'tools' / name)], cwd=ROOT)
+
+release_version = json.loads((ROOT / 'package.json').read_text(encoding='utf-8'))['version']
+source_bytes = SOURCE_INDEX.read_bytes()
+generated_index = None
+
+try:
+    # The historical injectors operate on index.html in place. Keep that implementation
+    # isolated from the source tree by always restoring the exact original bytes.
+    for injector in INJECTORS:
+        run_tool(injector)
+
+    subprocess.check_call(
+        [sys.executable, str(ROOT / 'tools' / 'validate_medical_stack.py'), 'index.html'],
+        cwd=ROOT,
+    )
+    generated_index = SOURCE_INDEX.read_text(encoding='utf-8')
+finally:
+    SOURCE_INDEX.write_bytes(source_bytes)
+
+if generated_index is None:
+    raise SystemExit('Production build failed before a generated index was captured.')
+
+expected_version = f"APP_VERSION = 'v{release_version}'"
+required = REQUIRED_MARKERS + [expected_version]
+missing = [item for item in required if item not in generated_index]
 if missing:
-    raise SystemExit('Vercel build incomplete: ' + ', '.join(missing))
+    raise SystemExit('Production build incomplete: ' + ', '.join(missing))
 
-for asset in ['web-knowledge.js', 'web-knowledge-ui.js']:
-    if not (DIST / asset).is_file():
-        raise SystemExit('Vercel build incomplete: missing ' + asset)
+if DIST.exists():
+    shutil.rmtree(DIST)
+DIST.mkdir(parents=True)
 
-print('Vercel dist built with Medical LLM Stack V3 + Evidence RAG V1 + Multi-Agent Review V1 + Quantitative Pass V1 + DICOM Calibration V1 + Medical Control Agents V1 + curated web knowledge explorer')
+for name in RUNTIME_FILES:
+    src = ROOT / name
+    if not src.is_file():
+        raise SystemExit('Production build incomplete: missing runtime asset ' + name)
+    shutil.copy2(src, DIST / name)
+
+# Replace the base shell with the generated production shell after copying the allowlist.
+(DIST / 'index.html').write_text(generated_index, encoding='utf-8')
+
+subprocess.check_call(
+    [sys.executable, str(ROOT / 'tools' / 'validate_distribution.py'), str(DIST)],
+    cwd=ROOT,
+)
+
+print(
+    f'MedVision production dist v{release_version} built reproducibly '
+    'with medical multi-agent stack, DICOM calibration, control agents and web knowledge.'
+)
