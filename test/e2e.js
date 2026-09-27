@@ -163,13 +163,14 @@ const t = (ms) => new Promise(r => setTimeout(r, ms));
     const html = $('aiO').innerHTML;
 
     out.push('--- scenario : ' + SCENARIO + '  (' + dur + ' ms)');
-    check('erreurs JS bloquantes', errs.length === 0, errs.length ? errs[0].slice(0, 120) : 'aucune');
+    check('erreurs JS bloquantes', errs.length === 0, errs.length ? errs[0].slice(0, 1000) : 'aucune');
     check('/v1/models interroge', calls.models >= 1, calls.models + ' appel(s)');
     check('triage effectue', calls.triage >= 1, calls.triage + ' appel(s)');
     if (SCENARIO !== 'quota') {
         // Le scenario quota doit precisement NE PAS produire de compte rendu.
         check('lecture experte effectuee', calls.lecture >= 1, calls.lecture + ' appel(s)');
-        check('compte rendu rendu a l ecran', !/Analyse interrompue/.test(html) && html.length > 400, html.length + ' caracteres');
+        check('compte rendu rendu a l ecran', !/Analyse interrompue/.test(html) && html.length > 400,
+            html.length + ' caracteres' + (/Analyse interrompue/.test(html) ? ' · ' + html.replace(/<[^>]+>/g, ' ').slice(0, 180) : ''));
         check('conclusion presente', /pneumopathie/i.test(html), '');
     }
 
@@ -198,4 +199,3 @@ const t = (ms) => new Promise(r => setTimeout(r, ms));
     console.log(out.join('\n'));
     host.close(); process.exit(process.exitCode || 0);
 })();
-

@@ -715,7 +715,7 @@ const store = (() => {
     };
 })();
 
-const APP_VERSION = 'v17.1.4';
+const APP_VERSION = 'v17.1.5';
 
 const AG = {
     radio: {
@@ -2575,6 +2575,7 @@ function mcall(o) {
 // Extraction du message d'erreur réel renvoyé par l'API
 function apiErr(e) {
     if (!e) return 'erreur inconnue';
+    if (e.status == null) return 'Erreur interne : ' + (e.message || String(e));
     if (e.status === -2) return 'Analyse arrêtée à votre demande.';
     if (e.status === -1 || e.status === 0) return e.msg || 'Connexion impossible ou délai dépassé.';
     const b = e.body;
