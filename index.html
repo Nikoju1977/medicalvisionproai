@@ -605,7 +605,7 @@ header>div:first-child{flex:1;min-width:170px}
 
         <label class="pnl"><input type="checkbox" id="panelOff"><span data-i18n="opt.single">Lecture unique (désactive les lectures indépendantes + consensus)</span></label>
         <label class="pnl"><input type="checkbox" id="zoomOff" onchange="setZoom()"><span data-i18n="opt.nozoom">Désactiver l'inspection par zoom (plus rapide, moins précis)</span></label>
-        <label class="pnl"><input type="checkbox" id="genMode"><span>Analyse générale — image non médicale (hors finalité du dispositif)</span></label>
+        <label class="pnl"><input type="checkbox" id="genMode"><span><strong>Image standard / photo</strong> — analyse visuelle non médicale (JPEG, PNG, WebP, BMP)</span></label>
 
         <!-- Analysis Buttons -->
         <div class="fr fw" style="margin-bottom:8px">
@@ -710,7 +710,7 @@ const store = (() => {
     };
 })();
 
-const APP_VERSION = 'v16.8.0';
+const APP_VERSION = 'v17.0.0';
 
 const AG = {
     radio: {
@@ -4287,7 +4287,7 @@ function renderGeneral(r) {
     if ((r.texte_visible || []).length)
         h += '<h3>Texte lisible</h3><ul>' + r.texte_visible.map(function (x) {
             return '<li>' + mdEsc(x) + '</li>'; }).join('') + '</ul>';
-    if (r.qualite) h += '<h3>Qualité de l\'image</h3><p>' + escapeHtml(r.qualite) + '</p>';
+    if (r.composition) h += '<h3>Composition et cadrage</h3><p>' + escapeHtml(r.composition) + '</p>';\n    if (r.couleurs_lumiere) h += '<h3>Couleurs et lumière</h3><p>' + escapeHtml(r.couleurs_lumiere) + '</p>';\n    if (r.qualite) h += '<h3>Qualité de l\'image</h3><p>' + escapeHtml(r.qualite) + '</p>';
     if ((r.limites || []).length)
         h += '<h3>Limites</h3><ul>' + r.limites.map(function (x) {
             return '<li>' + mdEsc(x) + '</li>'; }).join('') + '</ul>';
@@ -5479,5 +5479,5 @@ else window.addEventListener('load', registerSW);
 
 })();
 </script>
-</body>
+<script src="imaging-pro.js"></script>\n</body>
 </html>
