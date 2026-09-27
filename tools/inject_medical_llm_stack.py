@@ -311,7 +311,7 @@ required = [
     'lingshu-medical-mllm/Lingshu-32B',
     'YongchengYAO/MedVision-V0-7B',
     'google/medgemma-27b-text-it',
-    "APP_VERSION = 'v16.3.0'"
+
 ]
 missing = [x for x in required if x not in s]
 if missing:
