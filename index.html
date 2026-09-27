@@ -713,7 +713,7 @@ const store = (() => {
     };
 })();
 
-const APP_VERSION = 'v17.1.1';
+const APP_VERSION = 'v17.1.2';
 
 const AG = {
     radio: {
@@ -2088,12 +2088,12 @@ function addItems(items) {
     const room = SERIES_MAX - S.series.length;
     if (room <= 0) return toast('Série pleine (' + SERIES_MAX + ' max)');
     const keep = items.slice(0, room);
-    const first = S.series.length === 0;
+    const firstNew = S.series.length;
     stashAnn();
     S.series = S.series.concat(keep);
     clearReport();
     if (keep.length < items.length) toast('Série limitée à ' + SERIES_MAX + ' éléments');
-    setActive(first ? 0 : S.active, true);
+    setActive(firstNew, true);
     renderStrip();
     toast(keep.length + ' élément(s) ajouté(s) — ' + S.series.length + ' au total');
 }

@@ -7,7 +7,7 @@
 'use strict';
 
 const MVI = {
-    version: '17.1.1',
+    version: '17.1.2',
     state: {
         volume: null,
         x: 0, y: 0, z: 0,
