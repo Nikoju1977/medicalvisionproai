@@ -2,7 +2,7 @@
 
 Prototype de visualisation et de lecture d’images assistée par IA. Création : Nicolas Julienne — Studio Niko Design.
 
-**Release applicative : 17.1.2** — le même artefact de production validé est destiné à GitHub Pages et Vercel.
+**Release applicative : 17.1.3** — le même artefact de production validé est destiné à GitHub Pages et Vercel.
 
 **Application : https://nikoju1977.github.io/medicalvisionproai/**
 
