@@ -2,6 +2,8 @@
 
 Prototype de visualisation et de lecture d’images assistée par IA. Création : Nicolas Julienne — Studio Niko Design.
 
+**Release applicative : 16.8.0** — le même artefact de production validé est destiné à GitHub Pages et Vercel.
+
 **Application : https://nikoju1977.github.io/medicalvisionproai/**
 
 ## Démarrage
@@ -33,19 +35,23 @@ Le cache hors ligne contient uniquement les fichiers applicatifs autorisés. Il 
 
 **Prototype non certifié comme dispositif médical.** Les tests logiciels ne valident pas les performances diagnostiques. Les réponses IA peuvent être inexactes et ne permettent pas, seules, de poser ou d’écarter un diagnostic.
 
-## Développement et tests
+## Développement, build et tests
 
-Node.js 22 ou supérieur ; Python 3 pour servir le dossier en local :
+Node.js 22 ou supérieur et Python 3 :
 
 ```bash
-npm install --ignore-scripts
+npm ci --ignore-scripts --no-audit --no-fund
 npm test
-python3 -m http.server 8080 --bind 127.0.0.1
+npm run build
+npm run validate:dist
+python3 -m http.server 8080 --directory dist --bind 127.0.0.1
 ```
+
+`npm run build` génère `dist/` sans modifier le `index.html` source. Les modules médicaux injectés restent indépendants du numéro de version : la release est pilotée par `package.json`, puis contrôlée automatiquement dans `index.html`, `manifest.json`, `sw.js` et `package-lock.json`. L’artefact publié contient uniquement les ressources nécessaires à l’exécution, sans les outils, tests ou workflows de développement.
 
 Ouvrez ensuite http://localhost:8080 (évitez `file://`, incompatible avec certaines fonctions sécurisées).
 
-Les tests exécutent le JavaScript réel, Canvas, le décodage d’images et WebCrypto dans un hôte Node avec DOM de test. Ils couvrent les cinq scénarios d’intégration d’origine et les régressions de configuration, import, sauvegarde, annulation, indices d’images et cache. Ils utilisent des réponses IA simulées, sans appel payant. Ils ne remplacent pas un essai dans les navigateurs cibles ni une validation avec un compte IA réel.
+Les tests exécutent le JavaScript réel, Canvas, le décodage d’images et WebCrypto dans un hôte Node avec DOM de test. La CI reconstruit également l’artefact de production, valide sa cohérence PWA et vérifie que le build est reproductible et non destructif. Ils couvrent les cinq scénarios d’intégration d’origine et les régressions de configuration, import, sauvegarde, annulation, indices d’images et cache. Ils utilisent des réponses IA simulées, sans appel payant. Ils ne remplacent pas un essai dans les navigateurs cibles ni une validation avec un compte IA réel.
 
 Le banc expérimental `test/bench.js` est séparé ; ses dépendances historiques et son mode d’emploi sont décrits dans `test/BENCH.md`. Il transmet les images du jeu d’essai au fournisseur : ne l’exécuter que sur des données autorisées.
 

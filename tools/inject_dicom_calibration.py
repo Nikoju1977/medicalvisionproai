@@ -330,7 +330,7 @@ needle_meta = "quantitative_measurements: rep.quantitative_measurements || medic
 if needle_meta in s and 'dicom_geometry:' not in s:
     s = s.replace(needle_meta, needle_meta + "\n        dicom_geometry: dicomSeriesGeometrySummary(),", 1)
 
-s = s.replace("const APP_VERSION = 'v16.5.0';", "const APP_VERSION = 'v16.6.0';", 1)
+# APP_VERSION intentionally remains unchanged by this injector.
 
 required = [
     'DICOM_CALIBRATION_V1',
@@ -340,7 +340,7 @@ required = [
     'dicomPhysicalGeometry',
     'dicomSeriesGeometrySummary',
     'dicomCal: null',
-    "APP_VERSION = 'v16.6.0'"
+
 ]
 missing = [x for x in required if x not in s]
 if missing:

@@ -297,8 +297,8 @@ if needle in s:
         additions += '\n                <option value="YongchengYAO/MedVision-V0-7B">MedVision-V0-7B — mesures quantitatives d’imagerie</option>'
     s = s.replace(needle, additions, 1)
 
-# Version bump is idempotent from either base or an earlier generated pass.
-s = s.replace("const APP_VERSION = 'v16.2.0';", "const APP_VERSION = 'v16.3.0';", 1)
+# Versioning is release-managed; feature injection must not mutate APP_VERSION.
+# APP_VERSION intentionally remains unchanged by this injector.
 
 # Hard validation: fail loudly instead of silently producing a half-wired medical stack.
 required = [
@@ -311,7 +311,7 @@ required = [
     'lingshu-medical-mllm/Lingshu-32B',
     'YongchengYAO/MedVision-V0-7B',
     'google/medgemma-27b-text-it',
-    "APP_VERSION = 'v16.3.0'"
+
 ]
 missing = [x for x in required if x not in s]
 if missing:

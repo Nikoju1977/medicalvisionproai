@@ -1,9 +1,12 @@
 from pathlib import Path
+import json
 import re
 import subprocess
 import sys
 import tempfile
 
+ROOT = Path(__file__).resolve().parents[1]
+RELEASE_VERSION = json.loads((ROOT / 'package.json').read_text(encoding='utf-8'))['version']
 path = Path(sys.argv[1] if len(sys.argv) > 1 else 'index.html')
 s = path.read_text(encoding='utf-8')
 
@@ -22,7 +25,7 @@ for marker in markers:
         errors.append(f'{marker}: expected exactly one marker, found {n}')
 
 required = [
-    "APP_VERSION = 'v16.7.0'",
+    f"APP_VERSION = 'v{RELEASE_VERSION}'",
     "medicalModelFor(expertKey, 'vision')",
     "medicalModelFor('consensus', 'consensus')",
     'medicalEvidenceForLectures(lectures, tri)',
@@ -174,4 +177,4 @@ if errors:
         print(' - ' + e)
     raise SystemExit(1)
 
-print('Medical stack validation OK: v16.7.0 with DICOM safeguards, deterministic control agents and curated web-reference explorer assets.')
+print(f'Medical stack validation OK: v{RELEASE_VERSION} with DICOM safeguards, deterministic control agents and curated web-reference explorer assets.')
