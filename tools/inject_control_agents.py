@@ -284,7 +284,7 @@ metadata_marker = "uncertainty_safety: rep.uncertainty_safety ||"
 if needle_meta in s and metadata_marker not in s:
     s = s.replace(needle_meta, needle_meta + "\n        control_agents: rep.control_agents || medicalControlSummary(rep._lectures || [], tri),\n        uncertainty_safety: rep.uncertainty_safety || medicalUncertaintySafetyAgent(rep._lectures || [], tri),\n        provenance: rep.provenance || medicalProvenanceAgent(rep._lectures || [], tri, rep.control_agents || medicalControlSummary(rep._lectures || [], tri)),", 1)
 
-s = s.replace("const APP_VERSION = 'v16.6.0';", "const APP_VERSION = 'v16.7.0';", 1)
+# APP_VERSION intentionally remains unchanged by this injector.
 
 required = [
     'MEDICAL_CONTROL_AGENTS_V1',
