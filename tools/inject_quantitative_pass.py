@@ -239,7 +239,7 @@ needle_meta = "audit_multiagent: rep.audit_multiagent || medicalMultiagentAudit(
 if needle_meta in s and 'quantitative_measurements:' not in s:
     s = s.replace(needle_meta, needle_meta + "\n        quantitative_measurements: rep.quantitative_measurements || medicalQuantitativeSummary(rep._lectures || []),", 1)
 
-s = s.replace("const APP_VERSION = 'v16.4.0';", "const APP_VERSION = 'v16.5.0';", 1)
+# APP_VERSION intentionally remains unchanged by this injector.
 
 required = [
     'MEDICAL_QUANTITATIVE_PASS_V1',
