@@ -87,6 +87,17 @@ for marker in markers:
     if marker not in index:
         errors.append('production index missing marker: ' + marker)
 
+quant_start = index.find('function medicalQuantitativeSummary(lectures)')
+finish_start = index.find('function finish(rep,')
+if quant_start >= 0 and finish_start >= 0:
+    quant_body = index[quant_start:index.find('\n}\n', quant_start) + 2]
+    finish_body = index[finish_start:index.find('\n}\n', finish_start) + 2]
+    if 'rep.control_agents' in quant_body or 'rep.provenance' in quant_body:
+        errors.append('report metadata was injected into quantitative summary')
+    for field in ['dicom_geometry:', 'control_agents: rep.control_agents', 'uncertainty_safety: rep.uncertainty_safety', 'provenance: rep.provenance']:
+        if field not in finish_body:
+            errors.append('production report metadata missing ' + field)
+
 for asset in ['./web-knowledge.js', './web-knowledge-ui.js', './imaging-pro.js']:
     if asset not in sw:
         errors.append('service worker does not precache ' + asset)

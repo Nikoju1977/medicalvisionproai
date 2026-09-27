@@ -281,8 +281,11 @@ if panel in s and 'rep.control_agents = medicalControlSummary(ok, tri);' not in 
 
 needle_meta = "dicom_geometry: dicomSeriesGeometrySummary(),"
 metadata_marker = "uncertainty_safety: rep.uncertainty_safety ||"
-if needle_meta in s and metadata_marker not in s:
-    s = s.replace(needle_meta, needle_meta + "\n        control_agents: rep.control_agents || medicalControlSummary(rep._lectures || [], tri),\n        uncertainty_safety: rep.uncertainty_safety || medicalUncertaintySafetyAgent(rep._lectures || [], tri),\n        provenance: rep.provenance || medicalProvenanceAgent(rep._lectures || [], tri, rep.control_agents || medicalControlSummary(rep._lectures || [], tri)),", 1)
+if needle_meta in s:
+    before, finish = s.split('function finish(rep,', 1)
+    if metadata_marker not in finish:
+        finish = finish.replace(needle_meta, needle_meta + "\n        control_agents: rep.control_agents || medicalControlSummary(rep._lectures || [], tri),\n        uncertainty_safety: rep.uncertainty_safety || medicalUncertaintySafetyAgent(rep._lectures || [], tri),\n        provenance: rep.provenance || medicalProvenanceAgent(rep._lectures || [], tri, rep.control_agents || medicalControlSummary(rep._lectures || [], tri)),", 1)
+    s = before + 'function finish(rep,' + finish
 
 # APP_VERSION intentionally remains unchanged by this injector.
 

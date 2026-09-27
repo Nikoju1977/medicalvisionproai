@@ -327,8 +327,11 @@ s = s.replace("physical_calibration: false,\n        warning: 'Mesures physiques
 
 # Audit metadata includes DICOM geometry provenance.
 needle_meta = "quantitative_measurements: rep.quantitative_measurements || medicalQuantitativeSummary(rep._lectures || []),"
-if needle_meta in s and 'dicom_geometry:' not in s:
-    s = s.replace(needle_meta, needle_meta + "\n        dicom_geometry: dicomSeriesGeometrySummary(),", 1)
+if needle_meta in s:
+    before, finish = s.split('function finish(rep,', 1)
+    if 'dicom_geometry: dicomSeriesGeometrySummary(),' not in finish:
+        finish = finish.replace(needle_meta, needle_meta + "\n        dicom_geometry: dicomSeriesGeometrySummary(),", 1)
+    s = before + 'function finish(rep,' + finish
 
 # APP_VERSION intentionally remains unchanged by this injector.
 
