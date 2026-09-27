@@ -64,6 +64,9 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 
 .cd{background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:12px;margin-bottom:12px;}
 .bt{padding:10px 14px;border-radius:8px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx);font-weight:600;cursor:pointer;display:inline-flex;align-items:center;}
+.file-pick{position:relative;overflow:hidden;min-height:44px}
+.file-pick input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:100px}
+.file-pick:focus-within{outline:2px solid var(--cy);outline-offset:2px}
 .bt:active{transform:scale(.95);}
 .bp{background:var(--pr);border-color:var(--pr);color:#fff;}
 .bi{padding:10px;border-radius:50%;min-height:42px;min-width:42px;justify-content:center;}
@@ -506,8 +509,7 @@ header>div:first-child{flex:1;min-width:170px}
     <div class="cd" style="margin-top:8px">
         <div class="fr fsb fnw">
             <div class="fr fw">
-                <button class="bt" onclick="pickF()" aria-label="Importer des images"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-images"></use></svg><span>Images</span></button>
-                <input type="file" id="fIn" hidden accept="image/jpeg,image/png,image/webp,image/bmp,.jpg,.jpeg,.png,.webp,.bmp" multiple>
+                <label class="bt file-pick"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-images"></use></svg><span>Importer des photos</span><input type="file" id="fIn" aria-label="Importer des photos JPEG, PNG, WebP ou BMP" accept="image/jpeg,image/png,image/webp,image/bmp,.jpg,.jpeg,.png,.webp,.bmp" multiple></label>
                 <button class="bt" onclick="pickV()" aria-label="Importer une video"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-video"></use></svg><span>Vidéo</span></button>
                 <input type="file" id="vIn" hidden accept="video/*">
                 <button class="bt" onclick="startCam()" aria-label="Capturer avec la camera"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-camera"></use></svg><span>Caméra</span></button>
@@ -711,7 +713,7 @@ const store = (() => {
     };
 })();
 
-const APP_VERSION = 'v17.1.0';
+const APP_VERSION = 'v17.1.1';
 
 const AG = {
     radio: {
@@ -1492,6 +1494,8 @@ async function hFile(inp) {
         status.textContent = items.length + ' image(s) importée(s).' +
             (files.length > room ? ' Limite de 24 images atteinte.' : '') +
             (failures.length ? ' Fichiers ignorés : ' + failures.join(' ; ') : '');
+    } catch (e) {
+        status.textContent = 'Importation impossible : ' + (e && e.message ? e.message : 'erreur inconnue');
     } finally { S.importing = false; }
 }
 

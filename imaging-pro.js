@@ -7,7 +7,7 @@
 'use strict';
 
 const MVI = {
-    version: '17.1.0',
+    version: '17.1.1',
     state: {
         volume: null,
         x: 0, y: 0, z: 0,
@@ -617,7 +617,7 @@ function injectUI() {
     const imageInput = $('fIn');
     if (!imageInput) return;
 
-    const actions = imageInput.parentElement;
+    const actions = imageInput.closest('.file-pick')?.parentElement || imageInput.parentElement;
     const dicomButton = document.createElement('button');
     dicomButton.className = 'bt';
     dicomButton.type = 'button';
@@ -635,7 +635,7 @@ function injectUI() {
         dicomInput.value = '';
         loadFiles(files);
     });
-    actions.insertBefore(dicomButton, imageInput.nextSibling);
+    actions.insertBefore(dicomButton, imageInput.closest('.file-pick')?.nextSibling || imageInput.nextSibling);
     actions.insertBefore(dicomInput, dicomButton.nextSibling);
 
     const host = imageInput.closest('.cd') || imageInput.parentElement;
