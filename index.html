@@ -611,6 +611,7 @@ header>div:first-child{flex:1;min-width:170px}
         <div class="fr fw" style="margin-bottom:8px">
             <button id="runAutoBtn" class="bt bp" style="flex:1" onclick="runAutoAI()" aria-label="Lancer l'analyse assistee"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-auto"></use></svg><span>ANALYSE ASSISTÉE</span></button>
             <button id="runBtn" class="bt" style="flex:1" onclick="runAI()" aria-label="Lancer l'analyse manuelle"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-scan"></use></svg><span>Analyse manuelle</span></button>
+            <button id="runGeneralBtn" class="bt" style="flex:1" onclick="runGeneralAI()" aria-label="Analyser une image standard non médicale"><span>Image standard</span></button>
         </div>
 
         <button id="cancelBtn" class="bt" onclick="cancelAnalysis()" hidden>Arrêter l’analyse</button>
@@ -4914,6 +4915,11 @@ function startAnalysis(auto) {
 }
 window.runAutoAI = () => startAnalysis(true);
 window.runAI = () => startAnalysis(false);
+window.runGeneralAI = () => {
+    const g = document.getElementById('genMode');
+    if (g) g.checked = true;
+    startAnalysis(false);
+};
 
 
 
