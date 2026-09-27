@@ -31,3 +31,14 @@ Ces contrôles exécutent le code et Canvas dans Node, avec DOM et réponses IA 
 Les écritures GitHub ont été refusées avec HTTP 403, « Resource not accessible by integration », y compris une tentative excluant le workflow. Aucun commit distant ni déploiement n’a été réalisé. L’archive contient les sources corrigées ; elle ne prouve pas une mise à jour du site public.
 
 La connexion GitHub utilisée doit disposer de l’écriture sur le contenu du dépôt pour publier les sources. Le fichier `.github/workflows/tests.yml` nécessite aussi les droits appropriés sur les workflows.
+
+
+## Imaging Pro v17
+
+- Décodage local d'un DICOM CT synthétique Explicit VR Little Endian 16 bits.
+- Application de Rescale Slope / Rescale Intercept et contrôle des valeurs HU.
+- Reconstruction d'une série 3D et tri par Image Position Patient / Instance Number.
+- Calcul de l'espacement inter-coupes à partir de la géométrie DICOM.
+- Refus explicite des Transfer Syntax compressées non supportées.
+- Présence de l'artefact `imaging-pro.js` dans `dist/` et dans le precache PWA.
+- Le mode **Image standard** reste séparé du pipeline médical et produit uniquement une description visuelle non diagnostique.
