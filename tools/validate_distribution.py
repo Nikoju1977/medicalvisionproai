@@ -32,6 +32,7 @@ required_files = [
     'sw.js',
     'web-knowledge.js',
     'web-knowledge-ui.js',
+    'imaging-pro.js',
     'apple-touch-icon.png',
     'icon-192.png',
     'icon-512.png',
@@ -80,12 +81,13 @@ markers = [
     'MEDICAL_CONTROL_AGENTS_V1',
     'src="web-knowledge.js"',
     'src="web-knowledge-ui.js"',
+    'src="imaging-pro.js"',
 ]
 for marker in markers:
     if marker not in index:
         errors.append('production index missing marker: ' + marker)
 
-for asset in ['./web-knowledge.js', './web-knowledge-ui.js']:
+for asset in ['./web-knowledge.js', './web-knowledge-ui.js', './imaging-pro.js']:
     if asset not in sw:
         errors.append('service worker does not precache ' + asset)
 
