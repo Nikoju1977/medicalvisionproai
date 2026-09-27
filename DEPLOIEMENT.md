@@ -41,12 +41,12 @@ Aucune clé IA ne doit être stockée dans le dépôt ou dans l’artefact stati
 
 Une mise à jour du service worker affiche une bannière. Enregistrez l’examen avant de recharger : aucun rechargement n’est imposé pendant une opération. Si le nouveau shell ne peut pas être téléchargé, le worker ne remplace pas la version hors ligne précédente.
 
-Le cache est limité aux fichiers applicatifs explicitement autorisés, aux modules de références web et à jsPDF. Les URL avec paramètres, les appels authentifiés et les endpoints de données ne sont pas interceptés. L’IA distante requiert une connexion.
+Le cache est limité aux fichiers applicatifs explicitement autorisés, au module `imaging-pro.js`, aux modules de références web et à jsPDF. Les URL avec paramètres, les appels authentifiés et les endpoints de données ne sont pas interceptés. L’IA distante requiert une connexion.
 
 ## Vérification manuelle après déploiement
 
 - Premier accès et déverrouillage avec le code choisi.
-- Import de deux images, déplacement, annotations et suppression d’une image.
+- Import de deux images JPEG/PNG, analyse standard d’une photo, déplacement, annotations et suppression d’une image.\n- Import d’une série DICOM de test non compressée, vérification MPR axial/coronal/sagittal, Window/Level, crosshair, HU et cine.
 - Sauvegarde puis restauration d’un dossier de test sans données réelles.
 - Configuration IA puis **Tester** avec une clé personnelle valide.
 - Lecture d’une image de test autorisée, annulation d’une requête et export PDF.
