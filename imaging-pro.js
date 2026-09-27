@@ -7,12 +7,14 @@
 'use strict';
 
 const MVI = {
-    version: '17.0.0',
+    version: '17.1.0',
     state: {
         volume: null,
         x: 0, y: 0, z: 0,
         center: 0, width: 1,
         cine: null,
+        projection: 'slice', slab: 1,
+        thresholdEnabled: false, thresholdMin: 0, thresholdMax: 0,
         canvasMap: new Map()
     }
 };
@@ -296,9 +298,21 @@ function planeInfo(volume, plane) {
 
 function planeValue(volume, plane, px, py) {
     const s = MVI.state;
-    if (plane === 'axial') return voxel(volume, px, py, s.z);
-    if (plane === 'coronal') return voxel(volume, px, s.y, volume.slices.length - 1 - py);
-    return voxel(volume, s.x, px, volume.slices.length - 1 - py);
+    const coord = plane === 'axial' ? [px, py, s.z] :
+        plane === 'coronal' ? [px, s.y, volume.slices.length - 1 - py] :
+        [s.x, px, volume.slices.length - 1 - py];
+    if (s.projection === 'slice' || s.slab <= 1) return voxel(volume, ...coord);
+    const axis = plane === 'axial' ? 2 : plane === 'coronal' ? 1 : 0;
+    const limit = [volume.columns, volume.rows, volume.slices.length][axis];
+    const start = Math.max(0, coord[axis] - Math.floor((s.slab - 1) / 2));
+    const end = Math.min(limit - 1, coord[axis] + Math.ceil((s.slab - 1) / 2));
+    let result = s.projection === 'mip' ? -Infinity : Infinity;
+    for (let i = start; i <= end; i++) {
+        coord[axis] = i;
+        const value = voxel(volume, ...coord);
+        result = s.projection === 'mip' ? Math.max(result, value) : Math.min(result, value);
+    }
+    return result;
 }
 
 function crosshairSource(plane, info) {
@@ -331,8 +345,13 @@ function renderPlane(plane) {
     let q = 0;
     for (let y = 0; y < info.h; y++) {
         for (let x = 0; x < info.w; x++) {
-            const g = windowByte(planeValue(v, plane, x, y), MVI.state.center, MVI.state.width, inv);
-            img.data[q++] = g; img.data[q++] = g; img.data[q++] = g; img.data[q++] = 255;
+            const value = planeValue(v, plane, x, y);
+            const g = windowByte(value, MVI.state.center, MVI.state.width, inv);
+            const marked = MVI.state.thresholdEnabled && value >= MVI.state.thresholdMin && value <= MVI.state.thresholdMax;
+            img.data[q++] = marked ? Math.round(g * .55 + 115) : g;
+            img.data[q++] = marked ? Math.round(g * .55 + 45) : g;
+            img.data[q++] = marked ? Math.round(g * .55 + 10) : g;
+            img.data[q++] = 255;
         }
     }
     sx.putImageData(img, 0, 0);
@@ -540,6 +559,16 @@ async function loadFiles(files) {
     MVI.state.z = Math.floor(v.slices.length / 2);
     MVI.state.center = v.center;
     MVI.state.width = v.width;
+    MVI.state.thresholdEnabled = false;
+    MVI.state.thresholdMin = v.min;
+    MVI.state.thresholdMax = v.max;
+    MVI.state.projection = 'slice';
+    MVI.state.slab = 1;
+    if ($('mvi-projection')) $('mvi-projection').value = 'slice';
+    if ($('mvi-slab')) $('mvi-slab').value = 1;
+    if ($('mvi-threshold-enabled')) $('mvi-threshold-enabled').checked = false;
+    if ($('mvi-threshold-min')) $('mvi-threshold-min').value = Math.round(v.min);
+    if ($('mvi-threshold-max')) $('mvi-threshold-max').value = Math.round(v.max);
 
     const xs = $('mvi-x'), ys = $('mvi-y'), zs = $('mvi-z');
     if (xs) { xs.max = v.columns - 1; xs.value = MVI.state.x; }
@@ -633,6 +662,12 @@ function injectUI() {
           '<span id="mvi-wl" class="sub"></span>' +
         '</div>' +
         '<div class="mvi-tools">' +
+          '<label class="sub">Projection <select id="mvi-projection"><option value="slice">Coupe</option><option value="mip">MIP</option><option value="minip">MinIP</option></select></label>' +
+          '<label class="sub">Épaisseur (voxels) <input id="mvi-slab" type="number" min="1" max="51" step="2" value="1"></label>' +
+          '<label class="sub"><input id="mvi-threshold-enabled" type="checkbox"> Masque de seuil</label>' +
+          '<label class="sub">Min <input id="mvi-threshold-min" type="number" step="1"></label>' +
+          '<label class="sub">Max <input id="mvi-threshold-max" type="number" step="1"></label>' +
+        '</div><div class="mvi-tools">' +
           '<button class="bt" type="button" id="mvi-cine">▶ Cine axial</button>' +
           '<label class="sub">FPS <input id="mvi-fps" type="number" min="1" max="30" value="12"></label>' +
           '<button class="bt bp" type="button" id="mvi-send-ai">Analyser la coupe active</button>' +
@@ -643,7 +678,7 @@ function injectUI() {
           '<label class="mvi-slider">Z<input id="mvi-z" type="range" min="0" max="0" value="0"></label>' +
         '</div>' +
         '<div id="mvi-readout" class="mvi-readout"></div>' +
-        '<div id="mvi-status" class="mvi-status">Importez des DICOM monochromes non compressés (Implicit/Explicit VR, Little/Big Endian). JPEG/JPEG2000/RLE seront signalés comme non pris en charge.</div>';
+        '<div id="mvi-status" class="mvi-status">Importez des DICOM monochromes non compressés. MIP/MinIP et masque de seuil sont des outils exploratoires, sans segmentation IA ni validation diagnostique. JPEG/JPEG2000/RLE restent non pris en charge.</div>';
     host.insertAdjacentElement('afterend', panel);
 
     ['axial', 'coronal', 'sagittal'].forEach(p => $('mvi-' + p).addEventListener('pointerdown', canvasPointer));
@@ -654,6 +689,14 @@ function injectUI() {
     $('mvi-y').addEventListener('input', e => setCrosshair(null, Number(e.target.value), null));
     $('mvi-z').addEventListener('input', e => setCrosshair(null, null, Number(e.target.value)));
     $('mvi-cine').addEventListener('click', toggleCine);
+    $('mvi-projection').addEventListener('change', e => { MVI.state.projection = e.target.value; renderAll(); });
+    $('mvi-slab').addEventListener('change', e => { MVI.state.slab = clamp(Math.round(Number(e.target.value) || 1), 1, 51); e.target.value = MVI.state.slab; renderAll(); });
+    $('mvi-threshold-enabled').addEventListener('change', e => { MVI.state.thresholdEnabled = e.target.checked; renderAll(); });
+    ['min', 'max'].forEach(bound => $('mvi-threshold-' + bound).addEventListener('change', e => {
+        const value = Number(e.target.value);
+        if (finite(value)) MVI.state[bound === 'min' ? 'thresholdMin' : 'thresholdMax'] = value;
+        renderAll();
+    }));
     $('mvi-send-ai').addEventListener('click', sendCurrentSliceToAI);
     $('mvi-clear').addEventListener('click', () => {
         stopCine();
@@ -667,6 +710,7 @@ function injectUI() {
 
 MVI.parseDicomBuffer = parseDicomBuffer;
 MVI.buildVolume = buildVolume;
+MVI.planeValue = planeValue;
 MVI.loadFiles = loadFiles;
 MVI.renderAll = renderAll;
 MVI.setWindow = setWindow;
