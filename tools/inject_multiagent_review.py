@@ -294,7 +294,7 @@ needle_meta = "preuves_recentes: (rep._lectures || []).map(l => ({ expert: l.k, 
 if needle_meta in s and 'audit_multiagent:' not in s:
     s = s.replace(needle_meta, needle_meta + "\n        audit_multiagent: rep.audit_multiagent || medicalMultiagentAudit(rep._lectures || []),", 1)
 
-s = s.replace("const APP_VERSION = 'v16.3.0';", "const APP_VERSION = 'v16.4.0';", 1)
+# APP_VERSION intentionally remains unchanged by this injector.
 
 required = [
     'MEDICAL_MULTIAGENT_REVIEW_V1',
