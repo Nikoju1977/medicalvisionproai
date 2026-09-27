@@ -25,6 +25,7 @@ RUNTIME_FILES = [
     'sw.js',
     'web-knowledge.js',
     'web-knowledge-ui.js',
+    'imaging-pro.js',
     'apple-touch-icon.png',
     'banner.svg',
     'icon.svg',
@@ -69,6 +70,7 @@ REQUIRED_MARKERS = [
     'provenance: rep.provenance ||',
     'src="web-knowledge.js"',
     'src="web-knowledge-ui.js"',
+    'src="imaging-pro.js"',
 ]
 
 def run_tool(name):
@@ -121,5 +123,5 @@ subprocess.check_call(
 
 print(
     f'MedVision production dist v{release_version} built reproducibly '
-    'with medical multi-agent stack, DICOM calibration, control agents and web knowledge.'
+    'with medical multi-agent stack, DICOM calibration, Imaging Pro MPR, control agents and web knowledge.'
 )
