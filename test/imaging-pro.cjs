@@ -88,6 +88,27 @@ test('Imaging Pro builds and sorts a calibrated 3D series', () => {
     assert.equal(v.slices[1].instance, 2);
 });
 
+test('MIP and MinIP project the selected thickness on all three planes', () => {
+    const v = {
+        columns: 2, rows: 2,
+        slices: [
+            { data: Float32Array.from([1, 2, 3, 4]) },
+            { data: Float32Array.from([10, 20, 30, 40]) },
+            { data: Float32Array.from([-5, 50, 60, 70]) }
+        ]
+    };
+    Object.assign(api.state, { x: 0, y: 0, z: 1, slab: 3, projection: 'mip' });
+    assert.equal(api.planeValue(v, 'axial', 0, 0), 10);
+    assert.equal(api.planeValue(v, 'coronal', 0, 1), 30);
+    assert.equal(api.planeValue(v, 'sagittal', 0, 1), 20);
+    api.state.projection = 'minip';
+    assert.equal(api.planeValue(v, 'axial', 0, 0), -5);
+    assert.equal(api.planeValue(v, 'coronal', 0, 1), 10);
+    assert.equal(api.planeValue(v, 'sagittal', 0, 1), 10);
+    api.state.projection = 'slice';
+    assert.equal(api.planeValue(v, 'axial', 0, 0), 10);
+});
+
 test('Imaging Pro refuses compressed transfer syntaxes instead of mis-decoding them', () => {
     const b = makeDicom();
     const needle = Buffer.from('1.2.840.10008.1.2.1\0', 'ascii');
