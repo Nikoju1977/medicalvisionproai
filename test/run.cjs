@@ -12,6 +12,8 @@ assert.equal(JSON.parse(fs.readFileSync('package.json')).version, version);
 assert.equal(fs.readFileSync('sw.js', 'utf8').match(/BUILD = 'v([\d.]+)'/)[1], version);
 console.log('Syntax and application/cache versions OK: ' + version);
 let failures = 0;
+const skills = spawnSync('python3', ['tools/medical_skills.py', '--check'], { stdio: 'inherit', timeout: 30000 });
+if (skills.status !== 0) failures++;
 for (const scenario of ['nominal', 'rate-limit', 'lot-perdu', 'tronque', 'quota']) {
     const result = spawnSync(process.execPath, ['test/e2e.js', 'index.html', scenario], { stdio: 'inherit', timeout: 120000 });
     if (result.status !== 0) failures++;

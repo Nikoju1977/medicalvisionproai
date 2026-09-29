@@ -17,6 +17,7 @@ markers = [
     'MEDICAL_QUANTITATIVE_PASS_V1',
     'DICOM_CALIBRATION_V1',
     'MEDICAL_CONTROL_AGENTS_V1',
+    'MEDICAL_SKILLS_ENGINE_V1',
 ]
 errors = []
 for marker in markers:
@@ -54,12 +55,27 @@ required = [
     'control_agents: rep.control_agents ||',
     'uncertainty_safety: rep.uncertainty_safety ||',
     'provenance: rep.provenance ||',
+    'medicalSkillsFor(context)',
+    'medicalSkillsPrompt(context)',
+    'withMedicalKnowledge(lectureMsg(grp, tri, grille, set), expertKey, tri)',
+    'human_review_required',
+    'draft_only',
     'src="web-knowledge.js"',
     'src="web-knowledge-ui.js"',
 ]
 for needle in required:
     if needle not in s:
         errors.append('missing: ' + needle)
+
+# Skills are additive: they enrich expert prompts but cannot replace the evidence/safety layers.
+skills_block = re.search(r'// MEDICAL_SKILLS_ENGINE_V1(.*?)function analyzeWithAI', s, re.S)
+if not skills_block:
+    errors.append('medical skills engine block not found')
+else:
+    sb = skills_block.group(1)
+    for needle in ['medicalSkillsFor', 'medicalSkillsPrompt', 'validation humaine', 'UNKNOWN']:
+        if needle not in sb:
+            errors.append('medical skills safety/routing missing: ' + needle)
 
 # Pipeline order: evidence -> critic -> quantitative -> control agents -> final output.
 chain = re.search(

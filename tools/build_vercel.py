@@ -15,6 +15,7 @@ INJECTORS = [
     'inject_quantitative_pass.py',
     'inject_dicom_calibration.py',
     'inject_control_agents.py',
+    'inject_medical_skills.py',
     'inject_web_knowledge_loader.py',
 ]
 
@@ -42,6 +43,7 @@ REQUIRED_MARKERS = [
     'MEDICAL_QUANTITATIVE_PASS_V1',
     'DICOM_CALIBRATION_V1',
     'MEDICAL_CONTROL_AGENTS_V1',
+    'MEDICAL_SKILLS_ENGINE_V1',
     "medicalModelFor(expertKey, 'vision')",
     "medicalModelFor('consensus', 'consensus')",
     'medicalEvidenceForLectures(lectures, tri)',
@@ -107,6 +109,11 @@ if DIST.exists():
     shutil.rmtree(DIST)
 DIST.mkdir(parents=True)
 
+subprocess.check_call(
+    [sys.executable, str(ROOT / 'tools' / 'medical_skills.py'), '--output', str(DIST / 'skills-manifest.json')],
+    cwd=ROOT,
+)
+
 for name in RUNTIME_FILES:
     src = ROOT / name
     if not src.is_file():
@@ -123,5 +130,5 @@ subprocess.check_call(
 
 print(
     f'MedVision production dist v{release_version} built reproducibly '
-    'with medical multi-agent stack, DICOM calibration, Imaging Pro MPR, control agents and web knowledge.'
+    'with medical multi-agent stack, Medical Skills Engine, DICOM calibration, Imaging Pro MPR, control agents and web knowledge.'
 )
