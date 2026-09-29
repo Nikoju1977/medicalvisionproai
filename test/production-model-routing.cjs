@@ -49,3 +49,18 @@ test('every production medical skill is draft-only and requires human review', a
         assert.equal(skill.metadata.human_review_required, true, skill.name);
     }
 });
+
+
+test('benchmark disable hook requires explicit benchmark mode', async t => {
+    const h = runtime('dist/index.html'); t.after(() => h.close());
+    const context = { agent: 'pulmo', modality: 'CT', region: 'thorax', purpose: 'vision', text: 'nodule pulmonaire' };
+
+    h.w.__MEDVISION_BENCH_DISABLE_SKILLS = true;
+    assert.match(h.api.medicalSkillsPrompt(context), /SKILL pulmonary-nodule-characterization/);
+
+    h.w.__MEDVISION_BENCH_MODE = true;
+    assert.equal(h.api.medicalSkillsPrompt(context), '');
+
+    h.w.__MEDVISION_BENCH_DISABLE_SKILLS = false;
+    assert.match(h.api.medicalSkillsPrompt(context), /SKILL pulmonary-nodule-characterization/);
+});
