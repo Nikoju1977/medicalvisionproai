@@ -68,6 +68,8 @@ function medicalSkillsFor(context) {
 }
 
 function medicalSkillsPrompt(context) {
+    // Benchmark-only A/B hook. It is inert unless the explicit benchmark mode flag is also set.
+    if (window.__MEDVISION_BENCH_MODE === true && window.__MEDVISION_BENCH_DISABLE_SKILLS === true) return '';
     const selected = medicalSkillsFor(context);
     if (!selected.length) return '';
     const sections = [
