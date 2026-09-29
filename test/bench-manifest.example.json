@@ -1,0 +1,18 @@
+[
+  {
+    "case_id": "cxr-normal-001",
+    "file": "normal-001.png",
+    "label": "normal",
+    "attendu": "Pas d'anomalie thoracique aiguë sur la référence."
+  },
+  {
+    "case_id": "cxr-abnormal-001",
+    "file": "abnormal-001.png",
+    "label": "anomalie",
+    "attendu": "Opacité focale basale droite sur la référence.",
+    "expected_terms_any": [
+      ["opacité", "opacity", "condensation", "infiltrat"],
+      ["droite", "right"]
+    ]
+  }
+]
