@@ -126,5 +126,38 @@ if old_call not in s:
     raise SystemExit('expert skill routing call not found')
 s = s.replace(old_call, new_call, 1)
 
+# Benchmark instrumentation is completely inert in normal application use.
+# It records logical API calls, request size, and provider-reported token usage when available.
+mcall_open = """function mcall(o) {
+    o = Object.assign({}, o, { config: o.config || configSnapshot(), signal: 'signal' in o ? o.signal : (S.analysisController && S.analysisController.signal) });"""
+mcall_instrumented = """function mcall(o) {
+    o = Object.assign({}, o, { config: o.config || configSnapshot(), signal: 'signal' in o ? o.signal : (S.analysisController && S.analysisController.signal) });
+    if (window.__MEDVISION_BENCH_MODE === true) {
+        S.benchUsage = S.benchUsage || { requests: 0, request_chars: 0, responses_with_usage: 0, prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+        S.benchUsage.requests += 1;
+        try { S.benchUsage.request_chars += JSON.stringify(o.body || {}).length; } catch (e) {}
+    }"""
+if mcall_open not in s:
+    raise SystemExit('mcall benchmark instrumentation anchor not found')
+s = s.replace(mcall_open, mcall_instrumented, 1)
+
+mcall_success = """if (x.status >= 200 && x.status < 300) {
+                if (!d || typeof d !== 'object') return settle(reject, { status: 200, msg: 'Le serveur a renvoyé une réponse vide ou non JSON.' });
+                return settle(resolve, d);"""
+mcall_success_instrumented = """if (x.status >= 200 && x.status < 300) {
+                if (!d || typeof d !== 'object') return settle(reject, { status: 200, msg: 'Le serveur a renvoyé une réponse vide ou non JSON.' });
+                if (window.__MEDVISION_BENCH_MODE === true && d.usage && typeof d.usage === 'object') {
+                    S.benchUsage = S.benchUsage || { requests: 0, request_chars: 0, responses_with_usage: 0, prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+                    S.benchUsage.responses_with_usage += 1;
+                    ['prompt_tokens', 'completion_tokens', 'total_tokens'].forEach(k => {
+                        const v = Number(d.usage[k]);
+                        if (Number.isFinite(v)) S.benchUsage[k] += v;
+                    });
+                }
+                return settle(resolve, d);"""
+if mcall_success not in s:
+    raise SystemExit('mcall success benchmark instrumentation anchor not found')
+s = s.replace(mcall_success, mcall_success_instrumented, 1)
+
 p.write_text(s, encoding='utf-8')
 print(f'Medical Skills Engine V1 injected with {len(catalog)} validated skills')
