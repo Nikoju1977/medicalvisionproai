@@ -112,6 +112,21 @@ try:
 except json.JSONDecodeError:
     errors.append('skills-manifest.json is invalid JSON')
 
+for pdf_marker in [
+    'function ensurePdfLibrary()',
+    'Sécurité du pipeline',
+    'Double lecture / critique',
+    'Passage quantitatif',
+    'Provenance des preuves récentes',
+    'M0.medical_skills',
+    'M0.uncertainty_safety',
+    'M0.audit_multiagent',
+    'M0.quantitative_measurements',
+    'M0.provenance',
+]:
+    if pdf_marker not in index:
+        errors.append('PDF export missing medical audit marker: ' + pdf_marker)
+
 for asset in ['./web-knowledge.js', './web-knowledge-ui.js', './imaging-pro.js', './skills-manifest.json']:
     if asset not in sw:
         errors.append('service worker does not precache ' + asset)
