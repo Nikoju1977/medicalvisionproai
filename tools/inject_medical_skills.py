@@ -72,6 +72,10 @@ function medicalSkillsPrompt(context) {
     if (window.__MEDVISION_BENCH_MODE === true && window.__MEDVISION_BENCH_DISABLE_SKILLS === true) return '';
     const selected = medicalSkillsFor(context);
     if (!selected.length) return '';
+    S.activeMedicalSkills = Array.isArray(S.activeMedicalSkills) ? S.activeMedicalSkills : [];
+    selected.forEach(skill => {
+        if (skill && skill.name && !S.activeMedicalSkills.includes(skill.name)) S.activeMedicalSkills.push(skill.name);
+    });
     const sections = [
         'COMPÉTENCES MÉDICALES SÉLECTIONNÉES :',
         'Ces compétences structurent un brouillon de travail. Elles ne remplacent ni la politique de preuves, ni les contrôles du pipeline, ni la validation humaine.'
@@ -92,6 +96,11 @@ function medicalSkillsPrompt(context) {
 
 if MARK in s:
     raise SystemExit('medical skills engine already injected')
+
+analysis_anchor = 'function analyzeWithAI(auto) {'
+if analysis_anchor not in s:
+    raise SystemExit('analysis reset anchor not found')
+s = s.replace(analysis_anchor, analysis_anchor + "\n    S.activeMedicalSkills = [];", 1)
 
 anchor = 'function analyzeWithAI(auto) {'
 if anchor not in s:
@@ -119,6 +128,10 @@ new_add = """const add = [
 if old_add not in s:
     raise SystemExit('medical knowledge prompt assembly not found')
 s = s.replace(old_add, new_add, 1)
+
+meta_anchor = "modeles_agents: Object.assign({}, S.agentModelTrace || {}),"
+if meta_anchor in s and 'medical_skills: S.activeMedicalSkills' not in s:
+    s = s.replace(meta_anchor, meta_anchor + "\n        medical_skills: (S.activeMedicalSkills || []).slice(),", 1)
 
 old_call = 'withMedicalKnowledge(lectureMsg(grp, tri, grille, set), expertKey);'
 new_call = 'withMedicalKnowledge(lectureMsg(grp, tri, grille, set), expertKey, tri);'
