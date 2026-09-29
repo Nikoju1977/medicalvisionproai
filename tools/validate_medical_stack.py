@@ -60,6 +60,7 @@ required = [
     'withMedicalKnowledge(lectureMsg(grp, tri, grille, set), expertKey, tri)',
     'human_review_required',
     'draft_only',
+    'medical_skills: (S.activeMedicalSkills || []).slice()',
     'src="web-knowledge.js"',
     'src="web-knowledge-ui.js"',
 ]
