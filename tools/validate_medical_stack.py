@@ -73,9 +73,13 @@ if not skills_block:
     errors.append('medical skills engine block not found')
 else:
     sb = skills_block.group(1)
-    for needle in ['medicalSkillsFor', 'medicalSkillsPrompt', 'validation humaine', 'UNKNOWN']:
+    for needle in ['medicalSkillsFor', 'medicalSkillsPrompt', 'validation humaine', 'UNKNOWN', '__MEDVISION_BENCH_MODE', '__MEDVISION_BENCH_DISABLE_SKILLS']:
         if needle not in sb:
             errors.append('medical skills safety/routing missing: ' + needle)
+    if "window.__MEDVISION_BENCH_MODE === true && window.__MEDVISION_BENCH_DISABLE_SKILLS === true" not in sb:
+        errors.append('skills benchmark disable hook must require explicit benchmark mode')
+    if "S.benchUsage" not in s or "responses_with_usage" not in s:
+        errors.append('benchmark usage instrumentation missing')
 
 # Pipeline order: evidence -> critic -> quantitative -> control agents -> final output.
 chain = re.search(
