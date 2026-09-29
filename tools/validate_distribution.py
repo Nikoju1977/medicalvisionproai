@@ -33,6 +33,7 @@ required_files = [
     'web-knowledge.js',
     'web-knowledge-ui.js',
     'imaging-pro.js',
+    'skills-manifest.json',
     'apple-touch-icon.png',
     'icon-192.png',
     'icon-512.png',
@@ -50,6 +51,7 @@ for forbidden in ['tools', 'test', '.github', 'corrections.patch', 'package-lock
 index = read(DIST / 'index.html')
 manifest_text = read(DIST / 'manifest.json')
 sw = read(DIST / 'sw.js')
+skills_text = read(DIST / 'skills-manifest.json')
 
 m = re.search(r"APP_VERSION = 'v([\d.]+)'", index)
 index_version = m.group(1) if m else None
@@ -79,6 +81,7 @@ markers = [
     'MEDICAL_QUANTITATIVE_PASS_V1',
     'DICOM_CALIBRATION_V1',
     'MEDICAL_CONTROL_AGENTS_V1',
+    'MEDICAL_SKILLS_ENGINE_V1',
     'src="web-knowledge.js"',
     'src="web-knowledge-ui.js"',
     'src="imaging-pro.js"',
@@ -98,7 +101,33 @@ if quant_start >= 0 and finish_start >= 0:
         if field not in finish_body:
             errors.append('production report metadata missing ' + field)
 
-for asset in ['./web-knowledge.js', './web-knowledge-ui.js', './imaging-pro.js']:
+try:
+    skills_manifest = json.loads(skills_text)
+    if skills_manifest.get('skill_count', 0) < 15:
+        errors.append('skills manifest must contain at least 15 validated skills')
+    for skill in skills_manifest.get('skills', []):
+        meta = skill.get('metadata') or {}
+        if meta.get('human_review_required') is not True or meta.get('draft_only') is not True:
+            errors.append('unsafe skill metadata: ' + str(skill.get('name')))
+except json.JSONDecodeError:
+    errors.append('skills-manifest.json is invalid JSON')
+
+for pdf_marker in [
+    'function ensurePdfLibrary()',
+    'Sécurité du pipeline',
+    'Double lecture / critique',
+    'Passage quantitatif',
+    'Provenance des preuves récentes',
+    'M0.medical_skills',
+    'M0.uncertainty_safety',
+    'M0.audit_multiagent',
+    'M0.quantitative_measurements',
+    'M0.provenance',
+]:
+    if pdf_marker not in index:
+        errors.append('PDF export missing medical audit marker: ' + pdf_marker)
+
+for asset in ['./web-knowledge.js', './web-knowledge-ui.js', './imaging-pro.js', './skills-manifest.json']:
     if asset not in sw:
         errors.append('service worker does not precache ' + asset)
 

@@ -25,6 +25,16 @@ Aucune clé n’est fournie par ce dépôt. L’accès à l’API, ses quotas et
 - Sauvegarde locale chiffrée de toute la série, des annotations, du contexte et du rapport ; restauration du dernier examen du patient sélectionné.
 - Export PDF d’un rapport médical terminé (bibliothèque jsPDF requise), installation PWA et notification de mise à jour.
 
+## Medical Skills Engine
+
+MedVision intègre un **Medical Skills Engine** original. Les compétences vivent dans `skills/<nom>/SKILL.md`, sont validées au build puis compilées dans `dist/skills-manifest.json`. Le routeur sélectionne au maximum trois compétences selon l'agent, la modalité, la région, la tâche et les mots-clés du contexte.
+
+Les skills sont strictement additifs : ils structurent les brouillons de lecture mais ne peuvent pas remplacer la politique de preuves, la double lecture, l'agent critique, les contrôles déterministes ou la validation humaine. Chaque skill doit déclarer `draft_only: true` et `human_review_required: true`, sinon le build échoue.
+
+### Benchmark A/B des skills
+
+Après `npm run build`, `test/bench.js --ab` peut comparer le même lot avec et sans skills, en conservant le reste du pipeline. Le banc mesure sensibilité, spécificité, faux positifs, latence, volume de requête et, lorsque le fournisseur le renvoie, l'usage en tokens. Les paires dont le routage réel utilise des modèles différents sont exclues par défaut. Voir `test/BENCH.md`.
+
 ## Données et limites
 
 Les images sont traitées localement pour l’affichage. **Lancer l’analyse transmet les images et le contexte clinique au fournisseur configuré.** Retirez les informations identifiantes, y compris celles inscrites dans les pixels. Le prétraitement n’anonymise pas les images.
