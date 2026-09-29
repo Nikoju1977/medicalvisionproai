@@ -25,7 +25,7 @@ get length(){try{if(ls)return ls.length;}catch(e){}return mem.size;}};})();
 window.nikoFetch = window.nikoFetch || function(url,opts){function xhr(){opts=opts||{};return new Promise(function(res,rej){var x=new XMLHttpRequest();x.open((opts.method||'GET'),url,true);if(opts.headers){Object.keys(opts.headers).forEach(function(h){try{x.setRequestHeader(h,opts.headers[h]);}catch(e){}});}x.onload=function(){res({ok:x.status>=200&&x.status<300,status:x.status,statusText:x.statusText,url:url,text:function(){return Promise.resolve(x.responseText);},json:function(){return Promise.resolve(JSON.parse(x.responseText));},headers:{get:function(n){return x.getResponseHeader(n);}}});};x.onerror=function(){rej(new TypeError('Network request failed'));};x.send(opts.body||null);});}
 return xhr();};
 </script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script defer data-medvision-pdf="1" src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{
     --bg:#050a12;--sf:#111827;--sf2:#1f2937;
@@ -5037,16 +5037,47 @@ window.togMic = function() {
 };
 
 // ---------- Export PDF ----------
-window.exportPDF = function() {
+const PDF_LIB_URL = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+let pdfLibPromise = null;
+
+function ensurePdfLibrary() {
+    if (window.jspdf && window.jspdf.jsPDF) return Promise.resolve(window.jspdf);
+    if (pdfLibPromise) return pdfLibPromise;
+    pdfLibPromise = new Promise((resolve, reject) => {
+        const stale = document.querySelector('script[data-medvision-pdf="1"]');
+        if (stale) stale.remove();
+        const sc = document.createElement('script');
+        sc.src = PDF_LIB_URL;
+        sc.async = true;
+        sc.dataset.medvisionPdf = '1';
+        sc.onload = () => {
+            if (window.jspdf && window.jspdf.jsPDF) resolve(window.jspdf);
+            else reject(new Error('jsPDF chargé sans API jsPDF disponible'));
+        };
+        sc.onerror = () => reject(new Error('chargement jsPDF impossible'));
+        document.head.appendChild(sc);
+    }).catch(err => {
+        pdfLibPromise = null;
+        throw err;
+    });
+    return pdfLibPromise;
+}
+
+window.exportPDF = async function() {
     // Un PDF a en-tete medical pour une description d'image non medicale serait
     // un document trompeur : refus avant meme de charger le generateur.
     if ($('genMode') && $('genMode').checked)
         return toast('Analyse générale : export PDF médical indisponible');
-    const ns = window.jspdf;
-    if (!ns || !ns.jsPDF) return toast(t('msg.nopdf'));
     if (operationLocked()) return toast('Terminez l’opération avant l’export.');
     if (!S.imgA) return toast(t('msg.noexam'));
     if (!S.lastReport) return toast('Lancez une analyse complète avant d’exporter un rapport.');
+
+    let ns;
+    try { ns = await ensurePdfLibrary(); }
+    catch (e) {
+        console.error('PDF library load failed', e);
+        return toast(t('msg.nopdf') + ' — reconnectez-vous puis réessayez');
+    }
 
     const doc = new ns.jsPDF({ unit: 'mm', format: 'a4' });
 
@@ -5361,6 +5392,103 @@ window.exportPDF = function() {
     if (Array.isArray(r.limites) && r.limites.length) {
         section(t('rep.limits'));
         bullets(r.limites, WN, '·');
+    }
+
+    // ---------- Audit médical exporté ----------
+    // Ces informations existaient dans S.lastMeta mais n'étaient pas présentes
+    // dans le document qui quitte l'application. Le PDF doit conserver les
+    // limites, désaccords et provenance du pipeline au même titre que l'écran.
+    const audit = M0.audit_multiagent || null;
+    const safety = M0.uncertainty_safety || null;
+    const controls = M0.control_agents || null;
+    const quant = M0.quantitative_measurements || null;
+    const dicomGeom = M0.dicom_geometry || null;
+    const evidenceMeta = Array.isArray(M0.preuves_recentes) ? M0.preuves_recentes : [];
+    const usedSkills = Array.isArray(M0.medical_skills) ? M0.medical_skills : [];
+    const yn = v => v ? 'oui' : 'non';
+
+    if (usedSkills.length) {
+        section(S.lang === 'en' ? 'Medical skills' : 'Compétences médicales');
+        bullets(usedSkills, DIM, '>');
+    }
+
+    if (safety || controls) {
+        section(S.lang === 'en' ? 'Pipeline safety' : 'Sécurité du pipeline');
+        if (safety) {
+            kv([
+                [S.lang === 'en' ? 'Reliability' : 'Fiabilité', safety.pipeline_reliability || '—'],
+                [S.lang === 'en' ? 'Quality' : 'Qualité', safety.quality_status || '—'],
+                [S.lang === 'en' ? 'Model independence' : 'Indépendance modèles', safety.model_independence || '—'],
+                [S.lang === 'en' ? 'Evidence tier' : 'Niveau documentaire', safety.evidence_tier || '—'],
+                [S.lang === 'en' ? 'Unresolved conflicts' : 'Conflits non résolus', safety.unresolved_conflicts == null ? '—' : safety.unresolved_conflicts],
+                [S.lang === 'en' ? 'Abstention' : 'Abstention', yn(!!safety.abstain)],
+                [S.lang === 'en' ? 'Human review' : 'Validation humaine', yn(safety.human_review_required !== false)]
+            ]);
+            if (safety.reliability_scope) para(safety.reliability_scope, 7.2, DIM);
+            if (Array.isArray(safety.reasons) && safety.reasons.length) bullets(safety.reasons, WN, '!');
+        }
+        if (controls && controls.quality && Array.isArray(controls.quality.reasons) && controls.quality.reasons.length) {
+            para((S.lang === 'en' ? 'Quality controls: ' : 'Contrôles qualité : ') +
+                 controls.quality.reasons.join(' ; '), 7.4, DIM);
+        }
+    }
+
+    if (audit && Array.isArray(audit.experts) && audit.experts.length) {
+        section(S.lang === 'en' ? 'Independent readings / critic' : 'Double lecture / critique');
+        kv([
+            [S.lang === 'en' ? 'Architecture' : 'Architecture', audit.architecture || '—'],
+            [S.lang === 'en' ? 'All second reads' : 'Secondes lectures complètes', yn(!!audit.all_second_reads_available)],
+            [S.lang === 'en' ? 'All model-independent' : 'Indépendance modèles complète', yn(!!audit.all_model_independent)],
+            [S.lang === 'en' ? 'Human review' : 'Validation humaine', yn(audit.requires_human_review !== false)]
+        ]);
+        audit.experts.forEach(ex => {
+            need(8);
+            const agree = typeof ex.critic_agreement === 'number' ? Math.round(ex.critic_agreement * 100) + ' %' : '—';
+            para((ex.expert || 'expert') + ' — A: ' + (ex.primary_model || '—') +
+                 ' ; B: ' + (ex.second_model || '—') +
+                 ' ; indépendant: ' + yn(!!ex.model_independent) +
+                 ' ; accord critique: ' + agree +
+                 ' ; risque: ' + (ex.critic_risk || '—'), 7.3, TX);
+            if (Array.isArray(ex.safety_flags) && ex.safety_flags.length) bullets(ex.safety_flags, WN, '!');
+        });
+    }
+
+    if (quant) {
+        section(S.lang === 'en' ? 'Quantitative pass' : 'Passage quantitatif');
+        kv([
+            [S.lang === 'en' ? 'Mode' : 'Mode', quant.mode || '—'],
+            [S.lang === 'en' ? 'Physical calibration' : 'Calibration physique', yn(!!quant.physical_calibration)],
+            [S.lang === 'en' ? 'Successful measurements' : 'Mesures réussies', quant.total_successful_measurements == null ? '—' : quant.total_successful_measurements]
+        ]);
+        if (quant.warning) para(quant.warning, 7.4, quant.physical_calibration ? DIM : WN);
+        (quant.experts || []).forEach(ex => {
+            const okn = (ex.measurements || []).filter(m => m && m.ok).length;
+            para((ex.expert || 'expert') + ' — ' + (ex.model || 'modèle indisponible') +
+                 ' ; mesures: ' + okn + ' ; unités physiques: ' + yn(!!ex.physical_units_available) +
+                 (ex.reason ? ' ; ' + ex.reason : ''), 7.2, DIM);
+        });
+    }
+
+    if (dicomGeom) {
+        section(S.lang === 'en' ? 'DICOM geometry' : 'Géométrie DICOM');
+        para(JSON.stringify(dicomGeom), 6.8, DIM);
+    }
+
+    if (evidenceMeta.length) {
+        section(S.lang === 'en' ? 'Recent evidence provenance' : 'Provenance des preuves récentes');
+        evidenceMeta.forEach(ev => {
+            para((ev.expert || 'expert') + ' — ' + (ev.source || 'source non précisée') +
+                 ' ; références: ' + (ev.count == null ? '—' : ev.count) +
+                 (ev.retrieved_at ? ' ; récupéré: ' + ev.retrieved_at : '') +
+                 (ev.error ? ' ; erreur: ' + ev.error : ''), 7.1, ev.error ? WN : DIM);
+        });
+    }
+
+    if (M0.provenance && M0.provenance.note) {
+        section(S.lang === 'en' ? 'Provenance' : 'Provenance');
+        para(M0.provenance.note, 7.2, DIM);
+        if (M0.provenance.generated_at) para('generated_at: ' + M0.provenance.generated_at, 6.8, DIM);
+        if (M0.provenance.scope) para('scope: ' + M0.provenance.scope, 6.8, DIM);
     }
 
     // ---------- Traçabilité + validation ----------
