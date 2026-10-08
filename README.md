@@ -1,43 +1,123 @@
 # MedVision AI Pro
 
-Prototype de visualisation et de lecture d’images assistée par IA. Création : Nicolas Julienne — Studio Niko Design.
+**AI-assisted medical imaging workspace for the web — DICOM viewing, MPR reconstruction, measurements, encrypted local cases and provider-agnostic vision AI.**
 
-**Release applicative : 17.1.5** — le même artefact de production validé est destiné à GitHub Pages et Vercel.
+[Live application](https://nikoju1977.github.io/medicalvisionproai/) · Version **17.1.5** · Created by **Nicolas Julienne — Studio Niko Design**
 
-**Application : https://nikoju1977.github.io/medicalvisionproai/**
+> MedVision AI Pro is a technical prototype for medical-imaging workflows. It is **not certified as a medical device** and is not intended to replace professional clinical judgement.
 
-## Démarrage
+## Why MedVision
 
-1. Au premier accès, choisissez un code de 6 à 12 chiffres et confirmez-le. Conservez ce code : il permet de déchiffrer vos dossiers sur cet appareil.
-2. Importez des images JPEG, PNG, WebP ou BMP pour l’analyse médicale ou visuelle standard. Pour une série DICOM, utilisez **DICOM / MPR** : la v17 décode localement les DICOM monochromes non compressés et reconstruit les plans axial, coronal et sagittal.
-3. Ouvrez **Configurer l’IA**. Pour Mistral, renseignez votre clé personnelle et choisissez **Auto Éco**. Le bouton **Tester** utilise une image géométrique synthétique ; il ne transmet aucun examen.
-4. Enregistrez la configuration puis lancez l’analyse. **Arrêter l’analyse** annule les requêtes en cours et celles en attente.
+Medical imaging workflows are often fragmented between viewers, annotation tools, reporting utilities and external AI services. MedVision explores a lighter architecture: a browser-based workspace that keeps visualization and case storage local while allowing the user to connect the vision-AI provider of their choice.
 
-Aucune clé n’est fournie par ce dépôt. L’accès à l’API, ses quotas et ses tarifs dépendent de votre compte fournisseur. Auto Éco sélectionne un modèle vision accessible ; il ne garantit pas la gratuité. Les modèles sont interrogés via le [catalogue Mistral](https://docs.mistral.ai/api/endpoint/models) et la [Chat Completions API](https://docs.mistral.ai/api/endpoint/chat).
+The product is designed around three principles:
 
-## Fonctions disponibles
+- **Fast access:** installable PWA, no heavyweight desktop client required.
+- **Interoperability:** DICOM imaging tools plus standard image support and provider-agnostic AI routing.
+- **Data control:** local encrypted case storage, explicit remote-analysis actions and no embedded vendor API key.
 
-- Visualisation, comparaison, zoom, mesures calibrées, annotations et zones d’intérêt.\n- **Imaging Pro v17** : DICOM monochrome non compressé 8/16 bits, séries CT/MR, reconstruction MPR axial/coronal/sagittal, crosshair synchronisé, Window/Level, presets CT, cine axial et lecture HU lorsque Rescale Slope/Intercept sont présents.
-- Import de séries d’images ; extraction de trames vidéo dans les formats décodés par le navigateur (250 Mo maximum).
-- Série / évolution pour un même examen ; lot pour des examens indépendants. Les deux boutons d’analyse respectent ce choix.
-- Mistral vision ou endpoint privé compatible OpenAI, par exemple un serveur hébergeant MedGemma. MedGemma n’est pas installé ni hébergé par cette application.
-- **Image standard / photo** : analyse visuelle non médicale dédiée (description, objets, texte visible, composition/cadrage, couleurs/lumière, qualité et limites), séparée du pipeline médical.
-- Sauvegarde locale chiffrée de toute la série, des annotations, du contexte et du rapport ; restauration du dernier examen du patient sélectionné.
-- Export PDF d’un rapport médical terminé (bibliothèque jsPDF requise), installation PWA et notification de mise à jour.
+## Product capabilities
 
-## Données et limites
+### Medical imaging
+- DICOM CT/MR series import for supported uncompressed monochrome 8/16-bit transfer syntaxes.
+- MPR reconstruction: axial, coronal and sagittal views.
+- Synchronized crosshair, Window/Level, CT presets and axial cine.
+- Hounsfield Unit reading when Rescale Slope / Intercept metadata are available.
+- Zoom, calibrated measurements, annotations and regions of interest.
+- Standard JPEG, PNG, WebP and BMP image viewing.
 
-Les images sont traitées localement pour l’affichage. **Lancer l’analyse transmet les images et le contexte clinique au fournisseur configuré.** Retirez les informations identifiantes, y compris celles inscrites dans les pixels. Le prétraitement n’anonymise pas les images.
+### AI-assisted analysis
+- Mistral vision integration.
+- Support for private OpenAI-compatible endpoints, including self-hosted model gateways.
+- Provider catalogue discovery and model routing.
+- Batch or series-oriented analysis workflows.
+- Abort/cancellation controls for in-flight and queued requests.
+- Separate non-medical standard-image analysis mode.
 
-Les dossiers sauvegardés dans IndexedDB sont chiffrés en AES-256-GCM avec une clé dérivée du code. Les anciennes sauvegardes restent lisibles. Les clés API sont conservées localement par la version actuelle ; utilisez cet espace uniquement sur un appareil de confiance. Une sauvegarde navigateur n’est pas une sauvegarde externe : effacer les données du site peut supprimer les dossiers et le code de déchiffrement.
+### Security and workflow
+- AES-256-GCM encrypted local case storage in IndexedDB.
+- Local persistence of image series, annotations, context and reports.
+- API credentials remain on the local device in the current implementation.
+- PDF report export.
+- Installable PWA with controlled offline cache and update notifications.
 
-Le cache hors ligne contient uniquement les fichiers applicatifs autorisés, dont le module Imaging Pro. Il ne stocke ni réponses IA ni endpoints patients. L’IA distante requiert une connexion. Le PDF hors ligne dépend du chargement préalable de jsPDF.
+## Architecture
 
-**Prototype non certifié comme dispositif médical.** Les tests logiciels ne valident pas les performances diagnostiques. Les réponses IA peuvent être inexactes et ne permettent pas, seules, de poser ou d’écarter un diagnostic.
+MedVision is intentionally lightweight:
 
-## Développement, build et tests
+- **Client:** static web application / PWA.
+- **Medical imaging module:** browser-side DICOM decoding and MPR reconstruction.
+- **Storage:** encrypted IndexedDB.
+- **AI layer:** remote provider selected by the user.
+- **Deployment:** reproducible static build for GitHub Pages and Vercel.
+- **Quality:** automated integration, regression, cache, production-routing and synthetic DICOM tests.
 
-Node.js 22 ou supérieur et Python 3 :
+No AI provider key is shipped with the repository.
+
+## Target strategic use cases
+
+MedVision can serve as a foundation or demonstrator for:
+
+- radiology and imaging software vendors;
+- PACS / RIS ecosystem companies;
+- tele-radiology platforms;
+- hospital software providers;
+- medical-device manufacturers exploring browser-based companion software;
+- AI-imaging companies that need a lightweight multimodal viewing and annotation front end;
+- research and proof-of-concept programs around locally controlled imaging workflows.
+
+## What is differentiated
+
+MedVision combines, in a single browser-based product:
+
+1. **DICOM visualization + local MPR**
+2. **provider-agnostic multimodal AI**
+3. **encrypted local case persistence**
+4. **PWA deployment**
+5. **medical and standard-image modes kept separate**
+6. **automated technical validation around imaging and routing logic**
+
+The project deliberately avoids claiming diagnostic performance that has not been clinically validated.
+
+## Demo path
+
+For a concise commercial demonstration:
+
+1. Open the application.
+2. Import a synthetic or authorized DICOM CT series.
+3. Show axial / coronal / sagittal reconstruction and synchronized crosshair.
+4. Demonstrate Window/Level and HU reading.
+5. Add an annotation or measurement.
+6. Show the AI-provider configuration panel.
+7. Run only an authorized demo analysis.
+8. Save the case locally and export a PDF report.
+
+See [DEMO_SCRIPT.md](DEMO_SCRIPT.md) for a 3-minute buyer presentation.
+
+## Current maturity
+
+**Technical prototype / pre-regulatory product.**
+
+The software includes build, test and deployment tooling, but it has not undergone clinical validation or medical-device certification. Automated tests validate software behavior, not diagnostic safety or efficacy.
+
+Known imaging limitation: compressed DICOM transfer syntaxes such as JPEG, JPEG-LS, JPEG2000, RLE and Deflated are not yet decoded locally and are explicitly rejected.
+
+## Commercial discussion
+
+The project may be relevant for:
+
+- strategic acquisition;
+- technology transfer;
+- white-label integration;
+- product / IP licensing;
+- co-development;
+- integration into an existing imaging, PACS, telemedicine or AI platform.
+
+For a buyer-facing summary, see [COMMERCIAL_OVERVIEW.md](COMMERCIAL_OVERVIEW.md).
+
+## Development
+
+Requirements: Node.js 22+ and Python 3.
 
 ```bash
 npm ci --ignore-scripts --no-audit --no-fund
@@ -47,14 +127,14 @@ npm run validate:dist
 python3 -m http.server 8080 --directory dist --bind 127.0.0.1
 ```
 
-`npm run build` génère `dist/` sans modifier le `index.html` source. Les modules médicaux injectés restent indépendants du numéro de version : la release est pilotée par `package.json`, puis contrôlée automatiquement dans `index.html`, `manifest.json`, `sw.js` et `package-lock.json`. L’artefact publié contient uniquement les ressources nécessaires à l’exécution, sans les outils, tests ou workflows de développement.
+## Data and clinical safety
 
-Ouvrez ensuite http://localhost:8080 (évitez `file://`, incompatible avec certaines fonctions sécurisées).
+Image display and local case storage happen in the browser. When the user explicitly launches a remote AI analysis, the selected images and clinical context are transmitted to the configured provider.
 
-Les tests exécutent le JavaScript réel, Canvas, le décodage d’images et WebCrypto dans un hôte Node avec DOM de test. La CI reconstruit également l’artefact de production, valide sa cohérence PWA et vérifie que le build est reproductible et non destructif. Ils couvrent les cinq scénarios d’intégration d’origine et les régressions de configuration, import, sauvegarde, annulation, indices d’images et cache. Un test DICOM synthétique contrôle aussi le décodage CT 16 bits vers HU, l’ordre des coupes et l’espacement 3D. Ils utilisent des réponses IA simulées, sans appel payant. Ils ne remplacent pas un essai dans les navigateurs cibles ni une validation avec un compte IA réel.
+The application does **not** guarantee de-identification of patient information embedded in image pixels. Demonstrations should use synthetic, anonymized or otherwise authorized data only.
 
-Limite Imaging Pro v17 : les Transfer Syntax compressées JPEG/JPEG-LS/JPEG2000, RLE et Deflated ne sont pas encore décodées localement ; l’application les refuse explicitement au lieu de produire une image erronée.\n\nLe banc expérimental `test/bench.js` est séparé ; ses dépendances historiques et son mode d’emploi sont décrits dans `test/BENCH.md`. Il transmet les images du jeu d’essai au fournisseur : ne l’exécuter que sur des données autorisées.
+## License
 
-## Licence
+Current public source is distributed under the [MIT License](LICENSE).
 
-[MIT](LICENSE) © 2026 Nicolas Julienne — Studio Niko Design
+© 2026 Nicolas Julienne — Studio Niko Design
