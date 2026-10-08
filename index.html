@@ -213,6 +213,34 @@ canvas{display:block;touch-action:none;}
 
 .coh{font-size:.75rem;color:var(--txd);background:rgba(0,229,255,.06);border-left:2px solid var(--cy);padding:7px 10px;border-radius:0 6px 6px 0;}
 .coh b{color:var(--cy);}
+/* ===== Commercial presentation layer ===== */
+.commercial-hero{position:relative;overflow:hidden;background:
+linear-gradient(135deg,rgba(59,130,246,.12),rgba(6,214,160,.08) 55%,rgba(0,229,255,.04));
+border:1px solid rgba(0,229,255,.24);border-radius:18px;padding:22px;margin-bottom:14px;box-shadow:0 18px 55px rgba(0,0,0,.22);}
+.commercial-hero::after{content:"";position:absolute;width:240px;height:240px;border-radius:50%;right:-100px;top:-120px;background:radial-gradient(circle,rgba(0,229,255,.14),transparent 68%);pointer-events:none;}
+.commercial-badges{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px;}
+.commercial-badge{font-family:var(--fmono);font-size:.62rem;font-weight:700;letter-spacing:.55px;text-transform:uppercase;padding:5px 9px;border-radius:999px;border:1px solid rgba(6,214,160,.35);background:rgba(6,214,160,.08);color:var(--ac);}
+.commercial-badge.reg{border-color:rgba(245,158,11,.38);background:rgba(245,158,11,.08);color:var(--wn);}
+.commercial-title{font-size:clamp(1.35rem,4vw,2rem);line-height:1.12;max-width:720px;margin:0 0 9px;font-weight:800;letter-spacing:-.025em;}
+.commercial-lead{font-size:.9rem;line-height:1.65;color:var(--txd);max-width:790px;margin:0;}
+.commercial-lead strong{color:var(--tx);}
+.commercial-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:16px 0 14px;}
+.commercial-kpi{min-height:88px;padding:11px;border-radius:11px;background:rgba(5,10,18,.48);border:1px solid var(--bd);}
+.commercial-kpi b{display:block;color:var(--tx);font-size:.78rem;margin-bottom:5px;}
+.commercial-kpi span{display:block;color:var(--txd);font-size:.69rem;line-height:1.4;}
+.commercial-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+.commercial-note{font-size:.68rem;color:var(--txd);font-family:var(--fmono);margin-top:10px;line-height:1.45;}
+.commercial-note strong{color:var(--wn);}
+.auth-brand{width:min(440px,100%);text-align:center;padding:4px 12px 18px;}
+.auth-brand .mark{display:inline-flex;align-items:center;justify-content:center;width:68px;height:68px;border-radius:22px;background:linear-gradient(135deg,rgba(59,130,246,.18),rgba(6,214,160,.18));border:1px solid rgba(0,229,255,.28);font-size:2rem;margin-bottom:12px;box-shadow:0 12px 35px rgba(0,0,0,.28);}
+.auth-brand .eyebrow{font-family:var(--fmono);font-size:.62rem;color:var(--ac);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;}
+.auth-brand h2{font-size:1.65rem;letter-spacing:-.02em;margin-bottom:6px;}
+.auth-brand p{color:var(--txd);font-size:.78rem;line-height:1.5;max-width:360px;margin:0 auto;}
+.auth-features{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin-top:11px;}
+.auth-features span{font-family:var(--fmono);font-size:.58rem;color:var(--cy);padding:4px 7px;border-radius:999px;background:rgba(0,229,255,.06);border:1px solid rgba(0,229,255,.16);}
+@media(max-width:720px){.commercial-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.commercial-hero{padding:16px;}}
+@media(max-width:390px){.commercial-grid{grid-template-columns:1fr 1fr}.commercial-kpi{min-height:82px;padding:9px}.commercial-title{font-size:1.3rem}}
+
 
 /* ===== Série multi-images / vidéo ===== */
 .serlbl{font-size:.7rem;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;}
@@ -396,15 +424,15 @@ header>div:first-child{flex:1;min-width:170px}
 @media(max-width:480px){.app{padding:8px}.cd{padding:10px}.bt{min-height:44px;padding:10px}header .lsel{max-width:none;flex:1 1 auto}.sub{font-size:.7rem}.ac-n{font-size:.75rem}.air{font-size:1rem;padding:12px}.ctxr{flex-wrap:wrap}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
-<meta name="description" content="MedVision AI Pro — Prototype d'aide à la lecture d'images médicales par IA multimodale. Usage de recherche/professionnel, non certifié comme dispositif médical.">
+<meta name="description" content="MedVision AI Pro — plateforme web d’imagerie médicale avec DICOM/MPR, mesures, stockage local chiffré et IA vision configurable. Prototype pré-réglementaire.">
 <meta name="author" content="Nicolas Julienne — Studio Niko Design">
 <meta property="og:title" content="MedVision AI Pro | Studio Niko Design">
-<meta property="og:description" content="Prototype d'aide à la lecture d'images médicales par IA multimodale — non certifié comme dispositif médical">
+<meta property="og:description" content="DICOM/MPR, outils de mesure, dossiers locaux chiffrés et IA vision configurable dans une plateforme web légère. Prototype pré-réglementaire.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://nikoju1977.github.io/medicalvisionproai/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="MedVision AI Pro | Studio Niko Design">
-<meta name="twitter:description" content="Prototype d’aide à la lecture d’images médicales par IA multimodale — non certifié comme dispositif médical">
+<meta name="twitter:description" content="DICOM/MPR, mesures, stockage chiffré et IA vision configurable dans une plateforme web médicale. Prototype pré-réglementaire.">
 
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
@@ -444,13 +472,17 @@ header>div:first-child{flex:1;min-width:170px}
 
 <!-- AUTH -->
 <div id="authScreen" class="auth">
-    <div style="font-size:3.2rem;margin-bottom:10px">🧬</div>
-    <h2 style="font-size:1.5rem">MedVision Pro</h2>
-    <p style="color:var(--txd);font-size:.8rem;margin-bottom:4px" data-i18n="auth.edition">Expert Edition</p>
+    <div class="auth-brand">
+        <div class="mark">◫</div>
+        <div class="eyebrow">Medical imaging · AI workspace</div>
+        <h2>MedVision AI Pro</h2>
+        <p>Plateforme web d’imagerie médicale : DICOM/MPR, mesures, dossiers locaux chiffrés et IA vision configurable.</p>
+        <div class="auth-features"><span>DICOM / MPR</span><span>Vision AI</span><span>AES-256-GCM</span><span>PWA</span></div>
+    </div>
     <div class="pdots" id="pinDots"><span class="pdot"></span><span class="pdot"></span><span class="pdot"></span><span class="pdot"></span></div>
     <div class="pgr" id="pinPad"></div>
     <div class="pinmsg" id="pinMsg" role="status" aria-live="polite"></div>
-    <div class="pinlbl">Code à 6 chiffres minimum · les données de santé sont chiffrées en AES-256-GCM avec une clé dérivée de ce code</div>
+    <div class="pinlbl">Accès local sécurisé · code de 6 chiffres minimum · prototype pré-réglementaire, non certifié comme dispositif médical</div>
 </div>
 
 <!-- APP -->
@@ -466,15 +498,28 @@ header>div:first-child{flex:1;min-width:170px}
         </div>
     </header>
 
-    <div class="cd" id="startHelp">
-        <strong>Votre espace d’imagerie</strong>
-        <p style="font-size:.8rem;color:var(--txd);margin:6px 0">1. Importez vos images. 2. Configurez votre IA. 3. Lancez la lecture.</p>
-        <p style="font-size:.75rem;color:var(--txd);margin:6px 0">La visualisation et les annotations fonctionnent sans clé. L’analyse envoie les images au fournisseur choisi et nécessite son accès API.</p>
-        <label class="bt file-pick" style="margin:8px 8px 0 0"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-images"></use></svg><span>Importer une photo</span><input type="file" id="fInQuick" aria-label="Importer une photo depuis le téléphone" accept="image/jpeg,image/png,image/webp,image/bmp,.jpg,.jpeg,.png,.webp,.bmp"></label>
-        <button class="bt" onclick="openApiM()">Configurer l’IA</button>
-        <span id="connectionStatus" role="status" style="font-size:.75rem;margin-left:8px"></span>
+    <section class="commercial-hero" id="startHelp" aria-label="Présentation MedVision AI Pro">
+        <div class="commercial-badges">
+            <span class="commercial-badge">MedVision AI Pro · v17.1.5</span>
+            <span class="commercial-badge">Plateforme web d’imagerie</span>
+            <span class="commercial-badge reg">Prototype pré-réglementaire</span>
+        </div>
+        <h2 class="commercial-title">L’imagerie médicale, la reconstruction MPR et l’IA vision réunies dans un workspace web léger.</h2>
+        <p class="commercial-lead"><strong>MedVision AI Pro</strong> combine visualisation DICOM, outils de mesure et d’annotation, stockage local chiffré et connexion à un fournisseur d’IA vision configurable — avec une architecture pensée pour l’intégration dans un écosystème PACS, RIS, téléradiologie ou medtech.</p>
+        <div class="commercial-grid">
+            <div class="commercial-kpi"><b>DICOM + MPR</b><span>CT/MR non compressé, plans axial, coronal et sagittal, Window/Level et HU.</span></div>
+            <div class="commercial-kpi"><b>IA configurable</b><span>Mistral vision ou endpoint privé compatible OpenAI, sans clé fournisseur embarquée.</span></div>
+            <div class="commercial-kpi"><b>Données locales</b><span>Dossiers, annotations et contexte persistés localement avec chiffrement AES-256-GCM.</span></div>
+            <div class="commercial-kpi"><b>Déploiement web</b><span>PWA installable, build statique reproductible et workflow de validation automatisé.</span></div>
+        </div>
+        <div class="commercial-actions">
+            <label class="bt bp file-pick"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-images"></use></svg><span>Démarrer la démonstration</span><input type="file" id="fInQuick" aria-label="Importer une image de démonstration" accept="image/jpeg,image/png,image/webp,image/bmp,.jpg,.jpeg,.png,.webp,.bmp"></label>
+            <button class="bt" onclick="openApiM()"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-key"></use></svg><span>Voir l’architecture IA</span></button>
+            <span id="connectionStatus" role="status" style="font-size:.75rem"></span>
+        </div>
+        <div class="commercial-note"><strong>Démo :</strong> utiliser uniquement des données synthétiques, anonymisées ou autorisées. Une analyse distante transmet les images sélectionnées au fournisseur IA configuré.</div>
         <div id="importStatusTop" role="status" aria-live="polite" style="font-size:.75rem;margin-top:8px"></div>
-    </div>
+    </section>
     <div id="updateNotice" class="cd" hidden>Une mise à jour est disponible. Enregistrez l’examen avant de recharger. <button class="bt" onclick="reloadApp()">Recharger</button></div>
 
     <!-- PATIENT -->
