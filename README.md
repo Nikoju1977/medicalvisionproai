@@ -20,7 +20,8 @@ Aucune clé n’est fournie par ce dépôt. L’accès à l’API, ses quotas et
 
 ## Fonctions disponibles
 
-- Visualisation, comparaison, zoom, mesures calibrées, annotations et zones d’intérêt.\n- **Imaging Pro v17** : DICOM monochrome non compressé 8/16 bits, séries CT/MR, reconstruction MPR axial/coronal/sagittal, crosshair synchronisé, Window/Level, presets CT, cine axial et lecture HU lorsque Rescale Slope/Intercept sont présents.
+- Visualisation, comparaison, zoom, mesures calibrées, annotations et zones d’intérêt.
+- **Imaging Pro v17** : DICOM monochrome non compressé 8/16 bits, séries CT/MR, reconstruction MPR axial/coronal/sagittal, crosshair synchronisé, Window/Level, presets CT, cine axial et lecture HU lorsque Rescale Slope/Intercept sont présents.
 - Import de séries d’images ; extraction de trames vidéo dans les formats décodés par le navigateur (250 Mo maximum).
 - Série / évolution pour un même examen ; lot pour des examens indépendants. Les deux boutons d’analyse respectent ce choix.
 - Mistral vision ou endpoint privé compatible OpenAI, par exemple un serveur hébergeant MedGemma. MedGemma n’est pas installé ni hébergé par cette application.
