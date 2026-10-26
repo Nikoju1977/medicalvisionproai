@@ -1,5 +1,8 @@
 # MedVision AI Pro
 
+> **Projet signature · 04/06 · VISUALISATION** — [Étude de projet : problème, choix techniques et limites](https://github.com/Nikoju1977/Nikoju1977/blob/main/SHOWCASE.md) · [Portfolio Studio Niko Design](https://github.com/Nikoju1977).
+
+
 Prototype de visualisation et de lecture d’images assistée par IA. Création : Nicolas Julienne — Studio Niko Design.
 
 **Release applicative : 17.1.5** — le même artefact de production validé est destiné à GitHub Pages et Vercel.
