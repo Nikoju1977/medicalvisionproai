@@ -1,0 +1,13 @@
+{
+  "schema": "studio-niko-design.provenance/v1",
+  "publisher": "Studio Niko Design",
+  "brand_alias": "Niko Studio Design",
+  "account": "Nikoju1977",
+  "repository": "https://github.com/Nikoju1977/medicalvisionproai",
+  "record_date": "2026-11-24",
+  "baseline_git_commit": "f09866c592c2ad3894197ea46c53eb3f3d9d1098",
+  "rights": "Repository attribution only; existing licenses and third-party rights remain unchanged. No additional restrictions or claim over third-party authorship.",
+  "license_file": "LICENSE",
+  "integrity_registry": "https://github.com/Nikoju1977/Nikoju1977/tree/main/provenance",
+  "verification": "Git commit identifiers are not personal signatures or independent timestamps."
+}
