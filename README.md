@@ -10,7 +10,7 @@ Un laboratoire d'imagerie séparant le traitement des pixels, la reconstruction 
 
 [English overview](#english-overview) · [Quickstart](#quickstart--démarrage-rapide) · [Portfolio](https://github.com/Nikoju1977)
 
-> [Insérer ici un GIF de démonstration avec données synthétiques / Insert synthetic-data demo GIF here]
+> Démonstration : DICOM synthétiques uniquement ; aucun GIF de démonstration ni nouveau résultat d'essai revendiqué.
 
 > **Prototype non validé cliniquement.** Ne pas utiliser pour un diagnostic, une prescription, un triage, une décision de traitement ou une urgence. En France, danger immédiat : 15 ou 112. Inspection statique uniquement ; aucun nouveau test d'exécution, audit de sécurité, test fournisseur, benchmark, validation clinique ou vérification de déploiement n'a été effectué.
 
@@ -127,6 +127,23 @@ Les tests exécutent le JavaScript réel, Canvas, le décodage d’images et Web
 Limite Imaging Pro v17 : les Transfer Syntax compressées JPEG/JPEG-LS/JPEG2000, RLE et Deflated ne sont pas encore décodées localement ; l’application les refuse explicitement au lieu de produire une image erronée.
 
 Le banc expérimental `test/bench.js` est séparé ; ses dépendances historiques et son mode d’emploi sont décrits dans `test/BENCH.md`. Il transmet les images du jeu d’essai au fournisseur : ne l’exécuter que sur des données autorisées.
+
+## Qualification proposée — géométrie et affichage DICOM
+
+Le module `imaging-pro.js` contient également des projections min/max sur une épaisseur de coupe (`planeValue`). Elles utilisent les voxels du volume discret ; leur existence ne démontre pas une reconstruction radiologique validée. Le regroupement par Series UID sélectionne le groupe majoritaire, élimine des dimensions incompatibles puis utilise la médiane des écarts géométriques non nuls. Une série incomplète ou hétérogène peut donc produire un volume trompeur ; les espacements de secours à 1 ne sont pas une calibration.
+
+| Contrôle synthétique proposé (non exécuté) | Critère de qualification |
+| --- | --- |
+| Décodage numérique | Comparer les pixels 8/16 bits à un tableau indépendant, y compris signe et rescale |
+| Géométrie | Vérifier ordre des coupes et espacements anisotropes sur un fantôme numérique |
+| Métadonnées absentes | Signaler l'incertitude, ne pas présenter un espacement de secours comme mesure vérifiée |
+| Séries mélangées et lacunes | Signaler la sélection, les exclusions et les incohérences plutôt que les masquer |
+| Affichage Window/Level et MIP/MinIP | Comparer aux valeurs de référence calculées indépendamment ; valider orientations et limites de slab |
+| Données et IA | Vérifier migration du coffre, refus de données non autorisées et séparation des interprétations générées |
+
+La suite [test/imaging-pro.cjs](test/imaging-pro.cjs) existe ; sa présence et les résultats historiques de [VALIDATION.md](VALIDATION.md) ne prouvent pas l'exécution sur cette révision. Le manifeste déclare toujours 17.1.5. Aucun nouveau test DICOM, GPU, fournisseur, clinique ou déploiement n'a été réalisé. Ne pas utiliser pour interpréter des examens réels.
+
+**English:** Proposed checks target pixel decoding, series consistency, geometry, missing spacing, windowing and slab projections. Existing tests are not new execution evidence. No clinical or runtime qualification was performed.
 
 ## Roadmap & contribution
 
