@@ -1,7 +1,7 @@
 /* Cache only the application shell. Never cache API responses or patient data. */
 'use strict';
 const BUILD = 'v17.1.5';
-const SHELL = 'medvision-shell-' + BUILD;
+const SHELL = 'medvision-shell-' + BUILD + '-research2';
 const VENDOR = 'medvision-vendor-' + BUILD;
 const PRECACHE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png',
     './icon-maskable-192.png', './icon-maskable-512.png', './apple-touch-icon.png',

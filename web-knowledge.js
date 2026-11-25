@@ -39,7 +39,8 @@
     }).toString();
     try {
       const data = await fetchJson(url, 8000);
-      const rows = (((data || {}).resultList || {}).result || []).slice(0, 6);
+      if (!Array.isArray(data?.resultList?.result)) throw Error('Invalid source response');
+      const rows = data.resultList.result.slice(0, 6);
       return rows.map(r => ({
         source: 'Europe PMC / PubMed',
         kind: 'publication',
@@ -51,7 +52,7 @@
         summary: String(r.abstractText || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 900)
       }));
     } catch (error) {
-      return [];
+      throw new Error('Source unavailable');
     }
   }
 
@@ -61,7 +62,8 @@
     }).toString();
     try {
       const data = await fetchJson(url, 8000);
-      const studies = Array.isArray(data && data.studies) ? data.studies : [];
+      if (!Array.isArray(data?.studies)) throw Error('Invalid source response');
+      const studies = data.studies;
       return studies.slice(0, 4).map(study => {
         const ps = study && study.protocolSection || {};
         const id = ps.identificationModule || {};
@@ -78,7 +80,7 @@
         };
       });
     } catch (error) {
-      return [];
+      throw new Error('Source unavailable');
     }
   }
 
@@ -89,9 +91,10 @@
     const hit = cache.get(key);
     if (hit && Date.now() - hit.at < TTL) return hit.value;
 
-    const parts = await Promise.all([searchEuropePmc(topic), searchClinicalTrials(topic)]);
+    const parts = await Promise.allSettled([searchEuropePmc(topic), searchClinicalTrials(topic)]);
+    const sources = ['Europe PMC / PubMed', 'ClinicalTrials.gov'].map((name,i)=>({name,status:parts[i].status==='fulfilled'?'ok':'unavailable'}));
     const seen = new Set();
-    const references = [].concat(parts[0], parts[1]).filter(item => {
+    const references = parts.flatMap(p=>p.status==='fulfilled'?p.value:[]).filter(item => {
       const id = item.pmid || item.doi || item.nct || item.title;
       const k = String(id || '').toLowerCase();
       if (!k || seen.has(k)) return false;
@@ -102,9 +105,14 @@
       topic,
       retrieved_at: new Date().toISOString(),
       references,
+      sources,
       notice: 'Research context only. Registry records and article abstracts are not clinical conclusions.'
     };
-    cache.set(key, { at: Date.now(), value });
+    if (sources.every(s=>s.status==='ok')) {
+      for (const [k,entry] of cache) if (Date.now()-entry.at>=TTL) cache.delete(k);
+      if(cache.size>=50) cache.delete(cache.keys().next().value);
+      cache.set(key, { at: Date.now(), value });
+    }
     return value;
   }
 

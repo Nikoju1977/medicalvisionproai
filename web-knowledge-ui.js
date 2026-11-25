@@ -2,10 +2,6 @@
 (function () {
   'use strict';
 
-  function esc(v) {
-    return String(v || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
-
   function refLink(item) {
     if (item.pmid) return 'https://pubmed.ncbi.nlm.nih.gov/' + encodeURIComponent(item.pmid) + '/';
     if (item.doi) return 'https://doi.org/' + encodeURIComponent(item.doi);
@@ -49,14 +45,18 @@
           <input id="mv-web-knowledge-topic" autocomplete="off" placeholder="Ex. pneumothorax radiographie thoracique" aria-label="Sujet de recherche">
           <button type="submit">Rechercher</button>
         </form>
-        <div id="mv-web-knowledge-status" class="mvwk-note"></div>
+        <label class="mvwk-note"><input id="mv-web-knowledge-consent" type="checkbox"> Je confirme que la recherche ne contient aucune donnée personnelle ou de santé identifiable. Le sujet sera envoyé aux bases documentaires externes.</label>
+        <div id="mv-web-knowledge-status" class="mvwk-note" role="status" aria-live="polite"></div>
         <div id="mv-web-knowledge-results"></div>
       </section>`;
 
     document.body.appendChild(button);
     document.body.appendChild(panel);
 
-    const close = () => { panel.dataset.open = '0'; };
+    let generation = 0;
+    const consent = document.getElementById('mv-web-knowledge-consent');
+    const close = () => { generation++; panel.dataset.open = '0'; consent.checked = false; button.focus(); };
+    panel.addEventListener('keydown', e=>{if(e.key==='Escape'){e.preventDefault();close();}});
     button.addEventListener('click', () => {
       panel.dataset.open = '1';
       setTimeout(() => document.getElementById('mv-web-knowledge-topic').focus(), 0);
@@ -69,18 +69,29 @@
       const topic = document.getElementById('mv-web-knowledge-topic').value;
       const status = document.getElementById('mv-web-knowledge-status');
       const results = document.getElementById('mv-web-knowledge-results');
+      if (!consent.checked) { status.textContent = 'Confirmez l’absence de données identifiantes avant la recherche.'; return; }
+      if (!window.MedVisionKnowledge.cleanTopic(topic)) { status.textContent = 'Saisissez un sujet documentaire général.'; return; }
+      consent.checked=false;
+      const request=++generation;
       status.textContent = 'Recherche des références…';
-      results.innerHTML = '';
+      results.textContent = '';
       try {
         const data = await window.MedVisionKnowledge.search({ topic });
-        status.textContent = data.references.length + ' référence(s) — ' + new Date(data.retrieved_at).toLocaleString();
-        results.innerHTML = data.references.map(item => {
-          const url = refLink(item);
-          const ids = [item.pmid && ('PMID ' + item.pmid), item.doi && ('DOI ' + item.doi), item.nct && item.nct].filter(Boolean).join(' · ');
-          return `<article class="mvwk-ref"><strong>${esc(item.title || 'Sans titre')}</strong><div class="mvwk-meta">${esc(item.source)}${item.year ? ' · ' + esc(item.year) : ''}${ids ? ' · ' + esc(ids) : ''}${item.status ? ' · ' + esc(item.status) : ''}</div>${item.summary ? `<div class="mvwk-summary">${esc(item.summary)}</div>` : ''}${url ? `<div><a href="${esc(url)}" target="_blank" rel="noopener noreferrer">Ouvrir la source</a></div>` : ''}</article>`;
-        }).join('') || '<p>Aucune référence trouvée.</p>';
+        if(request!==generation)return;
+        const unavailable=(data.sources||[]).filter(s=>s.status==='unavailable');
+        status.textContent = unavailable.length===2?'Les deux sources sont indisponibles. Aucun résultat ne peut être conclu.':data.references.length+' référence(s) — '+new Date(data.retrieved_at).toLocaleString()+(unavailable.length?' · Recherche partielle : '+unavailable.map(s=>s.name).join(', ')+' indisponible.':'');
+        for(const item of data.references){
+          const article=document.createElement('article');article.className='mvwk-ref';
+          const title=document.createElement('strong');title.textContent=item.title||'Sans titre';article.appendChild(title);
+          const ids=[item.pmid&&('PMID '+item.pmid),item.doi&&('DOI '+item.doi),item.nct].filter(Boolean).join(' · ');
+          const meta=document.createElement('div');meta.className='mvwk-meta';meta.textContent=[item.source,item.year,ids,item.status].filter(Boolean).join(' · ');article.appendChild(meta);
+          if(item.summary){const summary=document.createElement('div');summary.className='mvwk-summary';summary.textContent=item.summary;article.appendChild(summary);}
+          const url=refLink(item);if(url){const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='Ouvrir la source';article.appendChild(a);}
+          results.appendChild(article);
+        }
+        if(!data.references.length&&!unavailable.length){const p=document.createElement('p');p.textContent='Aucune référence trouvée.';results.appendChild(p);}
       } catch (err) {
-        status.textContent = 'Recherche indisponible pour le moment.';
+        if(request===generation)status.textContent = 'Recherche indisponible pour le moment.';
       }
     });
   }
