@@ -1,0 +1,39 @@
+name: Pages distribution proof
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/pages-distribution-proof.yml'
+      - 'tools/pages_distribution_proof.py'
+      - 'test/test_pages_distribution_proof.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Verify comparison logic
+        run: python3 test/test_pages_distribution_proof.py
+      - name: Build production distribution
+        run: python3 tools/build_vercel.py
+      - name: Verify source remains unchanged
+        run: git diff --exit-code
+      - name: Compare source, built shell and public HTTP bytes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          config=$(gh api "repos/$GITHUB_REPOSITORY/pages" 2>/dev/null) || config='{}'
+          PAGES_CONFIG="$config" python3 tools/pages_distribution_proof.py
+      - name: Keep metadata-only proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: pages-distribution-proof
+          path: pages-distribution-proof.json
+          retention-days: 7
